@@ -1,4 +1,4 @@
-import Image from "next/image";
+/* import Image from "next/image";
 import { Geist, Geist_Mono } from "next/font/google";
 
 const geistSans = Geist({
@@ -111,3 +111,18 @@ export default function Home() {
     </div>
   );
 }
+  */
+import Layout from "../../components/layout";
+
+export default function Home() {
+  return (
+    <Layout>
+    <div className="flex flex-col items-center justify-center h-screen">
+      <h1 className="text-3xl font-bold">Bem-vindo ao Connect League!</h1>
+      <p>Plataforma para conectar jogadores a organizações.</p>
+    </div>
+    </Layout>
+  );
+}
+
+
