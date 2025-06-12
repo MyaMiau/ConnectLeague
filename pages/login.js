@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useRouter } from "next/router";
 import Image from "next/image";
+import { useEffect } from "react";
 import { FiMail as Mail, FiLock as Lock, FiEye, FiEyeOff } from "react-icons/fi";
-
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
@@ -14,6 +14,17 @@ export default function Login() {
   });
   const [error, setError] = useState("");
 
+  useEffect(() => {
+    const role = localStorage.getItem("userRole");
+    const token = localStorage.getItem("authToken");
+  
+    if (token && role === "organization") {
+      router.push("/organization/profile");
+    } else if (token && role === "player") {
+      router.push("/profile");
+    }
+  }, []);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
@@ -21,21 +32,29 @@ export default function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+  
     try {
-      const response = await fetch("/api/auth/login", {
+      const response = await fetch("/api/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(formData),
       });
-
-      if (!response.ok) {
-        throw new Error("Erro ao fazer login");
+  
+      const data = await response.json(); // Agora isso vai funcionar
+  
+      console.log("Resposta da API:", data); // Adicione para verificar o token
+      localStorage.setItem("authToken", data.token);
+      localStorage.setItem("userRole", data.role);
+  
+      if (data.role === "organization") {
+        router.push("/organization/profile");
+      } else if (data.role === "player") {
+        router.push("/profile");
+      } else {
+        setError("Tipo de usuário desconhecido.");
       }
-
-      router.push("/dashboard");
     } catch (error) {
       console.error(error);
       setError("Erro ao fazer login. Verifique seu email e senha.");
@@ -72,76 +91,74 @@ export default function Login() {
           <h2 className="text-3xl font-bold mb-6 text-center">Login</h2>
 
           {/* Email */}
-         {/* Email */}
-  <div className="relative mb-4">
-    <label htmlFor="email" className="sr-only">Email</label>
-    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/70" size={20} />
-    <input
-      type="email"
-      name="email"
-      id="email"
-      placeholder="Email"
-      value={formData.email}
-      onChange={handleChange}
-      required
-      className="w-full pl-10 p-3 rounded-md bg-white/20 border border-white/30 placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-amber-400"
-    />
-  </div>
+          <div className="relative mb-4">
+            <label htmlFor="email" className="sr-only">Email</label>
+            <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/70" size={20} />
+            <input
+              type="email"
+              name="email"
+              id="email"
+              placeholder="Email"
+              value={formData.email}
+              onChange={handleChange}
+              required
+              className="w-full pl-10 p-3 rounded-md bg-white/20 border border-white/30 placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-amber-400"
+            />
+          </div>
 
-  {/* Senha */}
-  <div className="relative mb-4">
-    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/70" size={20} />
-    <input
-      type={showPassword ? "text" : "password"}
-      name="password"
-      placeholder="Senha"
-      value={formData.password}
-      onChange={handleChange}
-      required
-      className="w-full pl-10 pr-10 p-3 rounded-md bg-white/20 border border-white/30 placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-amber-400"
-    />
-    <button
-      type="button"
-      onClick={togglePassword}
-      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-white/70"
-      aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
-    >
-      {showPassword ? <FiEyeOff size={20} /> : <FiEye size={20} />}
-    </button>
-  </div>
-
-
-            {error && <p className="text-red-400 mb-4 text-sm">{error}</p>}
-
-            <div className="flex justify-end mb-4">
-              <a
-                href="/forgot-password"
-                className="text-sm text-amber-400 hover:text-amber-500 transition-colors"
-              >
-                Esqueceu sua senha?
-              </a>
-            </div>
-
+          {/* Senha */}
+          <div className="relative mb-4">
+            <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/70" size={20} />
+            <input
+              type={showPassword ? "text" : "password"}
+              name="password"
+              placeholder="Senha"
+              value={formData.password}
+              onChange={handleChange}
+              required
+              className="w-full pl-10 pr-10 p-3 rounded-md bg-white/20 border border-white/30 placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-amber-400"
+            />
             <button
-              type="submit"
-              className="w-full bg-amber-500 hover:bg-amber-600 text-white font-semibold py-2 rounded-md cursor-pointer"
+              type="button"
+              onClick={togglePassword}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-white/70"
+              aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
             >
-              Entrar
+              {showPassword ? <FiEyeOff size={20} /> : <FiEye size={20} />}
             </button>
+          </div>
 
-            <div className="text-center mt-4">
-              <p className="text-white">
-                Não tem uma conta?{" "}
-                <a
-                  href="/register"
-                  className="text-amber-400 hover:text-amber-500 font-semibold transition-colors"
-                >
-                  Cadastre-se
-                </a>
-              </p>
-            </div>
-          </form>
-        </div>
+          {error && <p className="text-red-400 mb-4 text-sm">{error}</p>}
+
+          <div className="flex justify-end mb-4">
+            <a
+              href="/forgot-password"
+              className="text-sm text-amber-400 hover:text-amber-500 transition-colors"
+            >
+              Esqueceu sua senha?
+            </a>
+          </div>
+
+          <button
+            type="submit"
+            className="w-full bg-amber-500 hover:bg-amber-600 text-white font-semibold py-2 rounded-md cursor-pointer"
+          >
+            Entrar
+          </button>
+
+          <div className="text-center mt-4">
+            <p className="text-white">
+              Não tem uma conta?{" "}
+              <a
+                href="/register"
+                className="text-amber-400 hover:text-amber-500 font-semibold transition-colors"
+              >
+                Cadastre-se
+              </a>
+            </p>
+          </div>
+        </form>
       </div>
-    );
-  }
+    </div>
+  );
+}
