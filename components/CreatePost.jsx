@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 
-export default function CreatePost({ onPost }) {
+export default function CreatePost({ onPost, user }) {
   const [text, setText] = useState("");
   const [image, setImage] = useState(null);
 
@@ -22,26 +22,26 @@ export default function CreatePost({ onPost }) {
   };
 
   const handlePost = () => {
-  if (!text.trim()) return;
+    if (!text.trim()) return;
 
-  const post = {
-    id: Date.now(),
-    content: text,
-    image,
-    date: new Date(),
-    likes: 0,
-    liked: false,
-    comments: [],
-    user: {
-      name: "Usuário Exemplo", // ou riotData.summonerName, se estiver vinculado
-      image: "/default-avatar.png", // ou riotData.profileIconUrl
-    },
+    const post = {
+      id: Date.now(),
+      content: text,
+      image,
+      date: new Date(),
+      likes: 0,
+      liked: false,
+      comments: [],
+      user: {
+        name: user?.name || "Usuário Exemplo",
+        image: user?.image || "/default-avatar.png",
+      },
+    };
+
+    onPost(post);
+    setText("");
+    setImage(null);
   };
-
-  onPost(post);
-  setText("");
-  setImage(null);
-};
 
   return (
     <Card className="w-full max-w-2xl bg-zinc-900 mb-8 rounded-2xl">
@@ -54,6 +54,6 @@ export default function CreatePost({ onPost }) {
         <Input type="file" accept="image/*" onChange={handleImageUpload} />
         <Button onClick={handlePost}>Publicar</Button>
       </CardContent>
-    </Card>
-  );
+  </Card>
+);
 }

@@ -10,9 +10,9 @@ import { Button } from "@/components/ui/button";
 import { MoreHorizontal, Heart, MessageCircle, Share2 } from "lucide-react";
 import DeleteConfirmationModal from "@/components/DeleteConfirmationModal";
 import CreatePost from "@/components/CreatePost";
-
 import Header from "@/components/Header";
 import EditPostModal from "@/components/EditPostModal";
+import ProfileCard from "@/components/ProfileCard";
 
 
 export default function ProfilePage() {
@@ -32,6 +32,8 @@ export default function ProfilePage() {
   const [deleteTarget, setDeleteTarget] = useState({ type: "", postId: null, commentId:null});
   const [activeReplyMenu, setActiveReplyMenu] = useState(null);
   const handleNewPost = (post) => {setPosts([post, ...posts]);}
+
+
 
   const handlePostSubmit = () => {
     if (!newPost.trim()) return;
@@ -201,8 +203,8 @@ const handleDeleteReply = (postId, commentId, replyId) => {
             ),
           }
         : post
-    )
-  );
+)
+);
 };
 
   const handleEditReply = (reply, commentId) => {
@@ -210,7 +212,7 @@ const handleDeleteReply = (postId, commentId, replyId) => {
     id: reply.id,
     content: reply.content,
     commentId,
-  });
+});
 };
 
   const saveEditedReply = (postId, commentId, replyId, content) => {
@@ -268,16 +270,16 @@ const handleDeleteReply = (postId, commentId, replyId) => {
     },
   ]);
   
-  const riotData = {
-    summonerName: "Rengar324",
-    tier: "Mestre",
-    profileIconUrl: "/riot-icon.jpg",
-    stats: {
-      teamfights: 66.7,
-      duels: 66.1,
-      soloDeaths: 33.3,
-    },
-  };
+    const initialUser = {
+      name: "Rengar324",
+      image: "/default-avatar.png",
+      role: "Mid",
+      elo: "Diamante",
+      status: "Free Agent",
+      bio: "Jogo desde 2018, especialista em assassinos e controle de rota.",
+    };
+    const [user, setUser] = useState(initialUser);
+    
 
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
@@ -297,71 +299,10 @@ const handleDeleteReply = (postId, commentId, replyId) => {
 
       <h1 className="text-3xl font-bold mb-8">Perfil do Jogador</h1>
 
-      {/* Card de perfil */}
-      <Card className="w-full max-w-4xl bg-zinc-900 shadow-xl rounded-2xl">
-        <CardContent className="flex flex-col md:flex-row gap-8 p-6 items-center md:items-start">
-          {/* Imagem de perfil */}
-          <div className="relative w-[120px] h-[120px]">
-            <Image
-              src={isRiotLinked ? riotData.profileIconUrl : profileImage}
-              fill
-              className="rounded-full border-4 border-zinc-700 object-cover"
-              alt="Imagem de perfil"
-            />
-          </div>
-
-          {/* Botão para trocar imagem */}
-          <label className="mt-2 cursor-pointer text-sm text-zinc-400 hover:text-white">
-            Trocar imagem
-            <Input
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={handleImageUpload}
-            />
-          </label>
-
-          {/* Informações do jogador */}
-          <div className="flex-1 space-y-3 mt-4 md:mt-0">
-            <p className="text-xl font-semibold">{riotData.summonerName}</p>
-            <p className="text-sm text-zinc-400">
-              {isRiotLinked ? `Tier: ${riotData.tier}` : "Conta Riot não vinculada"}
-            </p>
-
-            {!isRiotLinked && (
-              <Button className="mt-2" onClick={() => setIsRiotLinked(true)}>
-                Vincular conta Riot
-              </Button>
-            )}
-
-            {isRiotLinked && (
-              <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="bg-zinc-800 p-4 rounded-xl shadow text-center">
-                  <p className="text-sm text-zinc-400">Teamfights</p>
-                  <p className="text-lg font-bold">
-                    {riotData.stats.teamfights}%
-                  </p>
-                </div>
-                <div className="bg-zinc-800 p-4 rounded-xl shadow text-center">
-                  <p className="text-sm text-zinc-400">Duelos</p>
-                  <p className="text-lg font-bold">
-                    {riotData.stats.duels}%
-                  </p>
-                </div>
-                <div className="bg-zinc-800 p-4 rounded-xl shadow text-center col-span-1 sm:col-span-2">
-                  <p className="text-sm text-zinc-400">Mortes Individuais</p>
-                  <p className="text-lg font-bold">
-                    {riotData.stats.soloDeaths}%
-                  </p>
-                </div>
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+      <ProfileCard user={user} onUserUpdate={setUser} />
 
       {/* Timeline */}
-      <CreatePost onPost={handleNewPost} />
+      <CreatePost user={user} onPost={handleNewPost} />
 
 <div className="w-full max-w-2xl space-y-6">
         {posts.map((post) => (
@@ -370,14 +311,14 @@ const handleDeleteReply = (postId, commentId, replyId) => {
               <div className="flex justify-between items-start">
                 <div className="flex items-center gap-4">
                   <Image
-                    src={post.avatar}
+                    src={post.user?.image || "/default-avatar.png"}
                     alt="Avatar"
                     width={40}
                     height={40}
                     className="rounded-full object-cover border border-zinc-700"
                   />
                   <div>
-                    <p className="font-semibold">{post.name}</p>
+                    <p className="font-semibold">{post.user?.name || "Usuário Exemplo"}</p>
                     <p className="text-xs text-zinc-400">
                       {format(new Date(post.date), "d 'de' MMMM 'às' HH:mm", { locale: ptBR })}
                     </p>
@@ -634,6 +575,8 @@ const handleDeleteReply = (postId, commentId, replyId) => {
         onClose={() => setIsDeleteModalOpen(false)}
         onConfirm={handleConfirmDelete}
         itemType={deleteTarget.type}/>
+    
+
     </div>
   );
 }

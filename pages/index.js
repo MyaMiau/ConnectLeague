@@ -112,7 +112,7 @@ export default function Home() {
   );
 }
   */
-import Layout from "../../components/layout";
+import Layout from "@/components/layout";
 
 export default function Home() {
   return (
