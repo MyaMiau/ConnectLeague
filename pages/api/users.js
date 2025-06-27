@@ -1,6 +1,3 @@
-// pages/api/users.js
-
-// src/pages/api/users.js
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
@@ -8,7 +5,7 @@ const prisma = new PrismaClient();
 export default async function handler(req, res) {
   if (req.method === 'GET') {
     try {
-      const users = await prisma.user.findMany();
+      const users = await prisma.users.findMany();
       res.status(200).json(users);
     } catch (error) {
       console.error(error);
@@ -18,7 +15,7 @@ export default async function handler(req, res) {
     try {
       const { name, email, password, role, birthDate } = req.body;
 
-      const newUser = await prisma.user.create({
+      const newUser = await prisma.users.create({
         data: {
           name,
           email,
@@ -33,8 +30,22 @@ export default async function handler(req, res) {
       console.error(error);
       res.status(500).json({ error: 'Erro ao criar usuário' });
     }
+  } else if (req.method === 'PUT') {
+    try {
+      const { id, name, role, status, bio, elo, image } = req.body;
+
+      const updatedUser = await prisma.users.update({
+        where: { id },
+        data: { name, role, status, bio, elo, image },
+      });
+
+      res.status(200).json(updatedUser);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: 'Erro ao atualizar usuário' });
+    }
   } else {
-    res.setHeader('Allow', ['GET', 'POST']);
+    res.setHeader('Allow', ['GET', 'POST', 'PUT']);
     res.status(405).end(`Método ${req.method} não permitido`);
   }
 }

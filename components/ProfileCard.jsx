@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect} from "react";
 import Image from "next/image";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 // Todas as imagens estão em /public
 const ROLES = [
   { name: "Top", icon: "/Top.png" },
-  { name: "Jungle", icon: "/Jungle.png" },
+  { name: "Jungle", icon: "/Jg.png" },
   { name: "Mid", icon: "/Mid.png" },
   { name: "ADC", icon: "/Adc.png" },
   { name: "Support", icon: "/Sup.png" }
@@ -19,6 +19,7 @@ const ELOS = [
   { name: "Prata", image: "/Prata.png" },
   { name: "Ouro", image: "/Ouro.png" },
   { name: "Platina", image: "/Platina.png" },
+  { name: "Esmeralda", image: "/Esmeralda.png" },
   { name: "Diamante", image: "/Diamante.png" },
   { name: "Mestre", image: "/Mestre.png" },
   { name: "Grão-Mestre", image: "/GraoMestre.png" },
@@ -29,6 +30,15 @@ export default function ProfileCard({ user, onUserUpdate }) {
   const [editMode, setEditMode] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [localUser, setLocalUser] = useState(user);
+
+  useEffect(() => {
+    setLocalUser(user);
+  }, [user]);
+
+  if (!localUser) {
+  return <div>Carregando perfil...</div>;
+}
+
 
   function handleChange(e) {
     const { name, value } = e.target;
@@ -44,10 +54,25 @@ export default function ProfileCard({ user, onUserUpdate }) {
     }
   }
 
-  function handleSave() {
-    setEditMode(false);
-    setShowMenu(false);
-    onUserUpdate(localUser);
+  async function handleSave() {
+    try {
+      const response = await fetch('/api/users', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(localUser),
+      });
+      if (!response.ok) {
+        throw new Error('Erro ao salvar o perfil!');
+      }
+      const updatedUser = await response.json();
+      setEditMode(false);
+      setShowMenu(false);
+      setLocalUser(updatedUser);
+      if (onUserUpdate) onUserUpdate(updatedUser);
+      alert('Perfil salvo com sucesso!');
+    } catch (error) {
+      alert('Erro ao salvar perfil: ' + error.message);
+    }
   }
 
   const selectedRole = ROLES.find(r => r.name === localUser.role);

@@ -1,5 +1,5 @@
 // index.jsx
-import { useState } from "react";
+import { useState, useEffect  } from "react";
 import Image from "next/image";
 import { format } from "date-fns";
 import ptBR from "date-fns/locale/pt-BR";
@@ -13,6 +13,7 @@ import CreatePost from "@/components/CreatePost";
 import Header from "@/components/Header";
 import EditPostModal from "@/components/EditPostModal";
 import ProfileCard from "@/components/ProfileCard";
+
 
 
 export default function ProfilePage() {
@@ -270,15 +271,18 @@ const handleDeleteReply = (postId, commentId, replyId) => {
     },
   ]);
   
-    const initialUser = {
-      name: "Rengar324",
-      image: "/default-avatar.png",
-      role: "Mid",
-      elo: "Diamante",
-      status: "Free Agent",
-      bio: "Jogo desde 2018, especialista em assassinos e controle de rota.",
-    };
-    const [user, setUser] = useState(initialUser);
+
+    const [user, setUser] = useState(null);
+
+    useEffect(() => {
+    async function fetchUser() {
+      const res = await fetch("/api/users");
+      const data = await res.json();
+      // Pegue o usuário correto. Exemplo: o primeiro (ajuste para o id do usuário logado)
+      setUser(data[0]);
+    }
+    fetchUser();
+  }, []);
     
 
   const handleImageUpload = (e) => {

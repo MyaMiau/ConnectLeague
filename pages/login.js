@@ -3,6 +3,7 @@ import { useRouter } from "next/router";
 import Image from "next/image";
 import { useEffect } from "react";
 import { FiMail as Mail, FiLock as Lock, FiEye, FiEyeOff } from "react-icons/fi";
+import { signIn, useSession } from "next-auth/react";
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
@@ -13,17 +14,17 @@ export default function Login() {
     password: "",
   });
   const [error, setError] = useState("");
+  const { data: session, status } = useSession();
 
   useEffect(() => {
-    const role = localStorage.getItem("userRole");
-    const token = localStorage.getItem("authToken");
-  
-    if (token && role === "organization") {
-      router.push("/organization/profile");
-    } else if (token && role === "player") {
-      router.push("/profile");
+    if (status === "authenticated" && session?.user?.role) {
+      if (session.user.role === "organization") {
+        router.push("/organization/profile");
+      } else if (session.user.role === "player") {
+        router.push("/profile");
+      }
     }
-  }, []);
+  }, [status, session, router]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -32,33 +33,18 @@ export default function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-  
-    try {
-      const response = await fetch("/api/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
-      });
-  
-      const data = await response.json(); // Agora isso vai funcionar
-  
-      console.log("Resposta da API:", data); // Adicione para verificar o token
-      localStorage.setItem("authToken", data.token);
-      localStorage.setItem("userRole", data.role);
-  
-      if (data.role === "organization") {
-        router.push("/organization/profile");
-      } else if (data.role === "player") {
-        router.push("/profile");
-      } else {
-        setError("Tipo de usuário desconhecido.");
-      }
-    } catch (error) {
-      console.error(error);
+    setError("");
+    // Faz login via next-auth
+    const res = await signIn("credentials", {
+      redirect: false,
+      email: formData.email,
+      password: formData.password,
+    });
+
+    if (res.error) {
       setError("Erro ao fazer login. Verifique seu email e senha.");
     }
+    // Se sucesso, o useEffect faz o redirect
   };
 
   return (

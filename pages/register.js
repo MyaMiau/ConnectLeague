@@ -5,7 +5,6 @@ import { FiMail, FiLock, FiUser, FiEye, FiEyeOff } from "react-icons/fi";
 import { UserCog } from "lucide-react";
 import { FiCalendar } from "react-icons/fi";
 
-
 export default function Register() {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
@@ -33,46 +32,39 @@ export default function Register() {
     setFormData({ ...formData, [name]: value });
   };
 
-
   useEffect(() => {
-    const role = localStorage.getItem("userRole");
-    if (role === "organization") {
-      router.push("/organization/profile");
-    } else if (role === "player") {
-      router.push("/profile");
-    }
+    // O registro não depende mais de localStorage, pode remover este bloco se quiser
+    // Mantém só se quiser impedir usuário já logado de acessar a página de registro
   }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(""); // Limpa o erro anterior
-  
+
     if (formData.password !== formData.confirmPassword) {
       setError("As senhas não coincidem.");
       return;
     }
-  
+
     try {
       const response = await fetch("/api/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
-  
+
       if (!response.ok) {
-        throw new Error("Erro ao cadastrar");
+        const data = await response.json();
+        throw new Error(data.error || "Erro ao cadastrar");
       }
-  
+
       router.push("/login");
     } catch (error) {
-      console.error(error);
-      setError("Erro ao cadastrar. Tente novamente.");
+      setError(error.message || "Erro ao cadastrar. Tente novamente.");
     }
   };
-  
 
   const [showDateInput, setShowDateInput] = useState(false);
-
 
   return (
     <div className="relative h-screen w-screen">
@@ -162,7 +154,6 @@ export default function Register() {
                 />
               </div>
 
-
               {/* Senha */}
               <div className="relative mb-4">
                 <FiLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/70" size={20} />
@@ -197,7 +188,6 @@ export default function Register() {
                   required
                   className="w-full pl-10 pr-10 p-3 rounded-md bg-white/20 border border-white/30 placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-amber-400"
                 />
-                
               </div>
 
               {error && <p className="text-red-400 mb-4 text-sm">{error}</p>}
