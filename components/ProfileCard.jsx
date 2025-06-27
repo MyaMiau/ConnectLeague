@@ -29,11 +29,17 @@ const ELOS = [
 export default function ProfileCard({ user, onUserUpdate }) {
   const [editMode, setEditMode] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
-  const [localUser, setLocalUser] = useState(user);
+const [localUser, setLocalUser] = useState({
+  ...user,
+  status: user.status || "Free Agent",
+});
 
-  useEffect(() => {
-    setLocalUser(user);
-  }, [user]);
+useEffect(() => {
+  setLocalUser(prev => ({
+    ...user,
+    status: user.status || "Free Agent",
+  }));
+}, [user]);
 
   if (!localUser) {
   return <div>Carregando perfil...</div>;

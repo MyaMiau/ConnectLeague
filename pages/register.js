@@ -21,6 +21,7 @@ export default function Register() {
     email: "",
     password: "",
     confirmPassword: "",
+    type: "",
     role: "",
     birthDate: "", 
   });
@@ -123,8 +124,8 @@ export default function Register() {
               <div className="relative mb-4">
                 <UserCog className="absolute left-3 top-1/2 -translate-y-1/2 text-white/70" size={20} />
                 <select
-                  name="role"
-                  value={formData.role}
+                  name="type"
+                  value={formData.type}
                   onChange={handleChange}
                   required
                   className="w-full pl-10 p-3 rounded-md bg-white/20 border border-white/30 text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-amber-400"
@@ -132,6 +133,10 @@ export default function Register() {
                   <option value="" disabled hidden>Selecione sua função</option>
                   <option value="player" style={{ color: "#000" }}>Jogador</option>
                   <option value="organization" style={{ color: "#000" }}>Organização</option>
+                  <option value="coach" style={{ color: "#000" }}>Coach</option>
+                  <option value="analyst" style={{ color: "#000" }}>Analista</option>
+                  <option value="manager" style={{ color: "#000" }}>Manager</option>
+                  <option value="psychologist" style={{ color: "#000" }}>Psicologo</option>
                 </select>
               </div>
               
