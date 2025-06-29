@@ -20,7 +20,7 @@ export default function Login() {
     if (status === "authenticated" && session?.user?.type) {
       if (session.user.type === "organization") {
         router.push("/organization/profile");
-      } else if (session.user.role === "player") {
+      } else if (session.user.type === "player") {
         router.push("/profile");
       }
     }

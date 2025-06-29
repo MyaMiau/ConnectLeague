@@ -5,7 +5,20 @@ const prisma = new PrismaClient();
 export default async function handler(req, res) {
   if (req.method === 'GET') {
     try {
-      const users = await prisma.users.findMany();
+      // Nunca retorne o password!
+      const users = await prisma.users.findMany({
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true,
+          status: true,
+          bio: true,
+          elo: true,
+          image: true,
+          birthDate: true
+        }
+      });
       res.status(200).json(users);
     } catch (error) {
       console.error(error);
@@ -25,7 +38,9 @@ export default async function handler(req, res) {
         },
       });
 
-      res.status(201).json(newUser);
+      // Não envie o password de volta!
+      const { password: _, ...userWithoutPassword } = newUser;
+      res.status(201).json(userWithoutPassword);
     } catch (error) {
       console.error(error);
       res.status(500).json({ error: 'Erro ao criar usuário' });

@@ -6,7 +6,7 @@ import bcrypt from "bcrypt";
 
 const prisma = new PrismaClient();
 
-export default NextAuth({
+export const authOptions = {
   adapter: PrismaAdapter(prisma, {
     models: {
       User: { model: prisma.users },
@@ -27,19 +27,26 @@ export default NextAuth({
         const user = await prisma.users.findUnique({
           where: { email: credentials.email }
         });
-        if (!user || !user.password) return null;
+
+        if (!user || !user.password) {
+          return null;
+        }
         // Confere a senha
         const isValid = await bcrypt.compare(credentials.password, user.password);
-        if (!isValid) return null;
-        console.log("Usuário autenticado:", userObj);
+
+        if (!isValid) {
+          return null;
+        }
+
         // Retorna só os campos necessários para o JWT
-        return {
+        const userObj = {
           id: user.id,
           email: user.email,
           name: user.name,
-          type: user.type,      // tipo de conta: 'player', 'organization', 'psychologist', etc.
-          role: user.role || null // função do player, pode ser null se não for jogador ou não tiver definido ainda
+          type: user.type,
+          role: user.role || null
         };
+        return userObj;
       }
     }),
   ],
@@ -48,7 +55,6 @@ export default NextAuth({
   },
   callbacks: {
     async jwt({ token, user }) {
-      // Na primeira vez, user está presente e podemos adicionar campos extras
       if (user) {
         token.type = user.type;
         token.role = user.role || null;
@@ -57,7 +63,6 @@ export default NextAuth({
       return token;
     },
     async session({ session, token }) {
-      // Adiciona informações do token na sessão
       if (token) {
         session.user.id = token.sub;
         session.user.type = token.type;
@@ -70,4 +75,6 @@ export default NextAuth({
   pages: {
     signIn: "/login",
   },
-});
+};
+
+export default NextAuth(authOptions);

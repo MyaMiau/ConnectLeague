@@ -55,6 +55,8 @@ model users {
   evaluations_given    evaluations[] @relation("evaluations_evaluator_id")
   applications   applications[]
   vacancies      vacancies[]
+  posts      Post[]      @relation("UserPosts")
+  comments   Comment[]   @relation("UserComments")
 }
 
 model vacancies {
@@ -97,4 +99,24 @@ model verification_tokens {
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+model Post {
+  id        Int       @id @default(autoincrement())
+  content   String
+  createdAt DateTime  @default(now())
+  authorId  Int
+  author    users     @relation("UserPosts", fields: [authorId], references: [id])
+  comments  Comment[]
+  image     String? 
+}
+
+model Comment {
+  id        Int      @id @default(autoincrement())
+  content   String
+  createdAt DateTime @default(now())
+  authorId  Int
+  postId    Int
+  author    users    @relation("UserComments", fields: [authorId], references: [id])
+  post      Post     @relation(fields: [postId], references: [id])
 }

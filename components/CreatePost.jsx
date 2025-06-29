@@ -1,5 +1,3 @@
-//CreatePost.jsx
-
 "use client";
 
 import { Card, CardContent } from "@/components/ui/card";
@@ -11,6 +9,7 @@ import { useState } from "react";
 export default function CreatePost({ onPost, user }) {
   const [text, setText] = useState("");
   const [image, setImage] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
@@ -21,26 +20,32 @@ export default function CreatePost({ onPost, user }) {
     }
   };
 
-  const handlePost = () => {
-    if (!text.trim()) return;
+  const handlePost = async () => {
+    if (!text.trim() || !user?.id ) return;
+    setLoading(true);
 
-    const post = {
-      id: Date.now(),
+    // Monta o payload
+    const payload = {
       content: text,
       image,
-      date: new Date(),
-      likes: 0,
-      liked: false,
-      comments: [],
-      user: {
-        name: user?.name || "Usuário Exemplo",
-        image: user?.image || "/default-avatar.png",
-      },
+      authorId: user?.id, // Garanta que user.id está certo!
     };
+ 
+    console.log("Payload enviado para /api/posts:", payload);
 
-    onPost(post);
-    setText("");
-    setImage(null);
+    // Faz o POST na API do backend
+    const res = await fetch("/api/posts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    if (res.ok) {
+      setText("");
+      setImage(null);
+      onPost && onPost();
+    }
+    setLoading(false);
   };
 
   return (
@@ -52,8 +57,10 @@ export default function CreatePost({ onPost, user }) {
           onChange={(e) => setText(e.target.value)}
         />
         <Input type="file" accept="image/*" onChange={handleImageUpload} />
-        <Button onClick={handlePost}>Publicar</Button>
+        <Button onClick={handlePost} disabled={loading || !text.trim()}>
+          {loading ? "Publicando..." : "Publicar"}
+        </Button>
       </CardContent>
-  </Card>
-);
+    </Card>
+  );
 }

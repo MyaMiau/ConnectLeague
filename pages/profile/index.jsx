@@ -1,5 +1,4 @@
-// index.jsx
-import { useState, useEffect  } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import { format } from "date-fns";
 import ptBR from "date-fns/locale/pt-BR";
@@ -14,13 +13,9 @@ import Header from "@/components/Header";
 import EditPostModal from "@/components/EditPostModal";
 import ProfileCard from "@/components/ProfileCard";
 
-
-
 export default function ProfilePage() {
   const [isRiotLinked, setIsRiotLinked] = useState(false);
   const [profileImage, setProfileImage] = useState("/default-avatar.png");
-  const [newPost, setNewPost] = useState("");
-  const [newImage, setNewImage] = useState(null);
   const [activeOptions, setActiveOptions] = useState(null);
   const [activeCommentOptions, setActiveCommentOptions] = useState(null);
   const [commentInputs, setCommentInputs] = useState({});
@@ -30,119 +25,100 @@ export default function ProfilePage() {
   const [editingComment, setEditingComment] = useState(null);
   const [editingReply, setEditingReply] = useState(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [deleteTarget, setDeleteTarget] = useState({ type: "", postId: null, commentId:null});
+  const [deleteTarget, setDeleteTarget] = useState({ type: "", postId: null, commentId: null });
   const [activeReplyMenu, setActiveReplyMenu] = useState(null);
-  const handleNewPost = (post) => {setPosts([post, ...posts]);}
+  const [posts, setPosts] = useState([]);
+  const [user, setUser] = useState(null);
 
+  // 1. Busca o usuário logado
+  useEffect(() => {
+    async function fetchUser() {
+      try {
+        const res = await fetch("/api/users/me");
+        if (!res.ok) return;
+        const data = await res.json();
+        setUser(data);
+      } catch (err) {
+        setUser(null);
+      }
+    }
+    fetchUser();
+  }, []);
 
-
-  const handlePostSubmit = () => {
-    if (!newPost.trim()) return;
-
-    const post = {
-      id: Date.now(),
-      name: "Usuário Exemplo",
-      avatar: "/default-avatar.png",
-      content: newPost,
-      image: newImage,
-      date: new Date(),
-      likes: 0,
-      liked: false,
-      comments: [],
-    };
-
-    setPosts([post, ...posts]);
-    setNewPost("");
-    setNewImage(null);
+  // 2. Busca posts do usuário logado
+  const loadUserPosts = async () => {
+    if (!user?.id) return;
+    try {
+      const res = await fetch(`/api/posts?userId=${user.id}`);
+      if (!res.ok) return;
+      const data = await res.json();
+      setPosts(data);
+    } catch (err) {
+      setPosts([]);
+    }
   };
 
-  const toggleLikePost = (id) => {
-    setPosts(
-      posts.map((post) =>
-        post.id === id
-          ? { ...post, likes: post.liked ? post.likes - 1 : post.likes + 1, liked: !post.liked }
-          : post
-      )
-    );
+  useEffect(() => {
+    if (user?.id) {
+      loadUserPosts();
+    }
+    // eslint-disable-next-line
+  }, [user]);
+
+  // Ao criar novo post, recarrega os posts do usuário
+  const handleNewPost = () => {
+    loadUserPosts();
   };
 
-  const toggleLikeComment = (postId, commentId) => {
-    setPosts(
-      posts.map((post) => {
-        if (post.id !== postId) return post;
-        return {
-          ...post,
-          comments: post.comments.map((comment) =>
-            comment.id === commentId
-              ? {
-                  ...comment,
-                  likes: comment.liked ? comment.likes - 1 : comment.likes + 1,
-                  liked: !comment.liked,
-                }
-              : comment
-          ),
-        };
-      })
-    );
+  const toggleLikePost = async (id) => {
+    await fetch(`/api/posts/${id}/like`, { method: "POST" });
+    loadUserPosts();
   };
 
-  const addComment = (postId) => {
+  const toggleLikeComment = async (postId, commentId) => {
+    await fetch(`/api/comments/${commentId}/like`, { method: "POST" });
+    loadUserPosts();
+  };
+
+  const addComment = async (postId) => {
     const text = commentInputs[postId];
-    if (!text?.trim()) return;
-
-    const comment = {
-      id: Date.now(),
-      author: "Usuário Exemplo",
-      avatar: "/default-avatar.png",
-      content: text,
-      likes: 0,
-      liked: false,
-      replies: [],
-    };
-
-    setPosts(
-      posts.map((post) =>
-        post.id === postId ? { ...post, comments: [...post.comments, comment] } : post
-      )
-    );
+    if (!text?.trim() || !user?.id) return;
+    await fetch("/api/comments", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        content: text,
+        authorId: user.id,
+        postId,
+      }),
+    });
     setCommentInputs({ ...commentInputs, [postId]: "" });
+    loadUserPosts();
   };
 
   const toggleReplyInput = (commentId) => {
     setReplyInputs((prev) => ({ ...prev, [commentId]: prev[commentId] ? "" : "" }));
   };
 
-  const handleReply = (postId, commentId, text) => {
-    if (!text.trim()) return;
-    setPosts(
-      posts.map((post) => {
-        if (post.id !== postId) return post;
-        return {
-          ...post,
-          comments: post.comments.map((comment) =>
-            comment.id === commentId
-              ? {
-                  ...comment,
-                  replies: [
-                    ...comment.replies,
-                    {
-                      id: Date.now(),
-                      author: "Usuário Exemplo",
-                      avatar: "/default-avatar.png",
-                      content: text,
-                    },
-                  ],
-                }
-              : comment
-          ),
-        };
-      })
-    );
+  const handleReply = async (postId, commentId, text) => {
+    if (!text.trim() || !user?.id) return;
+    await fetch("/api/comments/reply", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        content: text,
+        authorId: user.id,
+        postId,
+        commentId,
+      }),
+    });
     setReplyInputs({ ...replyInputs, [commentId]: "" });
+    loadUserPosts();
   };
 
-  const handleDeletePost = (id) => {
-    setPosts(posts.filter((post) => post.id !== id));
+  const handleDeletePost = async (id) => {
+    await fetch(`/api/posts/${id}`, { method: "DELETE" });
+    loadUserPosts();
   };
 
   const handleEditPost = (post) => {
@@ -150,93 +126,57 @@ export default function ProfilePage() {
     setEditingContent(post.content);
   };
 
-  const saveEditedPost = (id) => {
-    setPosts(
-      posts.map((post) => (post.id === id ? { ...post, content: editingContent } : post))
-    );
+  const saveEditedPost = async (id) => {
+    await fetch(`/api/posts/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content: editingContent }),
+    });
     setEditingPostId(null);
     setEditingContent("");
+    loadUserPosts();
   };
 
-  const handleDeleteComment = (postId, commentId) => {
-    setPosts(
-      posts.map((post) =>
-        post.id === postId
-          ? { ...post, comments: post.comments.filter((c) => c.id !== commentId) }
-          : post
-      )
-    );
+  const handleDeleteComment = async (postId, commentId) => {
+    await fetch(`/api/comments/${commentId}`, { method: "DELETE" });
+    loadUserPosts();
   };
 
   const handleEditComment = (comment) => {
     setEditingComment(comment);
   };
 
-  const saveEditedComment = (postId, commentId, content) => {
-    setPosts(
-      posts.map((post) =>
-        post.id === postId
-          ? {
-              ...post,
-              comments: post.comments.map((c) =>
-                c.id === commentId ? { ...c, content } : c
-              ),
-            }
-          : post
-      )
-    );
+  const saveEditedComment = async (postId, commentId, content) => {
+    await fetch(`/api/comments/${commentId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content }),
+    });
     setEditingComment(null);
+    loadUserPosts();
   };
 
-const handleDeleteReply = (postId, commentId, replyId) => {
-  setPosts(
-    posts.map((post) =>
-      post.id === postId
-        ? {
-            ...post,
-            comments: post.comments.map((comment) =>
-              comment.id === commentId
-                ? {
-                    ...comment,
-                    replies: comment.replies.filter((reply) => reply.id !== replyId),
-                  }
-                : comment
-            ),
-          }
-        : post
-)
-);
-};
+  const handleDeleteReply = async (postId, commentId, replyId) => {
+    await fetch(`/api/comments/reply/${replyId}`, { method: "DELETE" });
+    loadUserPosts();
+  };
 
   const handleEditReply = (reply, commentId) => {
-  setEditingReply({
-    id: reply.id,
-    content: reply.content,
-    commentId,
-});
-};
+    setEditingReply({
+      id: reply.id,
+      content: reply.content,
+      commentId,
+    });
+  };
 
-  const saveEditedReply = (postId, commentId, replyId, content) => {
-    setPosts(
-      posts.map((post) =>
-        post.id === postId
-          ? {
-              ...post,
-              comments: post.comments.map((comment) =>
-                comment.id === commentId
-                  ? {
-                      ...comment,
-                      replies: comment.replies.map((r) =>
-                        r.id === replyId ? { ...r, content } : r
-                      ),
-                    }
-                  : comment
-              ),
-            }
-          : post
-      )
-    );
+  const saveEditedReply = async (postId, commentId, replyId, content) => {
+    await fetch(`/api/comments/reply/${replyId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content }),
+    });
     setEditingReply(null);
+    loadUserPosts();
   };
 
   const openDeleteModal = ({ type, postId, commentId = null, replyId = null }) => {
@@ -244,46 +184,16 @@ const handleDeleteReply = (postId, commentId, replyId) => {
     setIsDeleteModalOpen(true);
   };
 
-
-  const handleConfirmDelete = () => {
-    console.log("deleteTarget:",deleteTarget);
+  const handleConfirmDelete = async () => {
     if (deleteTarget.type === "post") {
-      handleDeletePost(deleteTarget.postId);
+      await handleDeletePost(deleteTarget.postId);
     } else if (deleteTarget.type === "comment") {
-      handleDeleteComment(deleteTarget.postId, deleteTarget.commentId);
+      await handleDeleteComment(deleteTarget.postId, deleteTarget.commentId);
     } else if (deleteTarget.type === "reply") {
-      handleDeleteReply(deleteTarget.postId, deleteTarget.commentId, deleteTarget.replyId);
+      await handleDeleteReply(deleteTarget.postId, deleteTarget.commentId, deleteTarget.replyId);
     }
     setIsDeleteModalOpen(false);
   };
-   
-    const [posts, setPosts] = useState([
-    {
-      id: 1,
-      name: "Coach Diego",
-      avatar: "/default-avatar.png",
-      content: "Finalizei mais um ciclo de treinamento com uma equipe de elo Diamante!",
-      image: "/imagem-teste.png",
-      date: new Date(),
-      likes: 0,
-      liked: false,
-      comments: [],
-    },
-  ]);
-  
-
-    const [user, setUser] = useState(null);
-
-    useEffect(() => {
-    async function fetchUser() {
-      const res = await fetch("/api/users");
-      const data = await res.json();
-      // Pegue o usuário correto. Exemplo: o primeiro (ajuste para o id do usuário logado)
-      setUser(data[0]);
-    }
-    fetchUser();
-  }, []);
-    
 
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
@@ -296,7 +206,6 @@ const handleDeleteReply = (postId, commentId, replyId) => {
     }
   };
 
-
   return (
     <div className="min-h-screen bg-black text-white pt-24 flex flex-col items-center px-4">
       <Header />
@@ -308,23 +217,26 @@ const handleDeleteReply = (postId, commentId, replyId) => {
       {/* Timeline */}
       <CreatePost user={user} onPost={handleNewPost} />
 
-<div className="w-full max-w-2xl space-y-6">
+      <div className="w-full max-w-2xl space-y-6">
+        {posts.length === 0 && (
+          <p className="text-center text-zinc-400">Nenhum post encontrado para este usuário.</p>
+        )}
         {posts.map((post) => (
           <Card key={post.id} className="bg-zinc-900 rounded-2xl">
             <CardContent className="p-6 space-y-4 relative">
               <div className="flex justify-between items-start">
                 <div className="flex items-center gap-4">
                   <Image
-                    src={post.user?.image || "/default-avatar.png"}
+                    src={post.author?.image || "/default-avatar.png"}
                     alt="Avatar"
                     width={40}
                     height={40}
                     className="rounded-full object-cover border border-zinc-700"
                   />
                   <div>
-                    <p className="font-semibold">{post.user?.name || "Usuário Exemplo"}</p>
+                    <p className="font-semibold">{post.author?.name || "Usuário Exemplo"}</p>
                     <p className="text-xs text-zinc-400">
-                      {format(new Date(post.date), "d 'de' MMMM 'às' HH:mm", { locale: ptBR })}
+                      {format(new Date(post.createdAt), "d 'de' MMMM 'às' HH:mm", { locale: ptBR })}
                     </p>
                   </div>
                 </div>
@@ -385,13 +297,13 @@ const handleDeleteReply = (postId, commentId, replyId) => {
 
               {/* Comentários */}
               <div className="mt-4 space-y-4">
-                {post.comments.map((comment) => (
+                {post.comments?.map((comment) => (
                   <div key={comment.id} className="bg-zinc-800 p-4 rounded-lg">
                     <div className="flex justify-between">
                       <div className="flex gap-3 items-center">
-                        <Image src={comment.avatar} alt="Avatar" width={30} height={30} className="rounded-full" />
+                        <Image src={comment.author?.image || "/default-avatar.png"} alt="Avatar" width={30} height={30} className="rounded-full" />
                         <div>
-                          <p className="text-sm font-semibold text-zinc-100S">{comment.author}</p>
+                          <p className="text-sm font-semibold text-zinc-100S">{comment.author?.name || comment.author}</p>
                           {editingComment?.id === comment.id ? (
                             <>
                               <Textarea
@@ -427,11 +339,11 @@ const handleDeleteReply = (postId, commentId, replyId) => {
                               className="block w-full text-left px-4 py-2 hover:bg-zinc-600 cursor-pointer">
                               Editar
                             </button>
-                           <button
-                            onClick={() => openDeleteModal({ type: "comment", postId: post.id, commentId: comment.id })}
-                            className="block w-full text-left px-4 py-2 hover:bg-zinc-600 cursor-pointer">
-                            Excluir
-                          </button>
+                            <button
+                              onClick={() => openDeleteModal({ type: "comment", postId: post.id, commentId: comment.id })}
+                              className="block w-full text-left px-4 py-2 hover:bg-zinc-600 cursor-pointer">
+                              Excluir
+                            </button>
                           </div>
                         )}
                       </div>
@@ -469,7 +381,7 @@ const handleDeleteReply = (postId, commentId, replyId) => {
                         Enviar
                       </Button>
                  </div>
-                  )}
+                    )}
                     
 
                     {/* Respostas */}
@@ -479,13 +391,13 @@ const handleDeleteReply = (postId, commentId, replyId) => {
                           <div key={reply.id} className="text-sm text-zinc-300 flex justify-between">
                             <div className="flex gap-2 items-start">
                               <Image
-                                src={reply.avatar || "/default-avatar.png"}
+                                src={reply.author?.image || "/default-avatar.png"}
                                 alt="Avatar"
                                 width={25}
                                 height={25}
                                 className="rounded-full"/>
                             <div className="flex flex-col gap-1">
-                                <p className="font-semibold text-purple-400">{reply.author}</p>
+                                <p className="font-semibold text-purple-400">{reply.author?.name || reply.author}</p>
                                 {editingReply?.id === reply.id ? (
                                   <>
                                     <Textarea
@@ -579,8 +491,6 @@ const handleDeleteReply = (postId, commentId, replyId) => {
         onClose={() => setIsDeleteModalOpen(false)}
         onConfirm={handleConfirmDelete}
         itemType={deleteTarget.type}/>
-    
-
-    </div>
-  );
+    </div>
+  );
 }

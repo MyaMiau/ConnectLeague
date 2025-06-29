@@ -1,4 +1,4 @@
-import { useState, useEffect} from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -29,22 +29,24 @@ const ELOS = [
 export default function ProfileCard({ user, onUserUpdate }) {
   const [editMode, setEditMode] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
-const [localUser, setLocalUser] = useState({
-  ...user,
-  status: user.status || "Free Agent",
-});
 
-useEffect(() => {
-  setLocalUser(prev => ({
-    ...user,
-    status: user.status || "Free Agent",
+  // Evita erro de user nulo/undefined
+  const [localUser, setLocalUser] = useState(() => ({
+    ...(user || {}),
+    status: user?.status || "Free Agent",
   }));
-}, [user]);
 
-  if (!localUser) {
-  return <div>Carregando perfil...</div>;
-}
+  useEffect(() => {
+    setLocalUser(prev => ({
+      ...(user || {}),
+      status: user?.status || "Free Agent",
+    }));
+  }, [user]);
 
+  // Se não há user, mostra carregando
+  if (!user) {
+    return <div>Carregando perfil...</div>;
+  }
 
   function handleChange(e) {
     const { name, value } = e.target;
@@ -144,7 +146,7 @@ useEffect(() => {
             {editMode ? (
               <select
                 name="role"
-                value={localUser.role}
+                value={localUser.role || ""}
                 onChange={handleChange}
                 className="bg-zinc-800 border border-zinc-700 rounded px-2 py-1"
               >
@@ -168,7 +170,7 @@ useEffect(() => {
             {editMode ? (
               <select
                 name="status"
-                value={localUser.status}
+                value={localUser.status || ""}
                 onChange={handleChange}
                 className="bg-zinc-800 border border-zinc-700 rounded px-2 py-1"
               >
@@ -204,7 +206,7 @@ useEffect(() => {
                 <label className="font-medium">Elo:</label>
                 <select
                   name="elo"
-                  value={localUser.elo}
+                  value={localUser.elo || ""}
                   onChange={handleChange}
                   className="bg-zinc-800 border border-zinc-700 rounded px-2 py-1"
                 >
