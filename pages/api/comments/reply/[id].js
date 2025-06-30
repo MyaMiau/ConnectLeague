@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/prisma";
+import prisma from "../../../../lib/prisma";
 
 export default async function handler(req, res) {
   const replyId = Number(req.query.id);
@@ -9,7 +9,7 @@ export default async function handler(req, res) {
 
   if (req.method === "DELETE") {
     try {
-      await prisma.Reply.delete({
+      await prisma.reply.delete({
         where: { id: replyId }
       });
       return res.status(204).end();
@@ -25,7 +25,7 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "Conteúdo é obrigatório para editar." });
     }
     try {
-      const reply = await prisma.Reply.update({
+      const reply = await prisma.reply.update({
         where: { id: replyId },
         data: { content }
       });

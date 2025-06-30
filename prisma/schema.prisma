@@ -125,13 +125,17 @@ model Comment {
 }
 
 model Reply {
-  id        Int      @id @default(autoincrement())
-  content   String
-  createdAt DateTime @default(now())
-  authorId  Int
-  commentId Int
-  postId    Int
-  author    users    @relation(fields: [authorId], references: [id])
-  comment   Comment  @relation(fields: [commentId], references: [id])
-  post      Post     @relation(fields: [postId], references: [id])
+  id             Int      @id @default(autoincrement())
+  content        String
+  createdAt      DateTime @default(now())
+  authorId       Int
+  commentId      Int
+  postId         Int
+  parentReplyId  Int?     // <-- NOVO: para sub-respostas
+  author         users    @relation(fields: [authorId], references: [id])
+  comment        Comment  @relation(fields: [commentId], references: [id])
+  post           Post     @relation(fields: [postId], references: [id])
+
+  parentReply    Reply?   @relation("ReplyToReply", fields: [parentReplyId], references: [id])
+  subReplies     Reply[]  @relation("ReplyToReply")
 }
