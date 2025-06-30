@@ -10,15 +10,10 @@ import { MoreHorizontal, Heart, MessageCircle, Share2 } from "lucide-react";
 import DeleteConfirmationModal from "@/components/DeleteConfirmationModal";
 import EditPostModal from "@/components/EditPostModal";
 import CreatePost from "@/components/CreatePost";
-
-// Simulação de usuário logado (troque pelo seu auth real)
-const mockUser = {
-  id: 1,
-  name: "Usuário Exemplo",
-  image: "/default-avatar.png",
-};
+import ReplyThread from "@/components/ReplyThread"; // Ou ReplyRecursive, se preferir
 
 export default function Timeline() {
+  const [user, setUser] = useState(null);
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -33,6 +28,21 @@ export default function Timeline() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState({ type: "", postId: null, commentId: null, replyId: null });
   const [activeReplyMenu, setActiveReplyMenu] = useState(null);
+
+  // Busca usuário logado
+  useEffect(() => {
+    async function fetchUser() {
+      try {
+        const res = await fetch("/api/users/me");
+        if (!res.ok) return;
+        const data = await res.json();
+        setUser(data);
+      } catch (err) {
+        setUser(null);
+      }
+    }
+    fetchUser();
+  }, []);
 
   // Carrega os posts da API
   const loadPosts = async () => {
@@ -75,14 +85,14 @@ export default function Timeline() {
   // Comentários
   const addComment = async (postId) => {
     const text = commentInputs[postId];
-    if (!text?.trim()) return;
+    if (!text?.trim() || !user?.id) return;
 
     await fetch("/api/comments", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         content: text,
-        authorId: mockUser.id,
+        authorId: user.id,
         postId,
       }),
     });
@@ -109,24 +119,26 @@ export default function Timeline() {
     loadPosts();
   };
 
-  // Respostas a comentários
-  const toggleReplyInput = (commentId) => {
-    setReplyInputs((prev) => ({ ...prev, [commentId]: prev[commentId] ? "" : "" }));
+  // Respostas a comentários E replies aninhadas
+  const toggleReplyInput = (commentOrReplyId) => {
+    setReplyInputs((prev) => ({ ...prev, [commentOrReplyId]: prev[commentOrReplyId] ? "" : "" }));
   };
 
-  const handleReply = async (postId, commentId, text) => {
-    if (!text.trim()) return;
+  // Aqui é o segredo: parentReplyId pode ser null (reply para comment) ou um id (reply para reply)
+  const handleReply = async (postId, commentId, text, parentReplyId = null) => {
+    if (!text.trim() || !user?.id) return;
     await fetch("/api/comments/reply", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         content: text,
-        authorId: mockUser.id,
+        authorId: user.id,
         postId,
         commentId,
+        parentReplyId,
       }),
     });
-    setReplyInputs({ ...replyInputs, [commentId]: "" });
+    setReplyInputs({ ...replyInputs, [parentReplyId || commentId]: "" });
     loadPosts();
   };
 
@@ -180,7 +192,7 @@ export default function Timeline() {
   // Renderização
   return (
     <div className="w-full flex flex-col items-center">
-      <CreatePost onPost={handleNewPost} user={mockUser} />
+      <CreatePost onPost={handleNewPost} user={user} />
 
       <div className="w-full max-w-2xl space-y-6">
         {loading ? (
@@ -354,93 +366,31 @@ export default function Timeline() {
                           <Button
                             type="button"
                             className="h-10 py-0 px-4"
-                            onClick={() =>
-                              handleReply(post.id, comment.id, replyInputs[comment.id])}>
+                            onClick={() => handleReply(post.id, comment.id, replyInputs[comment.id])}>
                             Enviar
                           </Button>
                         </div>
                       )}
-
-                      {/* Respostas */}
+                      {/* REPLIES ANINHADAS */}
                       {comment.replies?.length > 0 && (
                         <div className="ml-10 mt-2 space-y-2">
                           {comment.replies.map((reply) => (
-                            <div key={reply.id} className="text-sm text-zinc-300 flex justify-between">
-                              <div className="flex gap-2 items-start">
-                                <Image
-                                  src={reply.author?.image || "/default-avatar.png"}
-                                  alt="Avatar"
-                                  width={25}
-                                  height={25}
-                                  className="rounded-full"
-                                />
-                                <div className="flex flex-col gap-1">
-                                  <p className="font-semibold text-purple-400">{reply.author?.name || reply.author}</p>
-                                  {editingReply?.id === reply.id ? (
-                                    <>
-                                      <Textarea
-                                        className="text-sm mt-1"
-                                        value={editingReply.content}
-                                        onChange={(e) =>
-                                          setEditingReply({ ...editingReply, content: e.target.value })}/>
-                                      <div className="mt-1 flex gap-2">
-                                        <Button
-                                          type="button"
-                                          size="sm"
-                                          onClick={() =>
-                                            saveEditedReply(post.id, comment.id, reply.id, editingReply.content)}>
-                                          Salvar
-                                        </Button>
-                                        <Button
-                                          type="button"
-                                          size="sm"
-                                          variant="ghost"
-                                          onClick={() => setEditingReply(null)}>
-                                          Cancelar
-                                        </Button>
-                                      </div>
-                                    </>
-                                  ) : (
-                                    <p className="text-zinc-300">{reply.content}</p>
-                                  )}
-                                </div>
-                              </div>
-                              <div className="relative">
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    setActiveReplyMenu(
-                                      activeReplyMenu === reply.id ? null : reply.id)}
-                                  className="flex items-center gap-1 text-sm hover:opacity-80 cursor-pointer">
-                                  <MoreHorizontal size={14} />
-                                </button>
-                                {activeReplyMenu === reply.id && (
-                                  <div className="absolute right-0 mt-2 w-28 bg-zinc-700 border border-zinc-600 rounded shadow-md z-10">
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        handleEditReply(reply, comment.id);
-                                        setActiveReplyMenu(null);}}
-                                      className="block w-full text-left px-4 py-2 hover:bg-zinc-600 cursor-pointer">
-                                      Editar
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        openDeleteModal({
-                                          type: "reply",
-                                          postId: post.id,
-                                          commentId: comment.id,
-                                          replyId: reply.id,
-                                        });
-                                        setActiveReplyMenu(null);}}
-                                      className="block w-full text-left px-4 py-2 hover:bg-zinc-600 cursor-pointer">
-                                      Excluir
-                                    </button>
-                                  </div>
-                                )}   
-                              </div>
-                            </div>
+                            <ReplyThread
+                              key={reply.id}
+                              reply={reply}
+                              postId={post.id}
+                              commentId={comment.id}
+                              editingReply={editingReply}
+                              setEditingReply={setEditingReply}
+                              saveEditedReply={saveEditedReply}
+                              openDeleteModal={openDeleteModal}
+                              activeReplyMenu={activeReplyMenu}
+                              setActiveReplyMenu={setActiveReplyMenu}
+                              replyInputs={replyInputs}
+                              setReplyInputs={setReplyInputs}
+                              onReply={handleReply} 
+                              onEditReply={handleEditReply}
+                            />
                           ))}
                         </div>
                       )}

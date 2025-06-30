@@ -12,7 +12,7 @@ import CreatePost from "@/components/CreatePost";
 import Header from "@/components/Header";
 import EditPostModal from "@/components/EditPostModal";
 import ProfileCard from "@/components/ProfileCard";
-
+import ReplyThread from "@/components/ReplyThread"; // <= Aqui!
 
 export default function ProfilePage() {
   const [isRiotLinked, setIsRiotLinked] = useState(false);
@@ -26,7 +26,7 @@ export default function ProfilePage() {
   const [editingComment, setEditingComment] = useState(null);
   const [editingReply, setEditingReply] = useState(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [deleteTarget, setDeleteTarget] = useState({ type: "", postId: null, commentId: null });
+  const [deleteTarget, setDeleteTarget] = useState({ type: "", postId: null, commentId: null, replyId: null });
   const [activeReplyMenu, setActiveReplyMenu] = useState(null);
   const [posts, setPosts] = useState([]);
   const [user, setUser] = useState(null);
@@ -97,11 +97,12 @@ export default function ProfilePage() {
     loadUserPosts();
   };
 
-  const toggleReplyInput = (commentId) => {
-    setReplyInputs((prev) => ({ ...prev, [commentId]: prev[commentId] ? "" : "" }));
+  const toggleReplyInput = (commentOrReplyId) => {
+    setReplyInputs((prev) => ({ ...prev, [commentOrReplyId]: prev[commentOrReplyId] ? "" : "" }));
   };
 
-  const handleReply = async (postId, commentId, text) => {
+  // Aqui: aceita parentReplyId para replies aninhadas
+  const handleReply = async (postId, commentId, text, parentReplyId = null) => {
     if (!text.trim() || !user?.id) return;
     await fetch("/api/comments/reply", {
       method: "POST",
@@ -111,9 +112,10 @@ export default function ProfilePage() {
         authorId: user.id,
         postId,
         commentId,
+        parentReplyId,
       }),
     });
-    setReplyInputs({ ...replyInputs, [commentId]: "" });
+    setReplyInputs({ ...replyInputs, [parentReplyId || commentId]: "" });
     loadUserPosts();
   };
 
@@ -232,7 +234,7 @@ export default function ProfilePage() {
                     alt="Avatar"
                     width={40}
                     height={40}
-                    className="rounded-full object-cover border border-zinc-700"      
+                    className="rounded-full object-cover border border-zinc-700"
                   />
                   <div>
                     <p className="font-semibold">{post.author?.name || "Usuário Exemplo"}</p>
@@ -302,13 +304,7 @@ export default function ProfilePage() {
                   <div key={comment.id} className="bg-zinc-800 p-4 rounded-lg">
                     <div className="flex justify-between">
                       <div className="flex gap-3 items-center">
-                        <Image src={comment.author?.image || "/default-avatar.png"} 
-                        alt="Avatar" 
-                        width={30} 
-                        height={30} 
-                        className="rounded-full" 
-                        style={{ width: 30, height: 30 }}
-                        />
+                        <Image src={comment.author?.image || "/default-avatar.png"} alt="Avatar" width={30} height={30} className="rounded-full" style={{ width: 30, height: 30 }}/>
                         <div>
                           <p className="text-sm font-semibold text-zinc-100S">{comment.author?.name || comment.author}</p>
                           {editingComment?.id === comment.id ? (
@@ -316,13 +312,11 @@ export default function ProfilePage() {
                               <Textarea
                                 className="text-sm"
                                 value={editingComment.content}
-                                onChange={(e) =>
-                                  setEditingComment({ ...editingComment, content: e.target.value })}/>
+                                onChange={(e) => setEditingComment({ ...editingComment, content: e.target.value })}/>
                               <Button
                                 size="sm"
                                 className="mt-1"
-                                onClick={() =>
-                                  saveEditedComment(post.id, comment.id, editingComment.content)}>
+                                onClick={() => saveEditedComment(post.id, comment.id, editingComment.content)}>
                                 Salvar
                               </Button>
                             </>
@@ -355,139 +349,77 @@ export default function ProfilePage() {
                         )}
                       </div>
                     </div>
-                   <div className="flex gap-4 mt-2 text-xs text-zinc-400">
-                    <button
-                      onClick={() => toggleLikeComment(post.id, comment.id)}
-                      className="flex items-center gap-1 text-sm hover:opacity-80 cursor-pointer">
-                      <Heart className={comment.liked ? "text-pink-500" : ""} size={14} />
-                      <span>{comment.likes}</span>
-                    </button>
-                    <button
-                      onClick={() => toggleReplyInput(comment.id)}
-                      className="flex items-center gap-1 text-sm hover:underline cursor-pointer">
-                      <MessageCircle size={14} />
-                      <span>Responder</span>
-                    </button>
-                  </div>
-
+                    <div className="flex gap-4 mt-2 text-xs text-zinc-400">
+                      <button
+                        onClick={() => toggleLikeComment(post.id, comment.id)}
+                        className="flex items-center gap-1 text-sm hover:opacity-80 cursor-pointer">
+                        <Heart className={comment.liked ? "text-pink-500" : ""} size={14} />
+                        <span>{comment.likes}</span>
+                      </button>
+                      <button
+                        onClick={() => toggleReplyInput(comment.id)}
+                        className="flex items-center gap-1 text-sm hover:underline cursor-pointer">
+                        <MessageCircle size={14} />
+                        <span>Responder</span>
+                      </button>
+                    </div>
                     {/* Campo de resposta */}
                     {replyInputs[comment.id] !== undefined && (
                       <div className="mt-2 flex gap-2">
-                      <Input
-                        className="h-10"
-                        value={replyInputs[comment.id]}
-                        onChange={(e) =>
-                          setReplyInputs({ ...replyInputs, [comment.id]: e.target.value })
-                        }
-                        placeholder="Responder..."
-                      />
-                      <Button
-                        className="h-10 py-0 px-4"
-                        onClick={() =>
-                          handleReply(post.id, comment.id, replyInputs[comment.id])}>
-                        Enviar
-                      </Button>
-                 </div>
+                        <Input
+                          className="h-10"
+                          value={replyInputs[comment.id]}
+                          onChange={(e) =>
+                            setReplyInputs({ ...replyInputs, [comment.id]: e.target.value })
+                          }
+                          placeholder="Responder..."
+                        />
+                        <Button
+                          className="h-10 py-0 px-4"
+                          onClick={() => handleReply(post.id, comment.id, replyInputs[comment.id])}>
+                          Enviar
+                        </Button>
+                      </div>
                     )}
-                    
-
-                    {/* Respostas */}
+                    {/* REPLIES ANINHADAS */}
                     {comment.replies?.length > 0 && (
                       <div className="ml-10 mt-2 space-y-2">
                         {comment.replies.map((reply) => (
-                          <div key={reply.id} className="text-sm text-zinc-300 flex justify-between">
-                            <div className="flex gap-2 items-start">
-                              <Image
-                                src={reply.author?.image || "/default-avatar.png"}
-                                alt="Avatar"
-                                width={25}
-                                height={25}
-                                className="rounded-full"                    
-                                />
-                            <div className="flex flex-col gap-1">
-                                <p className="font-semibold text-purple-400">{reply.author?.name || reply.author}</p>
-                                {editingReply?.id === reply.id ? (
-                                  <>
-                                    <Textarea
-                                      className="text-sm mt-1"
-                                      value={editingReply.content}
-                                      onChange={(e) =>
-                                        setEditingReply({ ...editingReply, content: e.target.value })}/>
-                                    <div className="mt-1 flex gap-2">
-                                      <Button
-                                        size="sm"
-                                        onClick={() =>
-                                        saveEditedReply(post.id, comment.id, reply.id, editingReply.content)}>
-                                        Salvar
-                                      </Button>
-                                      <Button
-                                        size="sm"
-                                        variant="ghost"
-                                        onClick={() => setEditingReply(null)}>
-                                        Cancelar
-                                      </Button>
-                                    </div>
-                                  </>
-                                ) : (
-                                  <p className="text-zinc-300">{reply.content}</p>
-                            )}
-                              </div>
-                            </div>
-
-                            <div className="relative">
-                              <button
-                               onClick={() =>
-                               setActiveReplyMenu(
-                                activeReplyMenu === reply.id ? null :reply.id)}
-                                className="flex items-center gap-1 text-sm hover:opacity-80 cursor-pointer">
-                                <MoreHorizontal size={14} />
-                              </button>
-
-                              {activeReplyMenu === reply.id && (
-                                <div className="absolute right-0 mt-2 w-28 bg-zinc-700 border border-zinc-600 rounded shadow-md z-10">
-                                  <button
-                                    onClick={() => {
-                                      handleEditReply(reply, comment.id);
-                                      setActiveReplyMenu(null);}}
-                                    className="block w-full text-left px-4 py-2 hover:bg-zinc-600 cursor-pointer">
-                                    Editar
-                                  </button>
-                                  <button
-                                    onClick={() => {
-                                      openDeleteModal({
-                                        type: "reply",
-                                        postId: post.id,
-                                        commentId: comment.id,
-                                        replyId: reply.id,
-                                      });
-                                      setActiveReplyMenu(null);}}
-                                    className="block w-full text-left px-4 py-2 hover:bg-zinc-600 cursor-pointer">
-                                    Excluir
-                                  </button>
-                                </div>
-                              )}   
-                            </div>
-                          </div>
+                          <ReplyThread
+                            key={reply.id}
+                            reply={reply}
+                            postId={post.id}
+                            commentId={comment.id}
+                            editingReply={editingReply}
+                            setEditingReply={setEditingReply}
+                            saveEditedReply={saveEditedReply}
+                            openDeleteModal={openDeleteModal}
+                            activeReplyMenu={activeReplyMenu}
+                            setActiveReplyMenu={setActiveReplyMenu}
+                            replyInputs={replyInputs}
+                            setReplyInputs={setReplyInputs}
+                            onReply={handleReply}
+                            onEditReply={handleEditReply}
+                          />
                         ))}
                       </div>
                     )}
                   </div>
                 ))}
-
                 {commentInputs[post.id] !== undefined && (
                   <div className="flex gap-2 mt-2">
-                  <Input
-                    className="h-10"
-                    value={commentInputs[post.id] || ""}
-                    onChange={(e) =>
-                      setCommentInputs({ ...commentInputs, [post.id]: e.target.value })}
-                    placeholder="Escreva um comentário..."/>
-                  <Button
-                    className="h-10 py-0 px-4"
-                    onClick={() => addComment(post.id)}>
-                    Enviar
-                  </Button>
-                </div>
+                    <Input
+                      className="h-10"
+                      value={commentInputs[post.id] || ""}
+                      onChange={(e) =>
+                        setCommentInputs({ ...commentInputs, [post.id]: e.target.value })}
+                      placeholder="Escreva um comentário..."/>
+                    <Button
+                      className="h-10 py-0 px-4"
+                      onClick={() => addComment(post.id)}>
+                      Enviar
+                    </Button>
+                  </div>
                 )}
               </div>
             </CardContent>
