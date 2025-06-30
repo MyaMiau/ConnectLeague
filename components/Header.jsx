@@ -47,7 +47,9 @@ export default function Header() {
           alt="Logo eSports Connect"
           width={80}
           height={80}
+          style={{ width: "100px", height: "auto" }}
           className="rounded-md"
+          priority
         />
       </Link>
 

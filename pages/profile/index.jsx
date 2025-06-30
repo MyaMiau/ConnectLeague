@@ -13,6 +13,7 @@ import Header from "@/components/Header";
 import EditPostModal from "@/components/EditPostModal";
 import ProfileCard from "@/components/ProfileCard";
 
+
 export default function ProfilePage() {
   const [isRiotLinked, setIsRiotLinked] = useState(false);
   const [profileImage, setProfileImage] = useState("/default-avatar.png");
@@ -231,7 +232,7 @@ export default function ProfilePage() {
                     alt="Avatar"
                     width={40}
                     height={40}
-                    className="rounded-full object-cover border border-zinc-700"
+                    className="rounded-full object-cover border border-zinc-700"      
                   />
                   <div>
                     <p className="font-semibold">{post.author?.name || "Usuário Exemplo"}</p>
@@ -301,7 +302,13 @@ export default function ProfilePage() {
                   <div key={comment.id} className="bg-zinc-800 p-4 rounded-lg">
                     <div className="flex justify-between">
                       <div className="flex gap-3 items-center">
-                        <Image src={comment.author?.image || "/default-avatar.png"} alt="Avatar" width={30} height={30} className="rounded-full" />
+                        <Image src={comment.author?.image || "/default-avatar.png"} 
+                        alt="Avatar" 
+                        width={30} 
+                        height={30} 
+                        className="rounded-full" 
+                        style={{ width: 30, height: 30 }}
+                        />
                         <div>
                           <p className="text-sm font-semibold text-zinc-100S">{comment.author?.name || comment.author}</p>
                           {editingComment?.id === comment.id ? (
@@ -395,7 +402,8 @@ export default function ProfilePage() {
                                 alt="Avatar"
                                 width={25}
                                 height={25}
-                                className="rounded-full"/>
+                                className="rounded-full"                    
+                                />
                             <div className="flex flex-col gap-1">
                                 <p className="font-semibold text-purple-400">{reply.author?.name || reply.author}</p>
                                 {editingReply?.id === reply.id ? (

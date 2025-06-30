@@ -206,15 +206,16 @@ export default function Timeline() {
                     </div>
                   </div>
                   <div className="relative">
-                    <button onClick={() => setActiveOptions(post.id === activeOptions ? null : post.id)}>
+                    <button type="button" onClick={() => setActiveOptions(post.id === activeOptions ? null : post.id)}>
                       <MoreHorizontal className="text-zinc-400 hover:text-white cursor-pointer" />
                     </button>
                     {activeOptions === post.id && (
                       <div className="absolute right-0 mt-2 w-32 bg-zinc-800 border border-zinc-700 rounded shadow-md z-10 cursor-pointer">
-                        <button onClick={() => handleEditPost(post)} className="block w-full text-left px-4 py-2 hover:bg-zinc-700 cursor-pointer">
+                        <button type="button" onClick={() => handleEditPost(post)} className="block w-full text-left px-4 py-2 hover:bg-zinc-700 cursor-pointer">
                           Editar
                         </button>
                         <button
+                          type="button"
                           onClick={() => openDeleteModal({ type: "post", postId: post.id })}
                           className="block w-full text-left px-4 py-2 hover:bg-zinc-700 cursor-pointer">
                           Excluir
@@ -248,16 +249,21 @@ export default function Timeline() {
 
                 <div className="flex gap-6 pt-2 border-t border-zinc-800 mt-2 text-sm text-zinc-400 ">
                   <button
+                    type="button"
                     onClick={() => toggleLikePost(post.id)}
                     className="flex items-center gap-1 text-sm hover:opacity-80 cursor-pointer">
                     <Heart className={post.liked ? "text-pink-500" : ""} size={18} />
                     <span>{post.likes}</span>
                   </button>
-                  <button onClick={() => setCommentInputs({ ...commentInputs, [post.id]: "" })}
+                  <button
+                    type="button"
+                    onClick={() => setCommentInputs({ ...commentInputs, [post.id]: "" })}
                     className="flex items-center gap-1 text-sm hover:opacity-80 cursor-pointer">
                     <MessageCircle size={18} />
                   </button>
-                  <button onClick={() => navigator.share?.({ title: "Post", url: window.location.href })}
+                  <button
+                    type="button"
+                    onClick={() => navigator.share?.({ title: "Post", url: window.location.href })}
                     className="flex items-center gap-1 text-sm hover:opacity-80 cursor-pointer">
                     <Share2 size={18} />
                   </button>
@@ -279,6 +285,7 @@ export default function Timeline() {
                                   value={editingComment.content}
                                   onChange={(e) => setEditingComment({ ...editingComment, content: e.target.value })}/>
                                 <Button
+                                  type="button"
                                   size="sm"
                                   className="mt-1"
                                   onClick={() => saveEditedComment(post.id, comment.id, editingComment.content)}>
@@ -292,6 +299,7 @@ export default function Timeline() {
                         </div>
                         <div className="relative">
                           <button
+                            type="button"
                             onClick={() =>
                               setActiveCommentOptions(
                                 activeCommentOptions === comment.id ? null : comment.id)}
@@ -301,11 +309,13 @@ export default function Timeline() {
                           {activeCommentOptions === comment.id && (
                             <div className="absolute right-0 mt-2 w-32 bg-zinc-700 border border-zinc-600 rounded shadow-md z-10">
                               <button
+                                type="button"
                                 onClick={() => handleEditComment(comment)}
                                 className="block w-full text-left px-4 py-2 hover:bg-zinc-600 cursor-pointer">
                                 Editar
                               </button>
                               <button
+                                type="button"
                                 onClick={() => openDeleteModal({ type: "comment", postId: post.id, commentId: comment.id })}
                                 className="block w-full text-left px-4 py-2 hover:bg-zinc-600 cursor-pointer">
                                 Excluir
@@ -316,12 +326,14 @@ export default function Timeline() {
                       </div>
                       <div className="flex gap-4 mt-2 text-xs text-zinc-400">
                         <button
+                          type="button"
                           onClick={() => toggleLikeComment(post.id, comment.id)}
                           className="flex items-center gap-1 text-sm hover:opacity-80 cursor-pointer">
                           <Heart className={comment.liked ? "text-pink-500" : ""} size={14} />
                           <span>{comment.likes}</span>
                         </button>
                         <button
+                          type="button"
                           onClick={() => toggleReplyInput(comment.id)}
                           className="flex items-center gap-1 text-sm hover:underline cursor-pointer">
                           <MessageCircle size={14} />
@@ -340,6 +352,7 @@ export default function Timeline() {
                             placeholder="Responder..."
                           />
                           <Button
+                            type="button"
                             className="h-10 py-0 px-4"
                             onClick={() =>
                               handleReply(post.id, comment.id, replyInputs[comment.id])}>
@@ -359,7 +372,8 @@ export default function Timeline() {
                                   alt="Avatar"
                                   width={25}
                                   height={25}
-                                  className="rounded-full"/>
+                                  className="rounded-full"
+                                />
                                 <div className="flex flex-col gap-1">
                                   <p className="font-semibold text-purple-400">{reply.author?.name || reply.author}</p>
                                   {editingReply?.id === reply.id ? (
@@ -371,12 +385,14 @@ export default function Timeline() {
                                           setEditingReply({ ...editingReply, content: e.target.value })}/>
                                       <div className="mt-1 flex gap-2">
                                         <Button
+                                          type="button"
                                           size="sm"
                                           onClick={() =>
                                             saveEditedReply(post.id, comment.id, reply.id, editingReply.content)}>
                                           Salvar
                                         </Button>
                                         <Button
+                                          type="button"
                                           size="sm"
                                           variant="ghost"
                                           onClick={() => setEditingReply(null)}>
@@ -391,6 +407,7 @@ export default function Timeline() {
                               </div>
                               <div className="relative">
                                 <button
+                                  type="button"
                                   onClick={() =>
                                     setActiveReplyMenu(
                                       activeReplyMenu === reply.id ? null : reply.id)}
@@ -400,6 +417,7 @@ export default function Timeline() {
                                 {activeReplyMenu === reply.id && (
                                   <div className="absolute right-0 mt-2 w-28 bg-zinc-700 border border-zinc-600 rounded shadow-md z-10">
                                     <button
+                                      type="button"
                                       onClick={() => {
                                         handleEditReply(reply, comment.id);
                                         setActiveReplyMenu(null);}}
@@ -407,6 +425,7 @@ export default function Timeline() {
                                       Editar
                                     </button>
                                     <button
+                                      type="button"
                                       onClick={() => {
                                         openDeleteModal({
                                           type: "reply",
@@ -436,6 +455,7 @@ export default function Timeline() {
                           setCommentInputs({ ...commentInputs, [post.id]: e.target.value })}
                         placeholder="Escreva um comentário..."/>
                       <Button
+                        type="button"
                         className="h-10 py-0 px-4"
                         onClick={() => addComment(post.id)}>
                         Enviar

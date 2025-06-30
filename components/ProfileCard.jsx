@@ -53,11 +53,28 @@ export default function ProfileCard({ user, onUserUpdate }) {
     setLocalUser((prev) => ({ ...prev, [name]: value }));
   }
 
-  function handleImage(e) {
+  // Novo handleImage para upload no servidor e salvar só a URL
+  async function handleImage(e) {
     const file = e.target.files[0];
     if (file) {
       const reader = new FileReader();
-      reader.onloadend = () => setLocalUser((prev) => ({ ...prev, image: reader.result }));
+      reader.onloadend = async () => {
+        const base64 = reader.result;
+        const filename = `${Date.now()}-${file.name}`;
+
+        // Envia para API que salva a imagem em /public/uploads e retorna a URL
+        const res = await fetch("/api/upload-avatar", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ base64, filename }),
+        });
+        if (res.ok) {
+          const { url } = await res.json();
+          setLocalUser((prev) => ({ ...prev, image: url }));
+        } else {
+          alert("Erro ao fazer upload da imagem.");
+        }
+      };
       reader.readAsDataURL(file);
     }
   }
@@ -114,13 +131,17 @@ export default function ProfileCard({ user, onUserUpdate }) {
           <Image
             src={localUser.image || "/default-avatar.png"}
             fill
+            sizes="120px"
             className="rounded-full border-4 border-zinc-700 object-cover"
             alt="Avatar do Jogador"
+            priority
           />
           {editMode && (
             <label className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-zinc-800 px-2 py-1 rounded text-xs cursor-pointer border border-zinc-600">
               Trocar
-              <Input type="file" accept="image/*" className="hidden" onChange={handleImage} />
+              <Input type="file" accept="image/*"
+                className="hidden"
+                onChange={handleImage} />
             </label>
           )}
         </div>
@@ -157,7 +178,13 @@ export default function ProfileCard({ user, onUserUpdate }) {
             ) : (
               <span className="flex items-center gap-2 px-2 py-1 rounded bg-purple-800/40 text-purple-300 font-semibold">
                 {selectedRole && (
-                  <Image src={selectedRole.icon} alt={selectedRole.name} width={24} height={24} />
+                  <Image
+                    src={selectedRole.icon}
+                    alt={selectedRole.name}
+                    width={24}
+                    height={24}
+                    priority
+                  />
                 )}
                 {localUser.role}
               </span>
@@ -198,6 +225,7 @@ export default function ProfileCard({ user, onUserUpdate }) {
                   width={100}
                   height={100}
                   className="drop-shadow-xl"
+                  priority
                 />
               </div>
             )}
@@ -221,6 +249,7 @@ export default function ProfileCard({ user, onUserUpdate }) {
                     width={48}
                     height={48}
                     className="mt-1"
+                    priority
                   />
                 )}
               </div>

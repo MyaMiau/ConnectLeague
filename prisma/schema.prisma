@@ -29,73 +29,74 @@ model applications {
 }
 
 model users {
-  id             Int           @id @default(autoincrement())
-  name           String        @db.VarChar(100)
-  email          String        @unique @db.VarChar(100)
-  emailVerified  DateTime?
-  image          String?
-  password       String
+  id                   Int            @id @default(autoincrement())
+  name                 String         @db.VarChar(100)
+  email                String         @unique @db.VarChar(100)
+  emailVerified        DateTime?
+  image                String?
+  password             String
   // TIPO DE USUÁRIO: obrigatório, ex: 'organization', 'player', 'coach', 'manager', 'analyst', 'psychologist'
-  type           String        @db.VarChar(50) 
+  type                 String         @db.VarChar(50)
   // ROLE: para jogadores (opcional), ex: 'atacante', 'suporte', etc.
-  role           String?       @db.VarChar(50)
-  birthDate      DateTime
-  created_at     DateTime?     @default(now()) @db.Timestamp(6)
-  bio            String?       
-  elo            String?  
-  status         String?  
+  role                 String?        @db.VarChar(50)
+  birthDate            DateTime
+  created_at           DateTime?      @default(now()) @db.Timestamp(6)
+  bio                  String?
+  elo                  String?
+  status               String?
   // CAMPOS OPCIONAIS PARA ORGANIZAÇÃO
-  orgName        String?       @db.VarChar(100)
-  cnpj           String?       @db.VarChar(30)
-  orgDesc        String?
+  orgName              String?        @db.VarChar(100)
+  cnpj                 String?        @db.VarChar(30)
+  orgDesc              String?
   // RELACIONAMENTOS
-  accounts       accounts[]
-  sessions       sessions[]
-  evaluations_received evaluations[] @relation("evaluations_evaluated_id")
-  evaluations_given    evaluations[] @relation("evaluations_evaluator_id")
-  applications   applications[]
-  vacancies      vacancies[]
-  posts      Post[]      @relation("UserPosts")
-  comments   Comment[]   @relation("UserComments")
+  accounts             accounts[]
+  sessions             sessions[]
+  evaluations_received evaluations[]  @relation("evaluations_evaluated_id")
+  evaluations_given    evaluations[]  @relation("evaluations_evaluator_id")
+  applications         applications[]
+  vacancies            vacancies[]
+  posts                Post[]         @relation("UserPosts")
+  comments             Comment[]      @relation("UserComments")
+  replies              Reply[]
 }
 
 model vacancies {
-  id             Int           @id @default(autoincrement())
-  title          String        @db.VarChar(100)
-  description    String
+  id              Int            @id @default(autoincrement())
+  title           String         @db.VarChar(100)
+  description     String
   organization_id Int
-  created_at     DateTime?     @default(now()) @db.Timestamp(6)
-  applications   applications[]
-  organization   users         @relation(fields: [organization_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  created_at      DateTime?      @default(now()) @db.Timestamp(6)
+  applications    applications[]
+  organization    users          @relation(fields: [organization_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
 
 model accounts {
-  id                 Int       @id @default(autoincrement())
-  userId             Int
-  type               String
-  provider           String
-  providerAccountId  String
-  refresh_token      String?
-  access_token       String?
-  expires_at         Int?
-  token_type         String?
-  scope              String?
-  id_token           String?
-  session_state      String?
-  user               users     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                Int     @id @default(autoincrement())
+  userId            Int
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              users   @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model sessions {
-  id           Int       @id @default(autoincrement())
-  sessionToken String    @unique
+  id           Int      @id @default(autoincrement())
+  sessionToken String   @unique
   userId       Int
   expires      DateTime
-  user         users     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user         users    @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model verification_tokens {
   identifier String
-  token      String    @unique
+  token      String   @unique
   expires    DateTime
 
   @@unique([identifier, token])
@@ -108,7 +109,8 @@ model Post {
   authorId  Int
   author    users     @relation("UserPosts", fields: [authorId], references: [id])
   comments  Comment[]
-  image     String? 
+  image     String?
+  replies   Reply[]
 }
 
 model Comment {
@@ -118,5 +120,18 @@ model Comment {
   authorId  Int
   postId    Int
   author    users    @relation("UserComments", fields: [authorId], references: [id])
+  post      Post     @relation(fields: [postId], references: [id])
+  replies   Reply[]
+}
+
+model Reply {
+  id        Int      @id @default(autoincrement())
+  content   String
+  createdAt DateTime @default(now())
+  authorId  Int
+  commentId Int
+  postId    Int
+  author    users    @relation(fields: [authorId], references: [id])
+  comment   Comment  @relation(fields: [commentId], references: [id])
   post      Post     @relation(fields: [postId], references: [id])
 }

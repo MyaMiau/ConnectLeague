@@ -9,10 +9,15 @@ export default async function handler(req, res) {
       const posts = await prisma.Post.findMany({
         where,
         include: {
-          author: true, // nome da relação no model Post
+          author: true,
           comments: {
             include: {
-              author: true
+              author: true,
+              replies: {
+                include: {
+                  author: true 
+                }
+              }
             }
           }
         },
