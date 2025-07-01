@@ -4,6 +4,7 @@ import Image from "next/image";
 import { FiMail, FiLock, FiUser, FiEye, FiEyeOff } from "react-icons/fi";
 import { UserCog } from "lucide-react";
 import { FiCalendar } from "react-icons/fi";
+import Link from "next/link";
 
 export default function Register() {
   const router = useRouter();
@@ -199,20 +200,17 @@ export default function Register() {
 
               <button
                 type="submit"
-                className="w-full bg-amber-500 hover:bg-amber-600 text-white font-semibold py-2 rounded-md cursor-pointer"
-              >
+                className="w-full bg-amber-500 hover:bg-amber-600 text-white font-semibold py-2 rounded-md cursor-pointer"              >
                 Cadastrar
               </button>
-
-              <div className="text-center mt-4">
+            <div className="text-center mt-4">
                 <p className="text-white text-sm">
                   Já tem uma conta?{" "}
-                  <a
+                  <Link
                     href="/login"
-                    className="text-amber-400 hover:text-amber-500 font-semibold transition-colors"
-                  >
+                    className="text-amber-400 hover:text-amber-500 font-semibold transition-colors">
                     Entrar
-                  </a>
+                  </Link>
                 </p>
               </div>
             </form>

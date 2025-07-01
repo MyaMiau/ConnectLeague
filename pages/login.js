@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useEffect } from "react";
 import { FiMail as Mail, FiLock as Lock, FiEye, FiEyeOff } from "react-icons/fi";
 import { signIn, useSession } from "next-auth/react";
+import Link from "next/link";
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
@@ -127,20 +128,17 @@ export default function Login() {
 
           <button
             type="submit"
-            className="w-full bg-amber-500 hover:bg-amber-600 text-white font-semibold py-2 rounded-md cursor-pointer"
-          >
+            className="w-full bg-amber-500 hover:bg-amber-600 text-white font-semibold py-2 rounded-md cursor-pointer">
             Entrar
           </button>
-
           <div className="text-center mt-4">
             <p className="text-white">
               Não tem uma conta?{" "}
-              <a
+              <Link
                 href="/register"
-                className="text-amber-400 hover:text-amber-500 font-semibold transition-colors"
-              >
+                className="text-amber-400 hover:text-amber-500 font-semibold transition-colors">
                 Cadastre-se
-              </a>
+              </Link>
             </p>
           </div>
         </form>
