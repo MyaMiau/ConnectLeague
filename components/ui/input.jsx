@@ -1,4 +1,4 @@
-// pages/components/ui/input.jsx
+// /components/ui/input.jsx
 export function Input(props) {
     return (
       <input

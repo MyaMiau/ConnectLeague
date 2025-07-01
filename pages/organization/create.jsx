@@ -1,8 +1,8 @@
 // pages/organization/create.jsx
 import { useState } from "react";
 import { useRouter } from "next/router";
-import { Input } from "../components/ui/input";
-import { Button } from "../components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 export default function CreateOrganization() {
   const [formData, setFormData] = useState({
