@@ -10,7 +10,7 @@ export default async function handler(req, res) {
         include: {
           comments: {
             include: {
-              replies: true, // Inclui replies dos comentários, se a relação existir no Prisma
+              replies: true, 
             },
           },
         },

@@ -11,7 +11,7 @@ export default async function handler(req, res) {
 
     const { content, postId, commentId, parentReplyId } = req.body;
 
-    // content, postId e commentId são obrigatórios
+
     if (!content || !postId || !commentId) {
       return res.status(400).json({ error: "Campos obrigatórios faltando." });
     }
