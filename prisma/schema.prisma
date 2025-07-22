@@ -58,6 +58,8 @@ model users {
   posts                Post[]         @relation("UserPosts")
   comments             Comment[]      @relation("UserComments")
   replies              Reply[]
+  postLikes            PostLike[]
+  commentLikes         CommentLike[]
 }
 
 model vacancies {
@@ -111,7 +113,7 @@ model Post {
   comments  Comment[]
   image     String?
   replies   Reply[]
-  likes Int @default(0)
+  postLikes PostLike[]
 }
 
 model Comment {
@@ -123,7 +125,7 @@ model Comment {
   author    users    @relation("UserComments", fields: [authorId], references: [id])
   post      Post     @relation(fields: [postId], references: [id])
   replies   Reply[]
-  likes Int @default(0)
+  commentLikes CommentLike[]
 }
 
 model Reply {
@@ -140,4 +142,24 @@ model Reply {
 
   parentReply    Reply?   @relation("ReplyToReply", fields: [parentReplyId], references: [id])
   subReplies     Reply[]  @relation("ReplyToReply")
+}
+
+model PostLike {
+  id        Int   @id @default(autoincrement())
+  user      users @relation(fields: [userId], references: [id])
+  userId    Int
+  post      Post  @relation(fields: [postId], references: [id])
+  postId    Int
+
+  @@unique([userId, postId])
+}
+
+model CommentLike {
+  id        Int   @id @default(autoincrement())
+  user      users @relation(fields: [userId], references: [id])
+  userId    Int
+  comment   Comment  @relation(fields: [commentId], references: [id])
+  commentId Int
+
+  @@unique([userId, commentId])
 }
