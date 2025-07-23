@@ -3,26 +3,23 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "../../auth/[...nextauth]";
 
 export default async function handler(req, res) {
-  const postId = Number(req.query.id);
+  const commentId = Number(req.query.id); // <- esta linha garante que commentId existe!
   const session = await getServerSession(req, res, authOptions);
   if (!session?.user?.id) return res.status(401).json({ error: "Not authenticated" });
   const userId = Number(session.user.id);
 
   if (req.method === "POST") {
-    // Verifica se já curtiu
-    const existing = await prisma.postLike.findUnique({
-      where: { userId_postId: { userId, postId } },
+    const existing = await prisma.commentLike.findUnique({
+      where: { userId_commentId: { userId, commentId } }
     });
     if (existing) {
-      // Remove like
-      await prisma.postLike.delete({
-        where: { userId_postId: { userId, postId } }
+      await prisma.commentLike.delete({
+        where: { userId_commentId: { userId, commentId } }
       });
       return res.status(200).json({ liked: false });
     } else {
-      // Adiciona like
-      await prisma.postLike.create({
-        data: { userId, postId }
+      await prisma.commentLike.create({
+        data: { userId, commentId }
       });
       return res.status(200).json({ liked: true });
     }

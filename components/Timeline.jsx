@@ -161,15 +161,43 @@ export default function Timeline() {
     loadPosts();
   };
 
-  // Likes (exemplo simples, adapte conforme seu backend)
-  const toggleLikePost = async (id) => {
-    await fetch(`/api/posts/${id}/like`, { method: "POST" });
-    loadPosts();
+  // CURTIR/DESCURTIR POST
+  const toggleLikePost = async (postId) => {
+    const post = posts.find(p => p.id === postId);
+    const likedByUser = (post.postLikes || []).some(like => like.userId === user.id);
+    setPosts(posts =>
+      posts.map(p => {
+        if (p.id !== postId) return p;
+        if (likedByUser) {
+          return { ...p, postLikes: (p.postLikes || []).filter(l => l.userId !== user.id) }
+        } else {
+          return { ...p, postLikes: [ ...(p.postLikes || []), { userId: user.id, postId }] }
+        }
+      })
+    );
+    await fetch(`/api/posts/${postId}/like`, { method: "POST" });
   };
 
-  const toggleLikeComment = async (postId, commentId) => {
+  // CURTIR/DESCURTIR COMENTÁRIO
+  const toggleLikeComment = async (commentId, postId) => {
+    setPosts(posts =>
+      posts.map(p => {
+        if (p.id !== postId) return p;
+        return {
+          ...p,
+          comments: p.comments.map(c => {
+            if (c.id !== commentId) return c;
+            const likedByUser = (c.commentLikes || []).some(like => like.userId === user.id);
+            if (likedByUser) {
+              return { ...c, commentLikes: (c.commentLikes || []).filter(l => l.userId !== user.id) }
+            } else {
+              return { ...c, commentLikes: [ ...(c.commentLikes || []), { userId: user.id, commentId }] }
+            }
+          })
+        }
+      })
+    );
     await fetch(`/api/comments/${commentId}/like`, { method: "POST" });
-    loadPosts();
   };
 
   // Modal de exclusão
@@ -264,8 +292,8 @@ export default function Timeline() {
                     type="button"
                     onClick={() => toggleLikePost(post.id)}
                     className="flex items-center gap-1 text-sm hover:opacity-80 cursor-pointer">
-                    <Heart className={post.liked ? "text-pink-500" : ""} size={18} />
-                    <span>{post.likes}</span>
+                    <Heart className={post.postLikes?.some(l => l.userId === user?.id) ? "text-pink-500" : ""} size={18} />
+                    <span>{post.postLikes?.length || 0}</span>
                   </button>
                   <button
                     type="button"
@@ -339,10 +367,10 @@ export default function Timeline() {
                       <div className="flex gap-4 mt-2 text-xs text-zinc-400">
                         <button
                           type="button"
-                          onClick={() => toggleLikeComment(post.id, comment.id)}
+                          onClick={() => toggleLikeComment(comment.id, post.id)}
                           className="flex items-center gap-1 text-sm hover:opacity-80 cursor-pointer">
-                          <Heart className={comment.liked ? "text-pink-500" : ""} size={14} />
-                          <span>{comment.likes}</span>
+                          <Heart className={comment.commentLikes?.some(l => l.userId === user?.id) ? "text-pink-500" : ""} size={14} />
+                          <span>{comment.commentLikes?.length || 0}</span>
                         </button>
                         <button
                           type="button"
@@ -388,7 +416,7 @@ export default function Timeline() {
                               setActiveReplyMenu={setActiveReplyMenu}
                               replyInputs={replyInputs}
                               setReplyInputs={setReplyInputs}
-                              onReply={handleReply} 
+                              onReply={handleReply}
                               onEditReply={handleEditReply}
                             />
                           ))}

@@ -12,7 +12,7 @@ import CreatePost from "@/components/CreatePost";
 import Header from "@/components/Header";
 import EditPostModal from "@/components/EditPostModal";
 import ProfileCard from "@/components/ProfileCard";
-import ReplyThread from "@/components/ReplyThread"; // <= Aqui!
+import ReplyThread from "@/components/ReplyThread";
 
 export default function ProfilePage() {
   const [isRiotLinked, setIsRiotLinked] = useState(false);
@@ -31,7 +31,6 @@ export default function ProfilePage() {
   const [posts, setPosts] = useState([]);
   const [user, setUser] = useState(null);
 
-  // 1. Busca o usuário logado
   useEffect(() => {
     async function fetchUser() {
       try {
@@ -46,7 +45,6 @@ export default function ProfilePage() {
     fetchUser();
   }, []);
 
-  // 2. Busca posts do usuário logado
   const loadUserPosts = async () => {
     if (!user?.id) return;
     try {
@@ -66,19 +64,44 @@ export default function ProfilePage() {
     // eslint-disable-next-line
   }, [user]);
 
-  // Ao criar novo post, recarrega os posts do usuário
   const handleNewPost = () => {
     loadUserPosts();
   };
 
-  const toggleLikePost = async (id) => {
-    await fetch(`/api/posts/${id}/like`, { method: "POST" });
-    loadUserPosts();
+  // LIKE/UNLIKE POST
+  const toggleLikePost = async (postId) => {
+    setPosts(posts =>
+      posts.map(post => {
+        if (post.id !== postId) return post;
+        const likedByUser = (post.postLikes || []).some(l => l.userId === user.id);
+        if (likedByUser) {
+          return { ...post, postLikes: (post.postLikes || []).filter(l => l.userId !== user.id) }
+        } else {
+          return { ...post, postLikes: [ ...(post.postLikes || []), { userId: user.id, postId }] }
+        }
+      })
+    );
+    await fetch(`/api/posts/${postId}/like`, { method: "POST" });
   };
 
-  const toggleLikeComment = async (postId, commentId) => {
+  // LIKE/UNLIKE COMMENT
+  const toggleLikeComment = async (commentId, postId) => {
+    setPosts(posts =>
+      posts.map(post => {
+        if (post.id !== postId) return post;
+        const comments = post.comments.map(c => {
+          if (c.id !== commentId) return c;
+          const likedByUser = (c.commentLikes || []).some(l => l.userId === user.id);
+          if (likedByUser) {
+            return { ...c, commentLikes: (c.commentLikes || []).filter(l => l.userId !== user.id) }
+          } else {
+            return { ...c, commentLikes: [ ...(c.commentLikes || []), { userId: user.id, commentId }] }
+          }
+        });
+        return { ...post, comments };
+      })
+    );
     await fetch(`/api/comments/${commentId}/like`, { method: "POST" });
-    loadUserPosts();
   };
 
   const addComment = async (postId) => {
@@ -101,7 +124,6 @@ export default function ProfilePage() {
     setReplyInputs((prev) => ({ ...prev, [commentOrReplyId]: prev[commentOrReplyId] ? "" : "" }));
   };
 
-  // Aqui: aceita parentReplyId para replies aninhadas
   const handleReply = async (postId, commentId, text, parentReplyId = null) => {
     if (!text.trim() || !user?.id) return;
     await fetch("/api/comments/reply", {
@@ -285,8 +307,8 @@ export default function ProfilePage() {
                 <button
                   onClick={() => toggleLikePost(post.id)}
                   className="flex items-center gap-1 text-sm hover:opacity-80 cursor-pointer">
-                  <Heart className={post.liked ? "text-pink-500" : ""} size={18} />
-                  <span>{post.likes}</span>
+                  <Heart className={post.postLikes?.some(l => l.userId === user?.id) ? "text-pink-500" : ""} size={18} />
+                  <span>{post.postLikes?.length || 0}</span>
                 </button>
                 <button onClick={() => setCommentInputs({ ...commentInputs, [post.id]: "" })}
                   className="flex items-center gap-1 text-sm hover:opacity-80 cursor-pointer">
@@ -351,10 +373,10 @@ export default function ProfilePage() {
                     </div>
                     <div className="flex gap-4 mt-2 text-xs text-zinc-400">
                       <button
-                        onClick={() => toggleLikeComment(post.id, comment.id)}
+                        onClick={() => toggleLikeComment(comment.id, post.id)}
                         className="flex items-center gap-1 text-sm hover:opacity-80 cursor-pointer">
-                        <Heart className={comment.liked ? "text-pink-500" : ""} size={14} />
-                        <span>{comment.likes}</span>
+                        <Heart className={comment.commentLikes?.some(l => l.userId === user?.id) ? "text-pink-500" : ""} size={14} />
+                        <span>{comment.commentLikes?.length || 0}</span>
                       </button>
                       <button
                         onClick={() => toggleReplyInput(comment.id)}
