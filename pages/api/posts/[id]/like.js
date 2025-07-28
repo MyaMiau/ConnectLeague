@@ -9,10 +9,18 @@ export default async function handler(req, res) {
   const userId = Number(session.user.id);
 
   if (req.method === "POST") {
-
     const existing = await prisma.postLike.findUnique({
       where: { userId_postId: { userId, postId } }
     });
+
+    // Busca o post para pegar o authorId
+    const post = await prisma.post.findUnique({
+      where: { id: postId },
+      select: { authorId: true },
+    });
+
+    if (!post) return res.status(404).json({ error: "Post not found" });
+
     if (existing) {
       await prisma.postLike.delete({
         where: { userId_postId: { userId, postId } }
@@ -22,6 +30,19 @@ export default async function handler(req, res) {
       await prisma.postLike.create({
         data: { userId, postId }
       });
+
+      // Cria notificação para o dono do post, exceto se o próprio dono curtir
+      if (post.authorId !== userId) {
+        await prisma.notification.create({
+          data: {
+            type: "like",
+            userId: post.authorId,
+            senderId: userId,
+            postId: postId,
+          },
+        });
+      }
+
       return res.status(200).json({ liked: true });
     }
   }

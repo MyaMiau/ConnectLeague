@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "../../auth/[...nextauth]";
 
 export default async function handler(req, res) {
-  const commentId = Number(req.query.id); // <- esta linha garante que commentId existe!
+  const commentId = Number(req.query.id); 
   const session = await getServerSession(req, res, authOptions);
   if (!session?.user?.id) return res.status(401).json({ error: "Not authenticated" });
   const userId = Number(session.user.id);
