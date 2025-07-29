@@ -1,66 +1,47 @@
 import prisma from "../../../lib/prisma";
-
+import { getServerSession } from "next-auth";
+import { authOptions } from "../auth/[...nextauth]";
 
 export default async function handler(req, res) {
+  // Autenticação NextAuth: garante usuário logado
+  const session = await getServerSession(req, res, authOptions);
+  if (!session?.user?.id) {
+    return res.status(401).json({ error: "Não autenticado" });
+  }
+  const userId = session.user.id;
+
   if (req.method === "GET") {
     try {
-      const { userId } = req.query;
-      const where = userId ? { authorId: Number(userId) } : {};
-
-      const posts = await prisma.post.findMany({
-        where,
+      // Busca notificações do usuário autenticado
+      const notifications = await prisma.notification.findMany({
+        where: { userId: Number(userId) },
         include: {
-          author: true,
-          postLikes: {
-            include: {
-              user: true, // Inclui os dados do usuário que curtiu o post
-            },
-          },
-          comments: {
-            include: {
-              author: true,
-              replies: {
-                include: {
-                  author: true,
-                },
-              },
-            },
-          },
-          replies: {
-            include: {
-              author: true,
-            },
-          },
+          sender: { select: { id: true, name: true, image: true } },
         },
         orderBy: { createdAt: "desc" },
       });
-
-      res.status(200).json(posts);
+      res.status(200).json(notifications);
     } catch (err) {
-      console.error("Erro ao buscar posts:", err);
-      res.status(500).json({ error: "Erro ao buscar posts", details: err.message });
+      console.error("Erro ao buscar notificações:", err);
+      res.status(500).json({ error: "Erro ao buscar notificações", details: err.message });
     }
     return;
   }
 
-  if (req.method === "POST") {
+  if (req.method === "PATCH") {
+    // Marcar todas como lidas
     try {
-      const { content, image, authorId } = req.body;
-      const post = await prisma.post.create({
-        data: {
-          content,
-          image,
-          authorId,
-        },
+      await prisma.notification.updateMany({
+        where: { userId: Number(userId), read: false },
+        data: { read: true },
       });
-      res.status(201).json(post);
+      res.status(200).json({ ok: true });
     } catch (err) {
-      console.error("Erro ao criar post:", err);
-      res.status(500).json({ error: "Erro ao criar post", details: err.message });
+      console.error("Erro ao marcar notificações como lidas:", err);
+      res.status(500).json({ error: "Erro ao marcar notificações como lidas", details: err.message });
     }
     return;
   }
 
-  // Se não for GET nem POST
   res.status(405).json({ error: "Método não permitido" });
 }
