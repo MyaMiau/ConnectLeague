@@ -1,5 +1,6 @@
 import prisma from "../../../lib/prisma";
 
+
 export default async function handler(req, res) {
   if (req.method === "GET") {
     try {
@@ -12,7 +13,7 @@ export default async function handler(req, res) {
           author: true,
           postLikes: {
             include: {
-              user: true, // Traz o usuário que curtiu, se quiser detalhar no frontend
+              user: true, // Inclui os dados do usuário que curtiu o post
             },
           },
           comments: {
@@ -37,7 +38,7 @@ export default async function handler(req, res) {
       res.status(200).json(posts);
     } catch (err) {
       console.error("Erro ao buscar posts:", err);
-      res.status(500).json({ error: "Erro ao buscar posts" });
+      res.status(500).json({ error: "Erro ao buscar posts", details: err.message });
     }
     return;
   }
@@ -55,7 +56,7 @@ export default async function handler(req, res) {
       res.status(201).json(post);
     } catch (err) {
       console.error("Erro ao criar post:", err);
-      res.status(500).json({ error: "Erro ao criar post" });
+      res.status(500).json({ error: "Erro ao criar post", details: err.message });
     }
     return;
   }

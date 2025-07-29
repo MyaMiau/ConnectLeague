@@ -8,32 +8,47 @@ import { useState } from "react";
 
 export default function CreatePost({ onPost, user }) {
   const [text, setText] = useState("");
-  const [image, setImage] = useState(null);
+  const [imageFile, setImageFile] = useState(null);
+  const [imageUrl, setImageUrl] = useState(""); // Caminho retornado pelo backend
   const [loading, setLoading] = useState(false);
 
-  const handleImageUpload = (e) => {
+  const handleImageUpload = async (e) => {
     const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => setImage(reader.result);
-      reader.readAsDataURL(file);
+    if (!file) return;
+    setImageFile(file);
+
+    // Faz upload imediatamente ao selecionar
+    const formData = new FormData();
+    formData.append("image", file);
+
+    try {
+      const resp = await fetch("/api/posts/upload", {
+        method: "POST",
+        body: formData,
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        setImageUrl(data.imageUrl); // ex: "/uploads/posts/abc123.jpg"
+      } else {
+        setImageUrl("");
+        // Você pode mostrar erro aqui se quiser
+      }
+    } catch (err) {
+      setImageUrl("");
+      // Você pode mostrar erro aqui se quiser
     }
   };
 
   const handlePost = async () => {
-    if (!text.trim() || !user?.id ) return;
+    if (!text.trim() || !user?.id) return;
     setLoading(true);
 
-    // Monta o payload
     const payload = {
       content: text,
-      image,
-      authorId: user?.id, // Garanta que user.id está certo!
+      image: imageUrl, // só o caminho!
+      authorId: user?.id,
     };
- 
-    console.log("Payload enviado para /api/posts:", payload);
 
-    // Faz o POST na API do backend
     const res = await fetch("/api/posts", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -42,7 +57,8 @@ export default function CreatePost({ onPost, user }) {
 
     if (res.ok) {
       setText("");
-      setImage(null);
+      setImageFile(null);
+      setImageUrl("");
       onPost && onPost();
     }
     setLoading(false);
@@ -57,6 +73,13 @@ export default function CreatePost({ onPost, user }) {
           onChange={(e) => setText(e.target.value)}
         />
         <Input type="file" accept="image/*" onChange={handleImageUpload} />
+        {imageUrl && (
+          <img
+            src={imageUrl}
+            alt="Prévia da imagem"
+            className="max-w-xs max-h-48 rounded-lg mt-2"
+          />
+        )}
         <Button onClick={handlePost} disabled={loading || !text.trim()}>
           {loading ? "Publicando..." : "Publicar"}
         </Button>
