@@ -6,36 +6,38 @@ export default function CommentsList({ postId, currentUserId }) {
   const [newComment, setNewComment] = useState("");
   const [replyInputs, setReplyInputs] = useState({}); // { [commentId]: text }
 
-  // Busca comentários apenas uma vez, ou quando postId muda
+  // Busca comentários do backend
+  const fetchComments = async () => {
+    setLoading(true);
+    const res = await fetch(`/api/comments?postId=${postId}`);
+    const data = await res.json();
+    setComments(data);
+    setLoading(false);
+  };
+
   useEffect(() => {
     if (!postId) return;
-    setLoading(true);
-    fetch(`/api/comments?postId=${postId}`)
-      .then(res => res.json())
-      .then(data => {
-        setComments(data);
-        setLoading(false);
-      });
+    fetchComments();
+    // eslint-disable-next-line
   }, [postId]);
 
-  // Adiciona novo comentário inline
+  // Adiciona novo comentário inline e recarrega do backend (garante consistência)
   const handleAddComment = async () => {
     if (!newComment.trim()) return;
-    const res = await fetch("/api/comments", {
+    await fetch("/api/comments", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ content: newComment, postId, authorId: currentUserId }),
     });
-    const comment = await res.json();
-    setComments((old) => [...old, { ...comment, replies: [], commentLikes: [] }]);
     setNewComment("");
+    fetchComments();
   };
 
-  // Adiciona reply inline
+  // Adiciona reply inline e recarrega do backend
   const handleReply = async (commentId) => {
     const text = replyInputs[commentId];
     if (!text?.trim()) return;
-    const res = await fetch("/api/comments/reply", {
+    await fetch("/api/comments/reply", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -44,36 +46,14 @@ export default function CommentsList({ postId, currentUserId }) {
         commentId,
       }),
     });
-    const reply = await res.json();
-    setComments(comments =>
-      comments.map(c =>
-        c.id === commentId
-          ? { ...c, replies: [...(c.replies || []), reply] }
-          : c
-      )
-    );
     setReplyInputs((ri) => ({ ...ri, [commentId]: "" }));
+    fetchComments();
   };
 
-  // Like inline (sem reload)
+  // Like inline: recarrega do backend após ação (garante like persistente)
   const toggleLikeComment = async (commentId) => {
-    const res = await fetch(`/api/comments/${commentId}/like`, { method: "POST" });
-    const { liked } = await res.json();
-    setComments(comments =>
-      comments.map(c => {
-        if (c.id !== commentId) return c;
-        const hasLike = c.commentLikes.some(l => l.userId === currentUserId);
-        let commentLikes;
-        if (liked && !hasLike) {
-          commentLikes = [...c.commentLikes, { userId: currentUserId, commentId }];
-        } else if (!liked && hasLike) {
-          commentLikes = c.commentLikes.filter(l => l.userId !== currentUserId);
-        } else {
-          commentLikes = c.commentLikes;
-        }
-        return { ...c, commentLikes };
-      })
-    );
+    await fetch(`/api/comments/${commentId}/like`, { method: "POST" });
+    fetchComments();
   };
 
   if (loading) return <p>Carregando comentários...</p>;

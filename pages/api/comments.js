@@ -3,7 +3,6 @@ import prisma from "../../lib/prisma";
 export default async function handler(req, res) {
   if (req.method === 'POST') {
     const { content, authorId, postId } = req.body;
-    // Validação dos campos obrigatórios
     if (!content || !authorId || !postId) {
       return res.status(400).json({ error: 'Campos obrigatórios: content, authorId, postId.' });
     }
@@ -17,13 +16,13 @@ export default async function handler(req, res) {
         include: {
           author: true,
           replies: {
-            where: { parentReplyId: null }, // só top-level replies
+            where: { parentReplyId: null },
             include: {
               author: true,
               subReplies: {
                 include: {
                   author: true,
-                  subReplies: { // segundo nível (opcional, pode remover se quiser só um nível)
+                  subReplies: {
                     include: { author: true }
                   }
                 }
@@ -32,6 +31,21 @@ export default async function handler(req, res) {
           }
         }
       });
+
+      // Notificação: ao comentar num post, notifica o autor do post (exceto se for o próprio autor)
+      const post = await prisma.post.findUnique({ where: { id: Number(postId) } });
+      if (post && post.authorId !== Number(authorId)) {
+        await prisma.notification.create({
+          data: {
+            type: "comment",
+            userId: post.authorId,
+            senderId: Number(authorId),
+            postId: Number(postId),
+            commentId: comment.id
+          }
+        });
+      }
+
       return res.status(201).json(comment);
     } catch (err) {
       console.error("Erro ao criar comentário:", err);
@@ -48,19 +62,20 @@ export default async function handler(req, res) {
         include: {
           author: true,
           replies: {
-            where: { parentReplyId: null }, // só replies raiz
+            where: { parentReplyId: null },
             include: {
               author: true,
               subReplies: {
                 include: {
                   author: true,
-                  subReplies: { // segundo nível (opcional)
+                  subReplies: {
                     include: { author: true }
                   }
                 }
               }
             }
-          }
+          },
+          commentLikes: true,
         },
         orderBy: { createdAt: 'asc' }
       });
