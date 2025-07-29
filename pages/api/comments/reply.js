@@ -3,22 +3,23 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "../auth/[...nextauth]";
 
 export default async function handler(req, res) {
-  const session = await getServerSession(req, res, authOptions);
-  const userIdSession = session?.user?.id;
-
   if (req.method === "POST") {
-    const { content, authorId, postId, commentId, parentReplyId = null } = req.body;
-    if (!content || !authorId || !postId || !commentId) {
-      return res.status(400).json({ error: "Campos obrigatórios: content, authorId, postId, commentId." });
+    const session = await getServerSession(req, res, authOptions);
+    if (!session?.user?.id) {
+      return res.status(401).json({ error: "Usuário não autenticado" });
     }
-    if (!userIdSession || Number(authorId) !== Number(userIdSession)) {
-      return res.status(401).json({ error: 'Usuário não autenticado.' });
+
+    const { content, postId, commentId, parentReplyId } = req.body;
+
+    if (!content || !postId || !commentId) {
+      return res.status(400).json({ error: "Campos obrigatórios faltando." });
     }
+
     try {
       const reply = await prisma.reply.create({
         data: {
           content,
-          authorId: Number(authorId),
+          authorId: Number(session.user.id),
           postId: Number(postId),
           commentId: Number(commentId),
           parentReplyId: parentReplyId ? Number(parentReplyId) : null,
@@ -31,25 +32,26 @@ export default async function handler(req, res) {
         }
       });
 
-      // Notificação: ao responder um comentário, notifica o autor do comentário 
+      // Notifica o autor do comentário, exceto se ele mesmo respondeu
       const comment = await prisma.comment.findUnique({ where: { id: Number(commentId) } });
-      if (comment && comment.authorId !== Number(authorId)) {
+      if (comment && comment.authorId !== session.user.id) {
         await prisma.notification.create({
           data: {
             type: "reply",
-            userId: comment.authorId,    
-            senderId: Number(authorId),  
-            commentId: Number(commentId)
+            userId: comment.authorId,
+            senderId: session.user.id,
+            postId: Number(postId),
+            commentId: Number(commentId),
           }
         });
       }
 
       return res.status(201).json(reply);
     } catch (err) {
-      console.error("Erro ao criar resposta:", err);
-      return res.status(500).json({ error: "Erro ao criar resposta." });
+      console.error("Erro ao criar reply:", err);
+      return res.status(500).json({ error: "Erro interno ao criar reply." });
     }
-  } else {
-    return res.status(405).json({ message: "Método não permitido" });
   }
+  res.setHeader("Allow", ["POST"]);
+  res.status(405).end(`Method ${req.method} Not Allowed`);
 }

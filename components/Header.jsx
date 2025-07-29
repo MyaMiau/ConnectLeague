@@ -50,7 +50,7 @@ function NotificationsPopover({ open, onClose, notifications = [], unreadCount, 
                   className="rounded-full"
                 />
                 <div className="flex-1">
-                  {/* Texto da notificação */}
+                  {/* Renderiza todos os tipos de notificação */}
                   {n.type === "like" && (
                     <Link
                       href={n.postId ? `/posts/${n.postId}` : "#"}
@@ -60,7 +60,21 @@ function NotificationsPopover({ open, onClose, notifications = [], unreadCount, 
                       <b>{n.sender?.name || "Alguém"}</b> curtiu seu post!
                     </Link>
                   )}
-                  {/* Adicione outros tipos aqui */}
+                  {n.type === "comment_like" && (
+                    <span>
+                      <b>{n.sender?.name || "Alguém"}</b> curtiu seu comentário!
+                    </span>
+                  )}
+                  {n.type === "reply" && (
+                    <span>
+                      <b>{n.sender?.name || "Alguém"}</b> respondeu seu comentário!
+                    </span>
+                  )}
+                  {n.type === "comment" && (
+                    <span>
+                      <b>{n.sender?.name || "Alguém"}</b> comentou no seu post!
+                    </span>
+                  )}
                   <div className="text-xs text-zinc-400 mt-1">
                     {new Date(n.createdAt).toLocaleString("pt-BR", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "short" })}
                   </div>
