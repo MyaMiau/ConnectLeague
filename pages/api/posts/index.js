@@ -9,6 +9,7 @@ export default async function handler(req, res) {
         where,
         include: {
           author: true,
+          postLikes: true, // <-- aqui!
           comments: {
             include: {
               author: true,

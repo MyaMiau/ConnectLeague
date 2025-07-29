@@ -166,11 +166,11 @@ model CommentLike {
 
 model Notification {
   id         Int      @id @default(autoincrement())
-  type       String   // "like", "comment", etc
-  userId     Int      // Quem recebe a notificação
-  senderId   Int      // Quem fez a ação
-  postId     Int?     // Post relacionado
-  commentId  Int?     // Comentário relacionado
+  type       String   
+  userId     Int     
+  senderId   Int      
+  postId     Int?    
+  commentId  Int?     
   read       Boolean  @default(false)
   createdAt  DateTime @default(now())
 }

@@ -5,20 +5,23 @@ export default async function handler(req, res) {
   const session = await getSession({ req });
   if (!session?.user?.id) return res.status(401).json({ error: "Unauthorized" });
 
-  const userId = Number(session.user.id); // <- Corrigido para Int
+  const userId = Number(session.user.id); 
 
   if (req.method === "GET") {
-    // Busca notificações do usuário, mais recentes primeiro
-    const notifications = await prisma.notification.findMany({
-      where: { userId },
-      orderBy: { createdAt: "desc" },
-      take: 50,
-    });
+  
+  const notifications = await prisma.notification.findMany({
+    where: { userId: user.id },
+    include: {
+      sender: true, 
+      post: true,   
+    },
+    orderBy: { createdAt: "desc" },
+  });
     return res.status(200).json(notifications);
   }
 
   if (req.method === "PATCH") {
-    // Marca todas como lidas
+
     await prisma.notification.updateMany({
       where: { userId, read: false },
       data: { read: true },
