@@ -35,9 +35,7 @@ model users {
   emailVerified        DateTime?
   image                String?
   password             String
-  // TIPO DE USUÁRIO: obrigatório, ex: 'organization', 'player', 'coach', 'manager', 'analyst', 'psychologist'
   type                 String         @db.VarChar(50)
-  // ROLE: para jogadores (opcional), ex: 'atacante', 'suporte', etc.
   role                 String?        @db.VarChar(50)
   birthDate            DateTime
   created_at           DateTime?      @default(now()) @db.Timestamp(6)
@@ -60,6 +58,8 @@ model users {
   replies              Reply[]
   postLikes            PostLike[]
   commentLikes         CommentLike[]
+  notificationsReceived Notification[] @relation("Receiver")
+  notificationsSent     Notification[] @relation("Sender")
 }
 
 model vacancies {
@@ -114,6 +114,7 @@ model Post {
   image     String?
   replies   Reply[]
   postLikes PostLike[]
+  notifications Notification[]
 }
 
 model Comment {
@@ -173,4 +174,8 @@ model Notification {
   commentId  Int?     
   read       Boolean  @default(false)
   createdAt  DateTime @default(now())
+
+  user      users     @relation("Receiver", fields: [userId], references: [id])
+  sender    users     @relation("Sender", fields: [senderId], references: [id])
+  post      Post?     @relation(fields: [postId], references: [id])
 }

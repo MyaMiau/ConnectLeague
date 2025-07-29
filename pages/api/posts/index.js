@@ -1,4 +1,5 @@
-import prisma from "../../../lib/prisma"; 
+import prisma from "../../../lib/prisma";
+
 export default async function handler(req, res) {
   if (req.method === "GET") {
     try {
@@ -9,7 +10,11 @@ export default async function handler(req, res) {
         where,
         include: {
           author: true,
-          postLikes: true, // <-- aqui!
+          postLikes: {
+            include: {
+              user: true, // Traz o usuário que curtiu, se quiser detalhar no frontend
+            },
+          },
           comments: {
             include: {
               author: true,

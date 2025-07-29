@@ -52,9 +52,13 @@ function NotificationsPopover({ open, onClose, notifications = [], unreadCount, 
                 <div className="flex-1">
                   {/* Texto da notificação */}
                   {n.type === "like" && (
-                    <span>
+                    <Link
+                      href={n.postId ? `/posts/${n.postId}` : "#"}
+                      className="hover:underline focus:underline"
+                      style={{ color: "inherit", textDecoration: "none" }}
+                    >
                       <b>{n.sender?.name || "Alguém"}</b> curtiu seu post!
-                    </span>
+                    </Link>
                   )}
                   {/* Adicione outros tipos aqui */}
                   <div className="text-xs text-zinc-400 mt-1">

@@ -1,33 +1,65 @@
-import { getSession } from "next-auth/react";
-import prisma from "@/lib/prisma";
+import prisma from "../../../lib/prisma";
 
 export default async function handler(req, res) {
-  const session = await getSession({ req });
-  if (!session?.user?.id) return res.status(401).json({ error: "Unauthorized" });
-
-  const userId = Number(session.user.id); 
-
   if (req.method === "GET") {
-  
-  const notifications = await prisma.notification.findMany({
-    where: { userId: user.id },
-    include: {
-      sender: true, 
-      post: true,   
-    },
-    orderBy: { createdAt: "desc" },
-  });
-    return res.status(200).json(notifications);
+    try {
+      const { userId } = req.query;
+      const where = userId ? { authorId: Number(userId) } : {};
+
+      const posts = await prisma.post.findMany({
+        where,
+        include: {
+          author: true,
+          postLikes: {
+            include: {
+              user: true, // Traz o usuário que curtiu, se quiser detalhar no frontend
+            },
+          },
+          comments: {
+            include: {
+              author: true,
+              replies: {
+                include: {
+                  author: true,
+                },
+              },
+            },
+          },
+          replies: {
+            include: {
+              author: true,
+            },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+      });
+
+      res.status(200).json(posts);
+    } catch (err) {
+      console.error("Erro ao buscar posts:", err);
+      res.status(500).json({ error: "Erro ao buscar posts" });
+    }
+    return;
   }
 
-  if (req.method === "PATCH") {
-
-    await prisma.notification.updateMany({
-      where: { userId, read: false },
-      data: { read: true },
-    });
-    return res.status(200).json({ success: true });
+  if (req.method === "POST") {
+    try {
+      const { content, image, authorId } = req.body;
+      const post = await prisma.post.create({
+        data: {
+          content,
+          image,
+          authorId,
+        },
+      });
+      res.status(201).json(post);
+    } catch (err) {
+      console.error("Erro ao criar post:", err);
+      res.status(500).json({ error: "Erro ao criar post" });
+    }
+    return;
   }
 
-  return res.status(405).json({ error: "Method not allowed" });
+  // Se não for GET nem POST
+  res.status(405).json({ error: "Método não permitido" });
 }
