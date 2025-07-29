@@ -82,12 +82,12 @@ export default function Timeline() {
     loadPosts();
   };
 
-  // Comentários
+  // Comentários: adicionar inline (sem reload global)
   const addComment = async (postId) => {
     const text = commentInputs[postId];
     if (!text?.trim() || !user?.id) return;
 
-    await fetch("/api/comments", {
+    const res = await fetch("/api/comments", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -96,8 +96,15 @@ export default function Timeline() {
         postId,
       }),
     });
+    const comment = await res.json();
+    setPosts(posts =>
+      posts.map(post =>
+        post.id === postId
+          ? { ...post, comments: [...(post.comments || []), { ...comment, replies: [], commentLikes: [] }] }
+          : post
+      )
+    );
     setCommentInputs({ ...commentInputs, [postId]: "" });
-    loadPosts();
   };
 
   // Edição de comentário
@@ -116,18 +123,24 @@ export default function Timeline() {
   // Deletar comentário
   const handleDeleteComment = async (postId, commentId) => {
     await fetch(`/api/comments/${commentId}`, { method: "DELETE" });
-    loadPosts();
+    setPosts(posts =>
+      posts.map(post =>
+        post.id === postId
+          ? { ...post, comments: post.comments.filter(c => c.id !== commentId) }
+          : post
+      )
+    );
   };
 
-  // Respostas a comentários E replies aninhadas
+  // Respostas a comentários E replies aninhadas (inline)
   const toggleReplyInput = (commentOrReplyId) => {
     setReplyInputs((prev) => ({ ...prev, [commentOrReplyId]: prev[commentOrReplyId] ? "" : "" }));
   };
 
-  // Aqui é o segredo: parentReplyId pode ser null (reply para comment) ou um id (reply para reply)
+  // parentReplyId pode ser null (reply para comment) ou um id (reply para reply)
   const handleReply = async (postId, commentId, text, parentReplyId = null) => {
     if (!text.trim() || !user?.id) return;
-    await fetch("/api/comments/reply", {
+    const res = await fetch("/api/comments/reply", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -138,8 +151,28 @@ export default function Timeline() {
         parentReplyId,
       }),
     });
+    const reply = await res.json();
+    setPosts(posts =>
+      posts.map(post =>
+        post.id === postId
+          ? {
+              ...post,
+              comments: post.comments.map(comment =>
+                comment.id === commentId
+                  ? {
+                      ...comment,
+                      replies: [
+                        ...(comment.replies || []),
+                        reply
+                      ]
+                    }
+                  : comment
+              )
+            }
+          : post
+      )
+    );
     setReplyInputs({ ...replyInputs, [parentReplyId || commentId]: "" });
-    loadPosts();
   };
 
   // Edição de resposta
@@ -158,7 +191,23 @@ export default function Timeline() {
   // Deletar resposta
   const handleDeleteReply = async (postId, commentId, replyId) => {
     await fetch(`/api/comments/reply/${replyId}`, { method: "DELETE" });
-    loadPosts();
+    setPosts(posts =>
+      posts.map(post =>
+        post.id === postId
+          ? {
+              ...post,
+              comments: post.comments.map(comment =>
+                comment.id === commentId
+                  ? {
+                      ...comment,
+                      replies: comment.replies.filter(r => r.id !== replyId)
+                    }
+                  : comment
+              )
+            }
+          : post
+      )
+    );
   };
 
   // CURTIR/DESCURTIR POST
@@ -178,7 +227,7 @@ export default function Timeline() {
     await fetch(`/api/posts/${postId}/like`, { method: "POST" });
   };
 
-  // CURTIR/DESCURTIR COMENTÁRIO
+  // CURTIR/DESCURTIR COMENTÁRIO (inline)
   const toggleLikeComment = async (commentId, postId) => {
     setPosts(posts =>
       posts.map(p => {

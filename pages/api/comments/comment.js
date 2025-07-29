@@ -1,19 +1,10 @@
 import prisma from "../../lib/prisma";
-import { getServerSession } from "next-auth";
-import { authOptions } from "./auth/[...nextauth]";
 
 export default async function handler(req, res) {
-  // Adiciona autenticação para garantir o userId correto
-  const session = await getServerSession(req, res, authOptions);
-  const userIdSession = session?.user?.id;
-
   if (req.method === 'POST') {
     const { content, authorId, postId } = req.body;
     if (!content || !authorId || !postId) {
       return res.status(400).json({ error: 'Campos obrigatórios: content, authorId, postId.' });
-    }
-    if (!userIdSession || Number(authorId) !== Number(userIdSession)) {
-      return res.status(401).json({ error: 'Usuário não autenticado.' });
     }
     try {
       const comment = await prisma.comment.create({
@@ -47,8 +38,8 @@ export default async function handler(req, res) {
         await prisma.notification.create({
           data: {
             type: "comment",
-            userId: post.authorId,      // dono do post recebe a notificação
-            senderId: Number(authorId), // quem comentou
+            userId: post.authorId,
+            senderId: Number(authorId),
             postId: Number(postId),
             commentId: comment.id
           }
@@ -83,7 +74,8 @@ export default async function handler(req, res) {
                 }
               }
             }
-          }
+          },
+          commentLikes: true,
         },
         orderBy: { createdAt: 'asc' }
       });

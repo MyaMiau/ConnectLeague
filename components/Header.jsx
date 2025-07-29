@@ -2,15 +2,12 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useEffect, useRef, useState } from "react";
-import { Button } from "./ui/button";
 import { User, Home, Briefcase, LogOut, Bell } from "lucide-react";
 import { signOut } from "next-auth/react";
 
-// Novo componente popover de notificações
 function NotificationsPopover({ open, onClose, notifications = [], unreadCount, onRead }) {
   const ref = useRef();
 
-  // Fecha o popover ao clicar fora
   useEffect(() => {
     function handleClickOutside(event) {
       if (ref.current && !ref.current.contains(event.target)) {
@@ -41,7 +38,6 @@ function NotificationsPopover({ open, onClose, notifications = [], unreadCount, 
           <ul className="divide-y divide-zinc-800">
             {notifications.map(n => (
               <li key={n.id} className={`flex items-start gap-3 p-4 ${n.read ? "" : "bg-zinc-800"}`}>
-                {/* Avatar do remetente, se disponível */}
                 <Image
                   src={n.sender?.image || "/default-avatar.png"}
                   alt="avatar"
@@ -50,12 +46,10 @@ function NotificationsPopover({ open, onClose, notifications = [], unreadCount, 
                   className="rounded-full"
                 />
                 <div className="flex-1">
-                  {/* Renderiza todos os tipos de notificação */}
                   {n.type === "like" && (
                     <Link
                       href={n.postId ? `/posts/${n.postId}` : "#"}
                       className="hover:underline focus:underline"
-                      style={{ color: "inherit", textDecoration: "none" }}
                     >
                       <b>{n.sender?.name || "Alguém"}</b> curtiu seu post!
                     </Link>
@@ -95,11 +89,6 @@ function NotificationsPopover({ open, onClose, notifications = [], unreadCount, 
 export default function Header() {
   const router = useRouter();
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    router.push("/login");
-  };
-
   const navItems = [
     {
       label: "Perfil",
@@ -126,7 +115,6 @@ export default function Header() {
     },
   ];
 
-  // Notificações
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -146,7 +134,6 @@ export default function Header() {
     fetchNotifications();
   }, [showNotifications]);
 
-  // Marcar todas como lidas
   const handleReadAll = async () => {
     await fetch("/api/notifications", { method: "PATCH" });
     setNotifications(notifications.map(n => ({ ...n, read: true })));
@@ -213,7 +200,6 @@ export default function Header() {
               </span>
             )}
           </button>
-          {/* Popover de notificações */}
           <NotificationsPopover
             open={showNotifications}
             onClose={() => setShowNotifications(false)}

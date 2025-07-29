@@ -10,11 +10,9 @@ export default async function handler(req, res) {
     }
 
     const { content, postId, commentId, parentReplyId } = req.body;
-
     if (!content || !postId || !commentId) {
       return res.status(400).json({ error: "Campos obrigatórios faltando." });
     }
-
     try {
       const reply = await prisma.reply.create({
         data: {
@@ -26,20 +24,18 @@ export default async function handler(req, res) {
         },
         include: {
           author: true,
-          subReplies: {
-            include: { author: true }
-          }
+          subReplies: { include: { author: true } }
         }
       });
 
-      // Notifica o autor do comentário, exceto se ele mesmo respondeu
+      // Notificação: ao responder um comentário, notifica o autor do comentário (exceto se for ele mesmo)
       const comment = await prisma.comment.findUnique({ where: { id: Number(commentId) } });
-      if (comment && comment.authorId !== session.user.id) {
+      if (comment && comment.authorId !== Number(session.user.id)) {
         await prisma.notification.create({
           data: {
             type: "reply",
             userId: comment.authorId,
-            senderId: session.user.id,
+            senderId: Number(session.user.id),
             postId: Number(postId),
             commentId: Number(commentId),
           }

@@ -13,7 +13,6 @@ export default async function handler(req, res) {
       where: { userId_commentId: { userId, commentId } }
     });
 
-    // Busca o comentário para pegar o authorId e postId
     const comment = await prisma.comment.findUnique({
       where: { id: commentId },
       select: { authorId: true, postId: true },
@@ -25,25 +24,26 @@ export default async function handler(req, res) {
       await prisma.commentLike.delete({
         where: { userId_commentId: { userId, commentId } }
       });
+      // retorna o novo status
       return res.status(200).json({ liked: false });
     } else {
       await prisma.commentLike.create({
         data: { userId, commentId }
       });
 
-      // Cria notificação para o autor do comentário, exceto se ele mesmo curtir
+      // Notificação: ao curtir comentário, notifica o autor (exceto se for ele mesmo)
       if (comment.authorId !== userId) {
         await prisma.notification.create({
           data: {
             type: "comment_like",
-            userId: comment.authorId,     // notificado
-            senderId: userId,             // quem curtiu
+            userId: comment.authorId,
+            senderId: userId,
             commentId: commentId,
             postId: comment.postId,
           },
         });
       }
-
+      // retorna o novo status
       return res.status(200).json({ liked: true });
     }
   }
