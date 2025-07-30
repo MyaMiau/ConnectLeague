@@ -227,8 +227,9 @@ export default function Timeline() {
     await fetch(`/api/posts/${postId}/like`, { method: "POST" });
   };
 
-  // CURTIR/DESCURTIR COMENTÁRIO (inline)
+    // CURTIR/DESCURTIR COMENTÁRIO (inline)
   const toggleLikeComment = async (commentId, postId) => {
+    // UI otimista
     setPosts(posts =>
       posts.map(p => {
         if (p.id !== postId) return p;
@@ -246,9 +247,14 @@ export default function Timeline() {
         }
       })
     );
+    // Requisição real
     await fetch(`/api/comments/${commentId}/like`, { method: "POST" });
-  };
 
+    // Fetch atualizado só do comentário
+    const res = await fetch(`/api/comments/${commentId}`);
+    const updatedComment = await res.json();
+  };
+  
   // Modal de exclusão
   const openDeleteModal = ({ type, postId, commentId = null, replyId = null }) => {
     setDeleteTarget({ type, postId, commentId, replyId });
