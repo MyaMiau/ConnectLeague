@@ -1,13 +1,15 @@
 import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
 import NewPostForm from "../components/NewPostForm";
 import CommentsList from "../components/CommentsList";
 import CommentForm from "../components/CommentForm";
 
 export default function PostsPage() {
+  const { data: session, status } = useSession();
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
-  // Troque para o id do usuário logado!
-  const authorId = 1;
+
+  const authorId = session?.user?.id;
 
   // Carregar posts
   function loadPosts() {
@@ -21,8 +23,18 @@ export default function PostsPage() {
   }
 
   useEffect(() => {
-    loadPosts();
-  }, []);
+    if (status === "authenticated") {
+      loadPosts();
+    }
+  }, [status]);
+
+  if (status === "loading") {
+    return <p>Carregando sessão...</p>;
+  }
+
+  if (status === "unauthenticated") {
+    return <p>Você precisa estar logado para ver os posts.</p>;
+  }
 
   return (
     <div style={{ maxWidth: 600, margin: "0 auto", padding: 24 }}>
