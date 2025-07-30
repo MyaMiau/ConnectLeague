@@ -53,7 +53,7 @@ export default function PostsPage() {
             </small>
             <div style={{ marginTop: 8 }}>
               <strong>Comentários:</strong>
-              <CommentsList postId={post.id} />
+              <CommentsList postId={post.id} currentUserId={authorId} />
               <CommentForm
                 postId={post.id}
                 authorId={authorId}
