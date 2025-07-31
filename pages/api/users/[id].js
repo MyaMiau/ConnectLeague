@@ -24,7 +24,14 @@ export default async function handler(req, res) {
       if (!user) {
         return res.status(404).json({ error: "Usuário não encontrado" });
       }
-      res.status(200).json(user);
+
+      // Busque também os posts desse usuário
+      const posts = await prisma.post.findMany({
+        where: { authorId: Number(id) },
+        orderBy: { createdAt: 'desc' },
+      });
+
+      res.status(200).json({ user, posts });
     } catch (error) {
       console.error(error);
       res.status(500).json({ error: 'Erro ao buscar usuário' });

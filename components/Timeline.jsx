@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { format } from "date-fns";
 import ptBR from "date-fns/locale/pt-BR";
 import { Card, CardContent } from "@/components/ui/card";
@@ -229,7 +230,6 @@ export default function Timeline() {
 
     // CURTIR/DESCURTIR COMENTÁRIO (inline)
   const toggleLikeComment = async (commentId, postId) => {
-    // UI otimista
     setPosts(posts =>
       posts.map(p => {
         if (p.id !== postId) return p;
@@ -247,14 +247,11 @@ export default function Timeline() {
         }
       })
     );
-    // Requisição real
     await fetch(`/api/comments/${commentId}/like`, { method: "POST" });
-
-    // Fetch atualizado só do comentário
     const res = await fetch(`/api/comments/${commentId}`);
     const updatedComment = await res.json();
   };
-  
+
   // Modal de exclusão
   const openDeleteModal = ({ type, postId, commentId = null, replyId = null }) => {
     setDeleteTarget({ type, postId, commentId, replyId });
@@ -273,52 +270,57 @@ export default function Timeline() {
   };
 
   // Renderização
-  return (
-    <div className="w-full flex flex-col items-center">
-      <CreatePost onPost={handleNewPost} user={user} />
+return (
+  <div className="w-full flex flex-col items-center">
+    <CreatePost onPost={handleNewPost} user={user} />
 
-      <div className="w-full max-w-2xl space-y-6">
-        {loading ? (
-          <p className="text-center text-zinc-400">Carregando posts...</p>
-        ) : (
-          posts.map((post) => (
-            <Card key={post.id} className="bg-zinc-900 rounded-2xl">
-              <CardContent className="p-6 space-y-4 relative">
-                <div className="flex justify-between items-start">
-                  <div className="flex items-center gap-4">
+    <div className="w-full max-w-2xl space-y-6">
+      {loading ? (
+        <p className="text-center text-zinc-400">Carregando posts...</p>
+      ) : (
+        posts.map((post) => (
+          <Card key={post.id} className="bg-zinc-900 rounded-2xl">
+            <CardContent className="p-6 space-y-4 relative">
+              <div className="flex justify-between items-start">
+                <div className="flex items-center gap-4">
+                  {/* Envolva imagem e nome com Link */}
+                  <Link href={`/profile/${post.author?.id || ""}`} className="flex items-center gap-4 cursor-pointer group">
                     <Image
                       src={post.author?.image || "/default-avatar.png"}
                       alt="Avatar"
                       width={40}
                       height={40}
-                      className="rounded-full object-cover border border-zinc-700"
+                      className="rounded-full object-cover border border-zinc-700 group-hover:opacity-80 transition"
                     />
                     <div>
-                      <p className="font-semibold">{post.author?.name || "Autor desconhecido"}</p>
+                      <p className="font-semibold group-hover:underline">
+                        {post.author?.name || "Autor desconhecido"}
+                      </p>
                       <p className="text-xs text-zinc-400">
                         {format(new Date(post.createdAt), "d 'de' MMMM 'às' HH:mm", { locale: ptBR })}
                       </p>
                     </div>
-                  </div>
-                  <div className="relative">
-                    <button type="button" onClick={() => setActiveOptions(post.id === activeOptions ? null : post.id)}>
-                      <MoreHorizontal className="text-zinc-400 hover:text-white cursor-pointer" />
-                    </button>
-                    {activeOptions === post.id && (
-                      <div className="absolute right-0 mt-2 w-32 bg-zinc-800 border border-zinc-700 rounded shadow-md z-10 cursor-pointer">
-                        <button type="button" onClick={() => handleEditPost(post)} className="block w-full text-left px-4 py-2 hover:bg-zinc-700 cursor-pointer">
-                          Editar
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => openDeleteModal({ type: "post", postId: post.id })}
-                          className="block w-full text-left px-4 py-2 hover:bg-zinc-700 cursor-pointer">
-                          Excluir
-                        </button>
-                      </div>
-                    )}
-                  </div>
+                  </Link>
                 </div>
+                <div className="relative">
+                  <button type="button" onClick={() => setActiveOptions(post.id === activeOptions ? null : post.id)}>
+                    <MoreHorizontal className="text-zinc-400 hover:text-white cursor-pointer" />
+                  </button>
+                  {activeOptions === post.id && (
+                    <div className="absolute right-0 mt-2 w-32 bg-zinc-800 border border-zinc-700 rounded shadow-md z-10 cursor-pointer">
+                      <button type="button" onClick={() => handleEditPost(post)} className="block w-full text-left px-4 py-2 hover:bg-zinc-700 cursor-pointer">
+                        Editar
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => openDeleteModal({ type: "post", postId: post.id })}
+                        className="block w-full text-left px-4 py-2 hover:bg-zinc-700 cursor-pointer">
+                        Excluir
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
 
                 {/* Modal de edição de post */}
                 <EditPostModal

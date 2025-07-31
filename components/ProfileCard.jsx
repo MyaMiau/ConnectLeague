@@ -26,7 +26,7 @@ const ELOS = [
   { name: "Desafiante", image: "/Desafiante.png" }
 ];
 
-export default function ProfileCard({ user, onUserUpdate }) {
+export default function ProfileCard({ user, onUserUpdate, showEdit = true }) {
   const [editMode, setEditMode] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
 
@@ -106,25 +106,27 @@ export default function ProfileCard({ user, onUserUpdate }) {
   return (
     <Card className="w-full max-w-2xl bg-zinc-900 shadow-xl rounded-2xl mb-6 relative">
       {/* Menu de 3 pontinhos */}
-      <div className="absolute top-4 right-4 z-20">
-        <button
-          aria-label="mais opções"
-          className="text-zinc-400 hover:text-white focus:outline-none text-2xl leading-none cursor-pointer"
-          onClick={() => setShowMenu(v => !v)}
-        >
-          &#x22EE;
-        </button>
-        {showMenu && !editMode && (
-          <div className="absolute right-0 mt-2 w-32 bg-zinc-800 border border-zinc-700 rounded shadow-md z-30 cursor-pointer">
-            <button
-              onClick={() => { setEditMode(true); setShowMenu(false); }}
-              className="block w-full text-left px-4 py-2 hover:bg-zinc-700 cursor-pointer"
-            >
-              Editar Perfil
-            </button>
-          </div>
-        )}
-      </div>
+      {showEdit && (
+        <div className="absolute top-4 right-4 z-20">
+          <button
+            aria-label="mais opções"
+            className="text-zinc-400 hover:text-white focus:outline-none text-2xl leading-none cursor-pointer"
+            onClick={() => setShowMenu(v => !v)}
+          >
+            &#x22EE;
+          </button>
+          {showMenu && !editMode && (
+            <div className="absolute right-0 mt-2 w-32 bg-zinc-800 border border-zinc-700 rounded shadow-md z-30 cursor-pointer">
+              <button
+                onClick={() => { setEditMode(true); setShowMenu(false); }}
+                className="block w-full text-left px-4 py-2 hover:bg-zinc-700 cursor-pointer"
+              >
+                Editar Perfil
+              </button>
+            </div>
+          )}
+        </div>
+      )}
       <CardContent className="flex flex-col md:flex-row gap-6 p-6 items-center md:items-start">
         {/* Avatar */}
         <div className="relative w-[120px] h-[120px] shrink-0">
