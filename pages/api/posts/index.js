@@ -12,12 +12,13 @@ export default async function handler(req, res) {
           author: true,
           postLikes: {
             include: {
-              user: true, // Traz o usuário que curtiu, se quiser detalhar no frontend
+              user: true, 
             },
           },
           comments: {
             include: {
               author: true,
+              commentLikes: true, 
               replies: {
                 include: {
                   author: true,
