@@ -1,43 +1,56 @@
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import prisma from "../../../lib/prisma";
+console.log("PRISMA OBJETO:", prisma);
 
 export default async function handler(req, res) {
   const { id } = req.query;
 
-  if (req.method === 'GET') {
-    try {
-      const user = await prisma.users.findUnique({
-        where: { id: Number(id) },
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          role: true,
-          status: true,
-          bio: true,
-          elo: true,
-          image: true,
-          birthDate: true
-        }
-      });
-      if (!user) {
-        return res.status(404).json({ error: "Usuário não encontrado" });
-      }
+  if (!id) {
+    return res.status(400).json({ error: "ID é obrigatório" });
+  }
 
-      // Busque também os posts desse usuário
+  if (req.method !== "GET") {
+    return res.status(405).json({ error: "Método não permitido" });
+  }
+
+  try {
+    // Busca o usuário
+    const user = await prisma.users.findUnique({
+      where: { id: Number(id) },
+      select: { id: true, name: true, image: true, email: true, bio: true },
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: "Usuário não encontrado" });
+    }
+
+    // Busca os posts do usuário, incluindo todos os dados necessários
       const posts = await prisma.post.findMany({
         where: { authorId: Number(id) },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
+        include: {
+          author: { select: { id: true, name: true, image: true } },
+          postLikes: true,
+          comments: {
+            include: {
+              author: { select: { id: true, name: true, image: true } },
+              commentLikes: true,
+              replies: {
+                include: {
+                  author: { select: { id: true, name: true, image: true } },
+                  subReplies: {
+                    include: {
+                      author: { select: { id: true, name: true, image: true } },
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
       });
-
-      res.status(200).json({ user, posts });
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({ error: 'Erro ao buscar usuário' });
-    }
-  } else {
-    res.setHeader('Allow', ['GET']);
-    res.status(405).end(`Método ${req.method} não permitido`);
+    return res.status(200).json({ user, posts });
+  } catch (err) {
+    console.error("Erro ao buscar perfil e posts:", err);
+    return res.status(500).json({ error: "Erro interno ao buscar perfil e posts" });
   }
 }

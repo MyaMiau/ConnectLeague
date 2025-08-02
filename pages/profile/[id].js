@@ -1,7 +1,9 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/router";
+import Header from "@/components/Header";
+import ProfileCard from "@/components/ProfileCard";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/router";
 import { format } from "date-fns";
 import ptBR from "date-fns/locale/pt-BR";
 import { Card, CardContent } from "@/components/ui/card";
@@ -11,9 +13,7 @@ import { Button } from "@/components/ui/button";
 import { MoreHorizontal, Heart, MessageCircle, Share2 } from "lucide-react";
 import DeleteConfirmationModal from "@/components/DeleteConfirmationModal";
 import EditPostModal from "@/components/EditPostModal";
-import ProfileCard from "@/components/ProfileCard";
-import Header from "@/components/Header";
-import ReplyThread from "@/components/ReplyThread"; 
+import ReplyThread from "@/components/ReplyThread"; // ou ReplyRecursive, conforme seu projeto
 
 export default function PublicProfilePage() {
   const router = useRouter();
@@ -43,7 +43,7 @@ export default function PublicProfilePage() {
         if (!res.ok) return;
         const data = await res.json();
         setLoggedUser(data);
-      } catch (err) {
+      } catch {
         setLoggedUser(null);
       }
     }
@@ -51,16 +51,19 @@ export default function PublicProfilePage() {
   }, []);
 
   // Carrega perfil e posts do usuário
+  const reloadPosts = async () => {
+    setLoading(true);
+    const res = await fetch(`/api/users/${id}`);
+    const data = await res.json();
+    setUser(data.user);
+    setPosts(data.posts);
+    setLoading(false);
+  };
+
   useEffect(() => {
     if (!id) return;
-    setLoading(true);
-    fetch(`/api/users/${id}`)
-      .then(res => res.json())
-      .then(data => {
-        setUser(data.user);
-        setPosts(data.posts);
-        setLoading(false);
-      });
+    reloadPosts();
+    // eslint-disable-next-line
   }, [id]);
 
   // Like post
@@ -78,13 +81,14 @@ export default function PublicProfilePage() {
       })
     );
     await fetch(`/api/posts/${postId}/like`, { method: "POST" });
+    reloadPosts();
   };
 
   // Comentar
   const addComment = async (postId) => {
     const text = commentInputs[postId];
     if (!text?.trim() || !loggedUser?.id) return;
-    const res = await fetch("/api/comments", {
+    await fetch("/api/comments", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -93,15 +97,8 @@ export default function PublicProfilePage() {
         postId,
       }),
     });
-    const comment = await res.json();
-    setPosts(posts =>
-      posts.map(post =>
-        post.id === postId
-          ? { ...post, comments: [...(post.comments || []), { ...comment, replies: [], commentLikes: [] }] }
-          : post
-      )
-    );
     setCommentInputs({ ...commentInputs, [postId]: "" });
+    reloadPosts();
   };
 
   // Editar comentário
@@ -113,44 +110,19 @@ export default function PublicProfilePage() {
       body: JSON.stringify({ content }),
     });
     setEditingComment(null);
-    // Recarregar posts após edição (ou só atualizar o comentário inline)
-    fetch(`/api/users/${id}`)
-      .then(res => res.json())
-      .then(data => setPosts(data.posts));
+    reloadPosts();
   };
 
   // Excluir comentário
   const handleDeleteComment = async (postId, commentId) => {
     await fetch(`/api/comments/${commentId}`, { method: "DELETE" });
-    setPosts(posts =>
-      posts.map(post =>
-        post.id === postId
-          ? { ...post, comments: post.comments.filter(c => c.id !== commentId) }
-          : post
-      )
-    );
+    reloadPosts();
   };
 
   // Like comentário
   const toggleLikeComment = async (commentId, postId) => {
-    setPosts(posts =>
-      posts.map(p => {
-        if (p.id !== postId) return p;
-        return {
-          ...p,
-          comments: p.comments.map(c => {
-            if (c.id !== commentId) return c;
-            const likedByUser = (c.commentLikes || []).some(like => like.userId === loggedUser?.id);
-            if (likedByUser) {
-              return { ...c, commentLikes: (c.commentLikes || []).filter(l => l.userId !== loggedUser?.id) }
-            } else {
-              return { ...c, commentLikes: [ ...(c.commentLikes || []), { userId: loggedUser?.id, commentId }] }
-            }
-          })
-        }
-      })
-    );
     await fetch(`/api/comments/${commentId}/like`, { method: "POST" });
+    reloadPosts();
   };
 
   // Campo de resposta (reply)
@@ -161,7 +133,7 @@ export default function PublicProfilePage() {
   // Adicionar reply
   const handleReply = async (postId, commentId, text, parentReplyId = null) => {
     if (!text.trim() || !loggedUser?.id) return;
-    const res = await fetch("/api/comments/reply", {
+    await fetch("/api/comments/reply", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -172,25 +144,8 @@ export default function PublicProfilePage() {
         parentReplyId,
       }),
     });
-    const reply = await res.json();
-    setPosts(posts =>
-      posts.map(post =>
-        post.id === postId
-          ? {
-              ...post,
-              comments: post.comments.map(comment =>
-                comment.id === commentId
-                  ? {
-                      ...comment,
-                      replies: [ ...(comment.replies || []), reply ]
-                    }
-                  : comment
-              )
-            }
-          : post
-      )
-    );
     setReplyInputs({ ...replyInputs, [parentReplyId || commentId]: "" });
+    reloadPosts();
   };
 
   // Editar reply
@@ -202,31 +157,13 @@ export default function PublicProfilePage() {
       body: JSON.stringify({ content }),
     });
     setEditingReply(null);
-    fetch(`/api/users/${id}`)
-      .then(res => res.json())
-      .then(data => setPosts(data.posts));
+    reloadPosts();
   };
 
   // Excluir reply
   const handleDeleteReply = async (postId, commentId, replyId) => {
     await fetch(`/api/comments/reply/${replyId}`, { method: "DELETE" });
-    setPosts(posts =>
-      posts.map(post =>
-        post.id === postId
-          ? {
-              ...post,
-              comments: post.comments.map(comment =>
-                comment.id === commentId
-                  ? {
-                      ...comment,
-                      replies: comment.replies.filter(r => r.id !== replyId)
-                    }
-                  : comment
-              )
-            }
-          : post
-      )
-    );
+    reloadPosts();
   };
 
   // Modal de exclusão
@@ -236,9 +173,7 @@ export default function PublicProfilePage() {
   };
 
   const handleConfirmDelete = async () => {
-    if (deleteTarget.type === "post") {
-      // Aqui você implementa a exclusão do post, se quiser no perfil público
-    } else if (deleteTarget.type === "comment") {
+    if (deleteTarget.type === "comment") {
       await handleDeleteComment(deleteTarget.postId, deleteTarget.commentId);
     } else if (deleteTarget.type === "reply") {
       await handleDeleteReply(deleteTarget.postId, deleteTarget.commentId, deleteTarget.replyId);
@@ -293,12 +228,51 @@ export default function PublicProfilePage() {
                     </div>
                   </Link>
                 </div>
-                <div className="relative">
-                  <button type="button" onClick={() => setActiveOptions(post.id === activeOptions ? null : post.id)}>
-                    <MoreHorizontal className="text-zinc-400 hover:text-white cursor-pointer" />
-                  </button>
-                  {/* Menu de opções do post (edição/exclusão se quiser) */}
-                </div>
+                {/* 3 pontinhos só para o dono do post */}
+                {loggedUser?.id === post.author?.id && (
+                  <div className="relative">
+                    <button
+                      type="button"
+                      tabIndex={0}
+                      aria-label="Abrir menu de opções do post"
+                      onClick={e => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setActiveOptions(activeOptions === post.id ? null : post.id);
+                      }}
+                      className="flex items-center"
+                    >
+                      <MoreHorizontal className="text-zinc-400 hover:text-white cursor-pointer" />
+                    </button>
+                    {activeOptions === post.id && (
+                      <div
+                        className="absolute right-0 mt-2 w-32 bg-zinc-700 border border-zinc-600 rounded shadow-md z-10"
+                        onClick={e => e.stopPropagation()}
+                      >
+                        <button
+                          type="button"
+                          className="block w-full text-left px-4 py-2 hover:bg-zinc-600 cursor-pointer"
+                          onClick={() => {
+                            setEditingPost(post);
+                            setActiveOptions(null);
+                          }}
+                        >
+                          Editar
+                        </button>
+                        <button
+                          type="button"
+                          className="block w-full text-left px-4 py-2 hover:bg-zinc-600 cursor-pointer"
+                          onClick={() => {
+                            openDeleteModal({ type: "post", postId: post.id });
+                            setActiveOptions(null);
+                          }}
+                        >
+                          Excluir
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               <p className="whitespace-pre-line">{post.content}</p>
@@ -341,7 +315,7 @@ export default function PublicProfilePage() {
                       <div className="flex gap-3 items-center">
                         <Image src={comment.author?.image || "/default-avatar.png"} alt="Avatar" width={30} height={30} className="rounded-full" />
                         <div>
-                          <p className="text-sm font-semibold text-zinc-100">{comment.author?.name || comment.author}</p>
+                          <p className="text-sm font-semibold text-zinc-100">{comment.author?.name || "Desconhecido"}</p>
                           {editingComment?.id === comment.id ? (
                             <>
                               <Textarea
@@ -365,14 +339,22 @@ export default function PublicProfilePage() {
                       <div className="relative">
                         <button
                           type="button"
-                          onClick={() =>
+                          tabIndex={0}
+                          aria-label="Abrir menu de opções do comentário"
+                          onClick={e => {
+                            e.preventDefault();
+                            e.stopPropagation();
                             setActiveCommentOptions(
-                              activeCommentOptions === comment.id ? null : comment.id)}
+                              activeCommentOptions === comment.id ? null : comment.id
+                            );
+                          }}
                           className="flex items-center gap-1 text-sm hover:opacity-80 cursor-pointer">
                           <MoreHorizontal size={16} />
                         </button>
                         {activeCommentOptions === comment.id && (
-                          <div className="absolute right-0 mt-2 w-32 bg-zinc-700 border border-zinc-600 rounded shadow-md z-10">
+                          <div className="absolute right-0 mt-2 w-32 bg-zinc-700 border border-zinc-600 rounded shadow-md z-10"
+                            onClick={e => e.stopPropagation()}
+                          >
                             <button
                               type="button"
                               onClick={() => handleEditComment(comment)}
