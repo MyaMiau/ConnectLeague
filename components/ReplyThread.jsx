@@ -18,9 +18,13 @@ export default function ReplyThread({
   replyInputs,
   setReplyInputs,
   onReply,
-  onEditReply, // <-- importante! use esse nome ao passar para cá
+  onEditReply, // importante! use esse nome ao passar para cá
+  loggedUser,
 }) {
   const [showReplyInput, setShowReplyInput] = useState(false);
+
+  // Só mostra editar/excluir para o autor da reply
+  const canEditOrDeleteReply = loggedUser?.id === reply.authorId;
 
   return (
     <div className="text-sm text-zinc-300 flex flex-col">
@@ -49,6 +53,7 @@ export default function ReplyThread({
                 <div className="mt-1 flex gap-2">
                   <Button
                     size="sm"
+                    type="button"
                     onClick={() =>
                       saveEditedReply(postId, commentId, reply.id, editingReply.content)
                     }
@@ -57,6 +62,7 @@ export default function ReplyThread({
                   </Button>
                   <Button
                     size="sm"
+                    type="button"
                     variant="ghost"
                     onClick={() => setEditingReply(null)}
                   >
@@ -69,6 +75,7 @@ export default function ReplyThread({
             )}
             {/* Botão de responder reply */}
             <button
+              type="button"
               className="text-xs text-blue-400 hover:underline mt-1 text-left"
               onClick={() => setShowReplyInput(!showReplyInput)}
             >
@@ -115,51 +122,54 @@ export default function ReplyThread({
                     setReplyInputs={setReplyInputs}
                     onReply={onReply}
                     onEditReply={onEditReply}
+                    loggedUser={loggedUser}
                   />
                 ))}
               </div>
             )}
           </div>
         </div>
-        {/* Menu de ações (editar/excluir) */}
-        <div className="relative">
-          <button
-            type="button"
-            onClick={() => setActiveReplyMenu(activeReplyMenu === reply.id ? null : reply.id)}
-            className="flex items-center gap-1 text-sm hover:opacity-80 cursor-pointer"
-          >
-            <MoreHorizontal size={14} />
-          </button>
-          {activeReplyMenu === reply.id && (
-            <div className="absolute right-0 mt-2 w-28 bg-zinc-700 border border-zinc-600 rounded shadow-md z-10">
-              <button
-                type="button"
-                onClick={() => {
-                  onEditReply(reply, commentId);
-                  setActiveReplyMenu(null);
-                }}
-                className="block w-full text-left px-4 py-2 hover:bg-zinc-600 cursor-pointer"
-              >
-                Editar
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  openDeleteModal({
-                    type: "reply",
-                    postId,
-                    commentId,
-                    replyId: reply.id,
-                  });
-                  setActiveReplyMenu(null);
-                }}
-                className="block w-full text-left px-4 py-2 hover:bg-zinc-600 cursor-pointer"
-              >
-                Excluir
-              </button>
-            </div>
-          )}
-        </div>
+        {/* Menu de ações (editar/excluir) só para o autor */}
+        {canEditOrDeleteReply && (
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setActiveReplyMenu(activeReplyMenu === reply.id ? null : reply.id)}
+              className="flex items-center gap-1 text-sm hover:opacity-80 cursor-pointer"
+            >
+              <MoreHorizontal size={14} />
+            </button>
+            {activeReplyMenu === reply.id && (
+              <div className="absolute right-0 mt-2 w-28 bg-zinc-700 border border-zinc-600 rounded shadow-md z-10">
+                <button
+                  type="button"
+                  onClick={() => {
+                    onEditReply(reply, commentId);
+                    setActiveReplyMenu(null);
+                  }}
+                  className="block w-full text-left px-4 py-2 hover:bg-zinc-600 cursor-pointer"
+                >
+                  Editar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    openDeleteModal({
+                      type: "reply",
+                      postId,
+                      commentId,
+                      replyId: reply.id,
+                    });
+                    setActiveReplyMenu(null);
+                  }}
+                  className="block w-full text-left px-4 py-2 hover:bg-zinc-600 cursor-pointer"
+                >
+                  Excluir
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
