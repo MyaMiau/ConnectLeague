@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import ReplyThread from "./ReplyThread";
 
 export default function CommentsList({ postId, currentUserId }) {
   const [comments, setComments] = useState([]);
@@ -34,8 +35,8 @@ export default function CommentsList({ postId, currentUserId }) {
   };
 
   // Adiciona reply inline e recarrega do backend
-  const handleReply = async (commentId) => {
-    const text = replyInputs[commentId];
+  const handleReply = async (commentId, parentReplyId = null) => {
+    const text = replyInputs[parentReplyId || commentId];
     if (!text?.trim()) return;
     await fetch("/api/comments/reply", {
       method: "POST",
@@ -44,9 +45,10 @@ export default function CommentsList({ postId, currentUserId }) {
         content: text,
         postId,
         commentId,
+        parentReplyId,
       }),
     });
-    setReplyInputs((ri) => ({ ...ri, [commentId]: "" }));
+    setReplyInputs((ri) => ({ ...ri, [parentReplyId || commentId]: "" }));
     fetchComments();
   };
 
@@ -87,47 +89,47 @@ export default function CommentsList({ postId, currentUserId }) {
       <ul>
         {comments.map(c => (
           <li key={c.id} style={{ marginBottom: 16 }}>
-            <strong>{c.author?.name || "Desconhecido"}:</strong> {c.content}
-            <button
-              type="button"
-              style={{
-                color: c.commentLikes.some(l => l.userId === currentUserId) ? "red" : "gray",
-                background: "none",
-                border: "none",
-                cursor: "pointer",
-                marginLeft: 8,
-              }}
-              onClick={() => toggleLikeComment(c.id)}
-            >
-              ♥
-            </button>
-            {c.commentLikes.length > 0 && (
-              <span style={{ marginLeft: 4 }}>{c.commentLikes.length}</span>
+            <div>
+              <strong>{c.author?.name || "Desconhecido"}:</strong> {c.content}
+              <button
+                style={{ marginLeft: 8, color: "#3498db" }}
+                onClick={() =>
+                  setReplyInputs((ri) => ({ ...ri, [c.id]: ri[c.id] ? "" : "" }))
+                }
+              >
+                Responder
+              </button>
+            </div>
+            {replyInputs[c.id] !== undefined && (
+              <div style={{ marginTop: 4 }}>
+                <input
+                  type="text"
+                  placeholder="Responder..."
+                  value={replyInputs[c.id] || ""}
+                  onChange={e =>
+                    setReplyInputs({ ...replyInputs, [c.id]: e.target.value })
+                  }
+                />
+                <button onClick={() => handleReply(c.id)}>Enviar</button>
+              </div>
             )}
 
-            {/* Responder */}
-            <div style={{ marginTop: 4 }}>
-              <input
-                type="text"
-                placeholder="Responder..."
-                value={replyInputs[c.id] || ""}
-                onChange={e =>
-                  setReplyInputs((ri) => ({ ...ri, [c.id]: e.target.value }))
-                }
-                style={{ width: 180 }}
-              />
-              <button onClick={() => handleReply(c.id)}>Enviar</button>
-            </div>
-
-            {/* Replies */}
+            {/* Replies aninhadas, recursivamente */}
             {Array.isArray(c.replies) && c.replies.length > 0 && (
-              <ul style={{ marginLeft: 20, marginTop: 8 }}>
-                {c.replies.map((r) => (
-                  <li key={r.id}>
-                    <strong>{r.author?.name || "Desconhecido"}:</strong> {r.content}
-                  </li>
+              <div style={{ marginLeft: 20, marginTop: 8 }}>
+                {c.replies.map((reply) => (
+                  <ReplyThread
+                    key={reply.id}
+                    reply={reply}
+                    postId={postId}
+                    commentId={c.id}
+                    replyInputs={replyInputs}
+                    setReplyInputs={setReplyInputs}
+                    onReply={handleReply}
+                    depth={1}
+                  />
                 ))}
-              </ul>
+              </div>
             )}
           </li>
         ))}

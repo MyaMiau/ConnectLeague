@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { MoreHorizontal } from "lucide-react";
 
+
 export default function ReplyThread({
   reply,
   postId,
@@ -18,24 +19,31 @@ export default function ReplyThread({
   replyInputs,
   setReplyInputs,
   onReply,
-  onEditReply, // importante! use esse nome ao passar para cá
+  onEditReply,
   loggedUser,
+  depth = 1, 
 }) {
   const [showReplyInput, setShowReplyInput] = useState(false);
 
   // Só mostra editar/excluir para o autor da reply
   const canEditOrDeleteReply = loggedUser?.id === reply.authorId;
 
+  // Limite máximo de indentação visual (3 níveis)
+  const indent = depth > 3 ? 24 : depth * 8;
+
   return (
-    <div className="text-sm text-zinc-300 flex flex-col">
+    <div
+      className={`bg-zinc-800 p-4 rounded-lg mt-2 text-zinc-100 text-sm flex flex-col`}
+      style={{ marginLeft: `${indent}px` }}
+    >
       <div className="flex justify-between">
-        <div className="flex gap-2 items-start">
+        <div className="flex gap-3 items-start">
           <Image
             src={reply.author?.image || "/default-avatar.png"}
             alt="Avatar"
-            width={25}
-            height={25}
-            className="rounded-full"
+            width={30}
+            height={30}
+            className="rounded-full object-cover"
           />
           <div className="flex flex-col gap-1">
             <p className="font-semibold text-purple-400">
@@ -71,7 +79,7 @@ export default function ReplyThread({
                 </div>
               </>
             ) : (
-              <p className="text-zinc-300">{reply.content}</p>
+              <p className="text-zinc-100">{reply.content}</p>
             )}
             {/* Botão de responder reply */}
             <button
@@ -84,7 +92,7 @@ export default function ReplyThread({
             {showReplyInput && (
               <div className="flex gap-2 mt-1">
                 <Input
-                  className="h-8"
+                  className="h-10"
                   value={replyInputs[reply.id] || ""}
                   onChange={e =>
                     setReplyInputs({ ...replyInputs, [reply.id]: e.target.value })
@@ -93,9 +101,9 @@ export default function ReplyThread({
                 />
                 <Button
                   type="button"
-                  className="h-8 py-0 px-2"
+                  className="h-10 py-0 px-4"
                   onClick={() => {
-                    onReply(postId, commentId, replyInputs[reply.id], reply.id); // envia parentReplyId
+                    onReply(postId, commentId, replyInputs[reply.id], reply.id);
                     setShowReplyInput(false);
                   }}
                 >
@@ -103,9 +111,9 @@ export default function ReplyThread({
                 </Button>
               </div>
             )}
-            {/* RECURSÃO: subReplies */}
+            {/* Replies aninhadas (recursivo) */}
             {reply.subReplies?.length > 0 && (
-              <div className="ml-8 mt-2 space-y-2">
+              <div className="mt-2 space-y-2">
                 {reply.subReplies.map(sub => (
                   <ReplyThread
                     key={sub.id}
@@ -123,6 +131,7 @@ export default function ReplyThread({
                     onReply={onReply}
                     onEditReply={onEditReply}
                     loggedUser={loggedUser}
+                    depth={depth + 1}
                   />
                 ))}
               </div>

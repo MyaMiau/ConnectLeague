@@ -110,8 +110,6 @@ export default function PublicProfilePage() {
   // Funções de ação
   const toggleLikePost = async (postId) => {
     await fetch(`/api/posts/${postId}/like`, { method: "POST" });
-    // reloadPosts(); // Mantém reload, pois o like pode afetar vários lugares
-    // Se quiser otimista, atualize localmente
     setPosts(posts =>
       posts.map(post =>
         post.id !== postId
@@ -595,9 +593,9 @@ export default function PublicProfilePage() {
                         </Button>
                       </div>
                     )}
-                    {/* Replies aninhadas */}
+                    {/* Replies aninhadas (somente comment.replies, e subReplies recursivas são no ReplyThread) */}
                     {comment.replies?.length > 0 && (
-                      <div className="ml-10 mt-2 space-y-2">
+                      <div className="mt-2 space-y-2">
                         {comment.replies.map((reply) => (
                           <ReplyThread
                             key={reply.id}
@@ -615,6 +613,7 @@ export default function PublicProfilePage() {
                             onReply={handleReply}
                             onEditReply={onEditReply}
                             loggedUser={loggedUser}
+                            depth={1}
                           />
                         ))}
                       </div>

@@ -136,12 +136,13 @@ model Reply {
   authorId       Int
   commentId      Int
   postId         Int
-  parentReplyId  Int?     // <-- NOVO: para sub-respostas
-  author         users    @relation(fields: [authorId], references: [id])
-  comment        Comment  @relation(fields: [commentId], references: [id])
-  post           Post     @relation(fields: [postId], references: [id])
+  parentReplyId  Int?                                
 
-  parentReply    Reply?   @relation("ReplyToReply", fields: [parentReplyId], references: [id])
+  author         users    @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  comment        Comment  @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  post           Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  parentReply    Reply?   @relation("ReplyToReply", fields: [parentReplyId], references: [id], onDelete: Cascade)
   subReplies     Reply[]  @relation("ReplyToReply")
 }
 
@@ -159,7 +160,7 @@ model CommentLike {
   id        Int   @id @default(autoincrement())
   user      users @relation(fields: [userId], references: [id])
   userId    Int
-  comment   Comment  @relation(fields: [commentId], references: [id])
+  comment   Comment  @relation(fields: [commentId], references: [id], onDelete: Cascade)
   commentId Int
 
   @@unique([userId, commentId])
