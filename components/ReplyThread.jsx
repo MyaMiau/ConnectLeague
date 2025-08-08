@@ -5,7 +5,6 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { MoreHorizontal } from "lucide-react";
 
-
 export default function ReplyThread({
   reply,
   postId,
@@ -49,11 +48,11 @@ export default function ReplyThread({
             <p className="font-semibold text-purple-400">
               {reply.author?.name || reply.author}
             </p>
-            {editingReply?.id === reply.id ? (
+            {editingReply && editingReply.id === reply.id ? (
               <>
                 <Textarea
                   className="text-sm mt-1"
-                  value={editingReply.content}
+                  value={editingReply.content ?? ""}
                   onChange={e =>
                     setEditingReply({ ...editingReply, content: e.target.value })
                   }

@@ -107,7 +107,7 @@ export default function PublicProfilePage() {
   const canEditOrDeletePost = (post) => loggedUser?.id === post.authorId;
   const canEditOrDeleteComment = (comment) => loggedUser?.id === comment.authorId;
 
-  // Funções de ação
+  // Likes continuam iguais -------------------------------------------
   const toggleLikePost = async (postId) => {
     await fetch(`/api/posts/${postId}/like`, { method: "POST" });
     setPosts(posts =>
@@ -147,6 +147,40 @@ export default function PublicProfilePage() {
     );
   };
 
+  // Helpers aninhamento de replies
+  function insertReplyNested(replies, parentReplyId, newReply) {
+    if (!replies) return [];
+    return replies.map(reply =>
+      reply.id === parentReplyId
+        ? { ...reply, subReplies: [...(reply.subReplies || []), newReply] }
+        : { ...reply, subReplies: insertReplyNested(reply.subReplies, parentReplyId, newReply) }
+    );
+  }
+  function updateReplyContent(replies, replyId, content) {
+    return replies
+      ? replies.map(reply =>
+          reply.id === replyId
+            ? { ...reply, content }
+            : {
+                ...reply,
+                subReplies: updateReplyContent(reply.subReplies, replyId, content),
+              }
+        )
+      : [];
+  }
+  function removeReplyById(replies, replyId) {
+    if (!replies) return [];
+    return replies
+      .filter(reply => reply.id !== replyId)
+      .map(reply => ({
+        ...reply,
+        subReplies: removeReplyById(reply.subReplies, replyId),
+      }));
+  }
+
+  // =============== COMENTÁRIOS BUGADOS: corrigido abaixo ===============
+
+  // ADD COMMENT
   const addComment = async (postId) => {
     const text = commentInputs[postId];
     if (!text?.trim() || !loggedUser?.id) return;
@@ -175,7 +209,7 @@ export default function PublicProfilePage() {
     }
   };
 
-  // Editar comentário (atualiza local, sem reload)
+  // EDIT COMMENT
   const saveEditedComment = async (postId, commentId, content) => {
     const res = await fetch(`/api/comments/${commentId}`, {
       method: "PUT",
@@ -183,6 +217,7 @@ export default function PublicProfilePage() {
       body: JSON.stringify({ content }),
     });
     if (res.ok) {
+      const updatedComment = await res.json();
       setPosts(posts =>
         posts.map(post =>
           post.id !== postId
@@ -190,9 +225,7 @@ export default function PublicProfilePage() {
             : {
                 ...post,
                 comments: post.comments.map(comment =>
-                  comment.id !== commentId
-                    ? comment
-                    : { ...comment, content }
+                  comment.id !== commentId ? comment : { ...comment, ...updatedComment }
                 ),
               }
         )
@@ -201,7 +234,7 @@ export default function PublicProfilePage() {
     }
   };
 
-  // Excluir comentário (atualiza local, sem reload)
+  // DELETE COMMENT
   const handleDeleteComment = async (postId, commentId) => {
     const res = await fetch(`/api/comments/${commentId}`, { method: "DELETE" });
     if (res.ok) {
@@ -218,92 +251,7 @@ export default function PublicProfilePage() {
     }
   };
 
-  // Helpers para replies aninhadas
-  function updateReplyContent(replies, replyId, content) {
-    return replies
-      ? replies.map(reply =>
-          reply.id === replyId
-            ? { ...reply, content }
-            : {
-                ...reply,
-                subReplies: updateReplyContent(reply.subReplies, replyId, content),
-              }
-        )
-      : [];
-  }
-
-  function removeReplyById(replies, replyId) {
-    if (!replies) return [];
-    return replies
-      .filter(reply => reply.id !== replyId)
-      .map(reply => ({
-        ...reply,
-        subReplies: removeReplyById(reply.subReplies, replyId),
-      }));
-  }
-
-  // Editar reply (atualiza local, sem reload)
-  const saveEditedReply = async (postId, commentId, replyId, content) => {
-    const res = await fetch(`/api/comments/reply/${replyId}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ content }),
-    });
-    if (res.ok) {
-      setPosts(posts =>
-        posts.map(post =>
-          post.id !== postId
-            ? post
-            : {
-                ...post,
-                comments: post.comments.map(comment =>
-                  comment.id !== commentId
-                    ? comment
-                    : {
-                        ...comment,
-                        replies: updateReplyContent(comment.replies, replyId, content),
-                      }
-                ),
-              }
-        )
-      );
-      setEditingReply(null);
-    }
-  };
-
-  // Excluir reply (atualiza local, sem reload)
-  const handleDeleteReply = async (postId, commentId, replyId) => {
-    const res = await fetch(`/api/comments/reply/${replyId}`, { method: "DELETE" });
-    if (res.ok) {
-      setPosts(posts =>
-        posts.map(post =>
-          post.id !== postId
-            ? post
-            : {
-                ...post,
-                comments: post.comments.map(comment =>
-                  comment.id !== commentId
-                    ? comment
-                    : {
-                        ...comment,
-                        replies: removeReplyById(comment.replies, replyId),
-                      }
-                ),
-              }
-        )
-      );
-    }
-  };
-
-  // Reply edição
-  const onEditReply = (reply, commentId) => setEditingReply({ ...reply, commentId });
-
-  // Campo de resposta (reply)
-  const toggleReplyInput = (commentOrReplyId) => {
-    setReplyInputs((prev) => ({ ...prev, [commentOrReplyId]: prev[commentOrReplyId] ? "" : "" }));
-  };
-
-  // Adicionar reply
+  // ADD REPLY
   const handleReply = async (postId, commentId, text, parentReplyId = null) => {
     if (!text?.trim() || !loggedUser?.id) return;
     const res = await fetch("/api/comments/reply", {
@@ -342,15 +290,68 @@ export default function PublicProfilePage() {
     }
   };
 
-  // Helper para inserir reply aninhada corretamente
-  function insertReplyNested(replies, parentReplyId, newReply) {
-    if (!replies) return [];
-    return replies.map(reply =>
-      reply.id === parentReplyId
-        ? { ...reply, subReplies: [...(reply.subReplies || []), newReply] }
-        : { ...reply, subReplies: insertReplyNested(reply.subReplies, parentReplyId, newReply) }
-    );
-  }
+  // EDIT REPLY
+  const saveEditedReply = async (postId, commentId, replyId, content) => {
+    const res = await fetch(`/api/comments/reply/${replyId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content }),
+    });
+    if (res.ok) {
+      // O backend retorna apenas {id, content, ...}, manter subReplies do estado
+      const updatedReply = await res.json();
+      setPosts(posts =>
+        posts.map(post =>
+          post.id !== postId
+            ? post
+            : {
+                ...post,
+                comments: post.comments.map(comment =>
+                  comment.id !== commentId
+                    ? comment
+                    : {
+                        ...comment,
+                        replies: updateReplyContent(comment.replies, replyId, updatedReply.content),
+                      }
+                ),
+              }
+        )
+      );
+      setEditingReply(null);
+    }
+  };
+
+  // DELETE REPLY
+  const handleDeleteReply = async (postId, commentId, replyId) => {
+    const res = await fetch(`/api/comments/reply/${replyId}`, { method: "DELETE" });
+    if (res.ok) {
+      setPosts(posts =>
+        posts.map(post =>
+          post.id !== postId
+            ? post
+            : {
+                ...post,
+                comments: post.comments.map(comment =>
+                  comment.id !== commentId
+                    ? comment
+                    : {
+                        ...comment,
+                        replies: removeReplyById(comment.replies, replyId),
+                      }
+                ),
+              }
+        )
+      );
+    }
+  };
+
+  // Reply edição
+  const onEditReply = (reply, commentId) => setEditingReply({ ...reply, commentId });
+
+  // Campo de resposta (reply)
+  const toggleReplyInput = (commentOrReplyId) => {
+    setReplyInputs((prev) => ({ ...prev, [commentOrReplyId]: prev[commentOrReplyId] ? "" : "" }));
+  };
 
   // Modal de exclusão
   const openDeleteModal = ({ type, postId, commentId = null, replyId = null }) => {
