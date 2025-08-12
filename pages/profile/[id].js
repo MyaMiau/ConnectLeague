@@ -178,7 +178,7 @@ export default function PublicProfilePage() {
       }));
   }
 
-  // =============== COMENTÁRIOS BUGADOS: corrigido abaixo ===============
+  // =============== COMENTÁRIOS CORRIGIDOS ===============
 
   // ADD COMMENT
   const addComment = async (postId) => {
@@ -251,7 +251,7 @@ export default function PublicProfilePage() {
     }
   };
 
-  // ADD REPLY
+  // ADD REPLY (corrigido para escada/duplicidade)
   const handleReply = async (postId, commentId, text, parentReplyId = null) => {
     if (!text?.trim() || !loggedUser?.id) return;
     const res = await fetch("/api/comments/reply", {
