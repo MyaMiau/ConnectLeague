@@ -7,16 +7,22 @@ import { MoreHorizontal, Heart, MessageCircle } from "lucide-react";
 import ReplyThread from "@/components/ReplyThread";
 import DeleteConfirmationModal from "@/components/DeleteConfirmationModal";
 
-/**
- * Componente de comentários isolado, pronto para ser importado em qualquer página.
- * Garante que apenas o autor pode editar/excluir e corrige exibição de nome/foto ao recarregar.
- */
-export default function CommentsTestList({ postId, currentUserId }) {
-  const [post, setPost] = useState(null);
-  const [loading, setLoading] = useState(true);
+// Função para achatar replies aninhadas em lista flat
+function flattenReplies(replies) {
+  let flat = [];
+  for (const reply of replies) {
+    flat.push(reply);
+    if (reply.subReplies && reply.subReplies.length) {
+      flat = flat.concat(flattenReplies(reply.subReplies));
+    }
+  }
+  return flat;
+}
 
-  // Estados para controle da UI
-  const [commentInput, setCommentInput] = useState("");
+export default function CommentsTestList({ postId, currentUserId }) {
+  const [comments, setComments] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [newComment, setNewComment] = useState("");
   const [replyInputs, setReplyInputs] = useState({});
   const [editingComment, setEditingComment] = useState(null);
   const [editingReply, setEditingReply] = useState(null);
@@ -25,164 +31,196 @@ export default function CommentsTestList({ postId, currentUserId }) {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState({ type: "", commentId: null, replyId: null });
 
-  // Busca post + comentários, sempre com author completo
-  useEffect(() => {
-    async function fetchPost() {
-      setLoading(true);
-      const res = await fetch(`/api/posts/${postId}?withComments=1`);
-      if (res.ok) {
-        const data = await res.json();
-        // Corrige comentários/replies para sempre ter author como objeto
-        const fixAuthor = (item) => {
-          if (!item.author || typeof item.author !== "object") {
-            item.author = {
-              id: item.authorId || "",
-              name: item.authorName || "Usuário",
-              image: item.authorImage || "/default-avatar.png"
-            };
-          }
-          // Recursivo para replies
-          if (item.replies && Array.isArray(item.replies)) {
-            item.replies = item.replies.map(fixAuthor);
-          }
-          // Para replies recursivas tipo subReplies
-          if (item.subReplies && Array.isArray(item.subReplies)) {
-            item.subReplies = item.subReplies.map(fixAuthor);
-          }
-          return item;
-        };
-        if (data.comments && Array.isArray(data.comments)) {
-          data.comments = data.comments.map(fixAuthor);
-        }
-        setPost(data);
-      }
-      setLoading(false);
+  // Busca comentários do backend (inclui dados completos do autor)
+  const fetchComments = async () => {
+    setLoading(true);
+    const res = await fetch(`/api/comments?postId=${postId}`);
+    if (res.ok) {
+      const data = await res.json();
+      setComments(data);
     }
-    if (postId) fetchPost();
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    if (!postId) return;
+    fetchComments();
   }, [postId]);
 
-  // Adiciona novo comentário
-  const addComment = async () => {
-    if (!commentInput?.trim() || !currentUserId) return;
+  // Adiciona novo comentário e atualiza estado local
+  const handleAddComment = async () => {
+    if (!newComment.trim()) return;
     const res = await fetch("/api/comments", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        content: commentInput,
-        authorId: currentUserId,
-        postId,
-      }),
+      body: JSON.stringify({ content: newComment, postId, authorId: currentUserId }),
     });
-    const comment = await res.json();
-    // Corrige para garantir que author está presente
-    comment.author = comment.author || {
-      id: currentUserId,
-      name: comment.authorName || "Você",
-      image: comment.authorImage || "/default-avatar.png",
-    };
-    setPost(post => ({
-      ...post,
-      comments: [...(post.comments || []), { ...comment, replies: [], commentLikes: [] }]
-    }));
-    setCommentInput("");
+    if (res.ok) {
+      const newCmt = await res.json();
+      setComments((prev) => [...prev, newCmt]);
+      setNewComment("");
+    }
   };
 
-  // Edição de comentário
-  const handleEditComment = (comment) => setEditingComment(comment);
+  // Enter para novo comentário
+  const handleNewCommentKeyDown = (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleAddComment();
+    }
+  };
 
+  // Edição de comentário (atualiza local)
+  const handleEditComment = (comment) => setEditingComment(comment);
   const saveEditedComment = async (commentId, content) => {
-    await fetch(`/api/comments/${commentId}`, {
+    const res = await fetch(`/api/comments/${commentId}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ content }),
     });
-    setEditingComment(null);
-    reload();
+    if (res.ok) {
+      setComments((prev) =>
+        prev.map((c) => (c.id === commentId ? { ...c, content } : c))
+      );
+      setEditingComment(null);
+    }
   };
 
-  // Deletar comentário
+  // Enter para editar comentário
+  const handleEditCommentKeyDown = (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      saveEditedComment(editingComment.id, editingComment.content);
+    }
+  };
+
+  // Deletar comentário (atualiza local)
   const handleDeleteComment = async (commentId) => {
-    await fetch(`/api/comments/${commentId}`, { method: "DELETE" });
-    setPost(post => ({
-      ...post,
-      comments: post.comments.filter(c => c.id !== commentId)
-    }));
+    const res = await fetch(`/api/comments/${commentId}`, { method: "DELETE" });
+    if (res.ok) {
+      setComments((prev) => prev.filter((c) => c.id !== commentId));
+    }
   };
 
-  // Replies aninhadas (corrigido para garantir dados de author)
+  // Handler para responder comentário ou reply (atualiza local)
   const handleReply = async (postId, commentId, text, parentReplyId = null) => {
-    text = typeof text === "string" ? text : "";
-    if (!text.trim() || !currentUserId) return;
+    if (!text?.trim()) return;
     const res = await fetch("/api/comments/reply", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         content: text,
-        authorId: currentUserId,
         postId,
         commentId,
         parentReplyId,
       }),
     });
-    const reply = await res.json();
-    reply.author = reply.author || {
-      id: currentUserId,
-      name: reply.authorName || "Você",
-      image: reply.authorImage || "/default-avatar.png",
-    };
-    setPost(post => ({
-      ...post,
-      comments: post.comments.map(comment =>
-        comment.id === commentId
-          ? { ...comment, replies: [...(comment.replies || []), reply] }
-          : comment
-      )
-    }));
-    setReplyInputs({ ...replyInputs, [parentReplyId || commentId]: "" });
+    if (res.ok) {
+      const newReply = await res.json();
+      setComments((prev) =>
+        prev.map((c) => {
+          if (c.id === commentId) {
+            let replies = c.replies ? [...c.replies] : [];
+            if (parentReplyId) {
+              // Adiciona nas subReplies do parentReply
+              replies = replies.map((r) =>
+                r.id === parentReplyId
+                  ? {
+                      ...r,
+                      subReplies: r.subReplies ? [...r.subReplies, newReply] : [newReply],
+                    }
+                  : r
+              );
+            } else {
+              replies = [...replies, newReply];
+            }
+            return { ...c, replies };
+          }
+          return c;
+        })
+      );
+      setReplyInputs((ri) => ({ ...ri, [parentReplyId || commentId]: "" }));
+    }
   };
 
-  // Edição de resposta
-  const handleEditReply = (reply, commentId) => setEditingReply({ ...reply, commentId });
+  // Enter para campo de resposta de comentário ou reply
+  const handleReplyInputKeyDown = (e, commentId, parentReplyId = null) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      const text = replyInputs[parentReplyId || commentId];
+      handleReply(postId, commentId, text, parentReplyId);
+    }
+  };
 
-  const saveEditedReply = async (postId, commentId, replyId, content) => {
-    await fetch(`/api/comments/reply/${replyId}`, {
+  // Edição de resposta (atualiza local)
+  const handleEditReply = (reply, commentId) => setEditingReply({ ...reply, commentId });
+  const saveEditedReply = async (commentId, replyId, content) => {
+    const res = await fetch(`/api/comments/reply/${replyId}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ content }),
     });
-    setEditingReply(null);
-    reload();
+    if (res.ok) {
+      setComments((prev) =>
+        prev.map((c) => {
+          if (c.id === commentId) {
+            const updateReplies = (arr) =>
+              arr.map((r) =>
+                r.id === replyId
+                  ? { ...r, content }
+                  : r.subReplies
+                  ? { ...r, subReplies: updateReplies(r.subReplies) }
+                  : r
+              );
+            return { ...c, replies: updateReplies(c.replies || []) };
+          }
+          return c;
+        })
+      );
+      setEditingReply(null);
+    }
   };
 
-  // Deletar resposta
+  // Deletar resposta (atualiza local)
   const handleDeleteReply = async (commentId, replyId) => {
-    await fetch(`/api/comments/reply/${replyId}`, { method: "DELETE" });
-    setPost(post => ({
-      ...post,
-      comments: post.comments.map(comment =>
-        comment.id === commentId
-          ? { ...comment, replies: comment.replies.filter(r => r.id !== replyId) }
-          : comment
-      )
-    }));
+    const res = await fetch(`/api/comments/reply/${replyId}`, { method: "DELETE" });
+    if (res.ok) {
+      setComments((prev) =>
+        prev.map((c) => {
+          if (c.id === commentId) {
+            const removeReply = (arr) =>
+              arr
+                .filter((r) => r.id !== replyId)
+                .map((r) =>
+                  r.subReplies
+                    ? { ...r, subReplies: removeReply(r.subReplies) }
+                    : r
+                );
+            return { ...c, replies: removeReply(c.replies || []) };
+          }
+          return c;
+        })
+      );
+    }
   };
 
-  // Curtir/descurtir comentário
+  // Like inline: atualiza local
   const toggleLikeComment = async (commentId) => {
-    if (!currentUserId) return;
-    setPost(post => ({
-      ...post,
-      comments: post.comments.map(c => {
-        if (c.id !== commentId) return c;
-        const likedByUser = (c.commentLikes || []).some(like => like.userId === currentUserId);
-        if (likedByUser) {
-          return { ...c, commentLikes: (c.commentLikes || []).filter(l => l.userId !== currentUserId) }
-        } else {
-          return { ...c, commentLikes: [ ...(c.commentLikes || []), { userId: currentUserId, commentId }] }
-        }
-      })
-    }));
-    await fetch(`/api/comments/${commentId}/like`, { method: "POST" });
+    const res = await fetch(`/api/comments/${commentId}/like`, { method: "POST" });
+    if (res.ok) {
+      setComments((prev) =>
+        prev.map((c) =>
+          c.id === commentId
+            ? {
+                ...c,
+                commentLikes: c.commentLikes?.some((l) => l.userId === currentUserId)
+                  ? c.commentLikes.filter((l) => l.userId !== currentUserId)
+                  : [...(c.commentLikes || []), { userId: currentUserId }],
+              }
+            : c
+        )
+      );
+    }
   };
 
   // Modal de exclusão
@@ -200,54 +238,61 @@ export default function CommentsTestList({ postId, currentUserId }) {
     setIsDeleteModalOpen(false);
   };
 
-  // Reload do post
-  const reload = async () => {
-    const res = await fetch(`/api/posts/${postId}?withComments=1`);
-    if (res.ok) {
-      const data = await res.json();
-      // Corrige comentários/replies para sempre ter author como objeto
-      const fixAuthor = (item) => {
-        if (!item.author || typeof item.author !== "object") {
-          item.author = {
-            id: item.authorId || "",
-            name: item.authorName || "Usuário",
-            image: item.authorImage || "/default-avatar.png"
-          };
-        }
-        if (item.replies && Array.isArray(item.replies)) {
-          item.replies = item.replies.map(fixAuthor);
-        }
-        if (item.subReplies && Array.isArray(item.subReplies)) {
-          item.subReplies = item.subReplies.map(fixAuthor);
-        }
-        return item;
-      };
-      if (data.comments && Array.isArray(data.comments)) {
-        data.comments = data.comments.map(fixAuthor);
-      }
-      setPost(data);
-    }
-  };
-
   if (loading) return <div className="text-zinc-400">Carregando comentários...</div>;
-  if (!post) return <div className="text-zinc-400">Post não encontrado.</div>;
+
+  // Renderiza todas as replies e subReplies como lista vertical, fora da caixa do comentário
+  const renderReplies = (replies, commentId) => (
+    <div className="mt-2 space-y-2">
+      {flattenReplies(replies).map((reply) => (
+        <ReplyThread
+          key={reply.id}
+          reply={reply}
+          postId={postId}
+          commentId={commentId}
+          editingReply={editingReply}
+          setEditingReply={setEditingReply}
+          saveEditedReply={saveEditedReply}
+          openDeleteModal={openDeleteModal}
+          activeReplyMenu={activeReplyMenu}
+          setActiveReplyMenu={setActiveReplyMenu}
+          replyInputs={replyInputs}
+          setReplyInputs={setReplyInputs}
+          onReply={handleReply}
+          onEditReply={handleEditReply}
+          handleReplyInputKeyDown={handleReplyInputKeyDown}
+          loggedUser={{ id: currentUserId }}
+        />
+      ))}
+    </div>
+  );
 
   return (
     <div className="space-y-4">
       {/* Lista de Comentários */}
-      {post.comments?.map((comment) => (
-        <div key={comment.id} className="bg-zinc-800 p-4 rounded-lg">
+      {comments.map((comment) => (
+        <div
+          key={comment.id}
+          className="w-full"
+          style={{
+            background: "#232326", // Troca: cor antes das replies, agora nos comentários
+            borderRadius: "18px",
+            border: "1.5px solid #2a2a2e", // Troca: cor antes das replies, agora nos comentários
+            boxShadow: "0 2px 8px 0 rgba(0,0,0,0.15)",
+            padding: "20px",
+          }}
+        >
           <div className="flex justify-between">
             <div className="flex gap-3 items-center">
               <Image src={comment.author?.image || "/default-avatar.png"} alt="Avatar" width={30} height={30} className="rounded-full" />
               <div>
-                <p className="text-sm font-semibold text-zinc-100">{comment.author?.name || "Usuário"}</p>
+                <span className="text-base font-semibold text-zinc-100">{comment.author?.name || "Usuário"}</span>
                 {editingComment?.id === comment.id ? (
                   <>
                     <Textarea
                       className="text-sm"
                       value={editingComment.content}
                       onChange={(e) => setEditingComment({ ...editingComment, content: e.target.value })}
+                      onKeyDown={handleEditCommentKeyDown}
                     />
                     <Button
                       type="button"
@@ -258,7 +303,7 @@ export default function CommentsTestList({ postId, currentUserId }) {
                     </Button>
                   </>
                 ) : (
-                  <p className="text-sm text-zinc-300">{comment.content}</p>
+                  <p className="text-sm text-zinc-300 mt-1">{comment.content}</p>
                 )}
               </div>
             </div>
@@ -310,64 +355,43 @@ export default function CommentsTestList({ postId, currentUserId }) {
               <span>Responder</span>
             </button>
           </div>
-          {/* Campo de resposta */}
+          {/* Campo de resposta para comentário */}
           {replyInputs[comment.id] !== undefined && (
             <div className="mt-2 flex gap-2">
               <Input
                 className="h-10"
                 value={replyInputs[comment.id] || ""}
-                onChange={(e) =>
+                onChange={e =>
                   setReplyInputs({ ...replyInputs, [comment.id]: e.target.value })
                 }
                 placeholder="Responder..."
+                onKeyDown={(e) => handleReplyInputKeyDown(e, comment.id)}
               />
               <Button
                 type="button"
                 className="h-10 py-0 px-4"
-                onClick={() => handleReply(postId, comment.id, String(replyInputs[comment.id] ?? ""), null)}>
+                onClick={() => handleReply(postId, comment.id, replyInputs[comment.id])}>
                 Enviar
               </Button>
             </div>
           )}
-          {/* REPLIES ANINHADAS */}
-          {comment.replies?.length > 0 && (
-            <div className="ml-10 mt-2 space-y-2">
-              {comment.replies.map((reply) => (
-                <ReplyThread
-                  key={reply.id}
-                  reply={reply}
-                  postId={postId}
-                  commentId={comment.id}
-                  editingReply={editingReply}
-                  setEditingReply={setEditingReply}
-                  saveEditedReply={saveEditedReply}
-                  openDeleteModal={openDeleteModal}
-                  activeReplyMenu={activeReplyMenu}
-                  setActiveReplyMenu={setActiveReplyMenu}
-                  replyInputs={replyInputs}
-                  setReplyInputs={setReplyInputs}
-                  onReply={handleReply}
-                  onEditReply={handleEditReply}
-                  loggedUser={{ id: currentUserId }}
-                  depth={1}
-                />
-              ))}
-            </div>
-          )}
+          {/* Todas replies e subReplies alinhadas verticalmente, fora da caixa principal */}
+          {comment.replies?.length > 0 && renderReplies(comment.replies, comment.id)}
         </div>
       ))}
       {/* Campo para novo comentário */}
       <div className="flex gap-2 mt-2">
         <Input
           className="h-10"
-          value={commentInput}
-          onChange={e => setCommentInput(e.target.value)}
+          value={newComment}
+          onChange={e => setNewComment(e.target.value)}
           placeholder="Escreva um comentário..."
+          onKeyDown={handleNewCommentKeyDown}
         />
         <Button
           type="button"
           className="h-10 py-0 px-4"
-          onClick={addComment}>
+          onClick={handleAddComment}>
           Enviar
         </Button>
       </div>

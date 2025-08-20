@@ -5,6 +5,16 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { MoreHorizontal } from "lucide-react";
 
+function getAuthorId(reply) {
+  return reply?.author?.id ?? reply?.authorId ?? null;
+}
+function getAuthorName(reply) {
+  return reply?.author?.name ?? reply?.author ?? "Usuário";
+}
+function getAuthorImage(reply) {
+  return reply?.author?.image ?? "/default-avatar.png";
+}
+
 export default function ReplyThread({
   reply,
   postId,
@@ -19,35 +29,31 @@ export default function ReplyThread({
   setReplyInputs,
   onReply,
   onEditReply,
+  handleReplyInputKeyDown,
   loggedUser,
-  depth = 1, 
 }) {
   const [showReplyInput, setShowReplyInput] = useState(false);
 
-  // Só mostra editar/excluir para o autor da reply
-  const canEditOrDeleteReply = loggedUser?.id === reply.authorId;
+  const canEditOrDeleteReply = !!loggedUser?.id && loggedUser.id === getAuthorId(reply);
 
-  // Limite máximo de indentação visual (3 níveis)
-  const indent = depth > 3 ? 24 : depth * 8;
+  if (!reply) return null;
 
   return (
     <div
-      className={`bg-zinc-800 p-4 rounded-lg mt-2 text-zinc-100 text-sm flex flex-col`}
-      style={{ marginLeft: `${indent}px` }}
+      className="w-full mb-2"
+      style={{
+        background: "#18181c", 
+        borderRadius: "16px",
+        border: "1.5px solid #232326", 
+        boxShadow: "0 2px 8px 0 rgba(0,0,0,0.13)",
+        padding: "16px",
+      }}
     >
       <div className="flex justify-between">
-        <div className="flex gap-3 items-start">
-          <Image
-            src={reply.author?.image || "/default-avatar.png"}
-            alt="Avatar"
-            width={30}
-            height={30}
-            className="rounded-full object-cover"
-          />
-          <div className="flex flex-col gap-1">
-            <p className="font-semibold text-purple-400">
-              {reply.author?.name || reply.author}
-            </p>
+        <div className="flex gap-3 items-center">
+          <Image src={getAuthorImage(reply)} alt="Avatar" width={30} height={30} className="rounded-full" />
+          <div>
+            <span className="text-sm font-semibold text-zinc-100">{getAuthorName(reply)}</span>
             {editingReply && editingReply.id === reply.id ? (
               <>
                 <Textarea
@@ -56,129 +62,115 @@ export default function ReplyThread({
                   onChange={e =>
                     setEditingReply({ ...editingReply, content: e.target.value })
                   }
+                  onKeyDown={e => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      saveEditedReply(commentId, reply.id, editingReply.content);
+                    }
+                  }}
                 />
                 <div className="mt-1 flex gap-2">
-                  <Button
-                    size="sm"
-                    type="button"
-                    onClick={() =>
-                      saveEditedReply(postId, commentId, reply.id, editingReply.content)
-                    }
-                  >
+                  <Button size="sm" type="button"
+                    onClick={() => saveEditedReply(commentId, reply.id, editingReply.content)}>
                     Salvar
                   </Button>
-                  <Button
-                    size="sm"
-                    type="button"
-                    variant="ghost"
-                    onClick={() => setEditingReply(null)}
-                  >
+                  <Button size="sm" type="button" variant="ghost"
+                    onClick={() => setEditingReply(null)}>
                     Cancelar
                   </Button>
                 </div>
               </>
             ) : (
-              <p className="text-zinc-100">{reply.content}</p>
-            )}
-            {/* Botão de responder reply */}
-            <button
-              type="button"
-              className="text-xs text-blue-400 hover:underline mt-1 text-left"
-              onClick={() => setShowReplyInput(!showReplyInput)}
-            >
-              Responder
-            </button>
-            {showReplyInput && (
-              <div className="flex gap-2 mt-1">
-                <Input
-                  className="h-10"
-                  value={replyInputs[reply.id] || ""}
-                  onChange={e =>
-                    setReplyInputs({ ...replyInputs, [reply.id]: e.target.value })
-                  }
-                  placeholder="Responder..."
-                />
-                <Button
-                  type="button"
-                  className="h-10 py-0 px-4"
-                  onClick={() => {
-                    onReply(postId, commentId, replyInputs[reply.id], reply.id);
-                    setShowReplyInput(false);
-                  }}
-                >
-                  Enviar
-                </Button>
-              </div>
-            )}
-            {/* Replies aninhadas (recursivo) */}
-            {reply.subReplies?.length > 0 && (
-              <div className="mt-2 space-y-2">
-                {reply.subReplies.map(sub => (
-                  <ReplyThread
-                    key={sub.id}
-                    reply={sub}
-                    postId={postId}
-                    commentId={commentId}
-                    editingReply={editingReply}
-                    setEditingReply={setEditingReply}
-                    saveEditedReply={saveEditedReply}
-                    openDeleteModal={openDeleteModal}
-                    activeReplyMenu={activeReplyMenu}
-                    setActiveReplyMenu={setActiveReplyMenu}
-                    replyInputs={replyInputs}
-                    setReplyInputs={setReplyInputs}
-                    onReply={onReply}
-                    onEditReply={onEditReply}
-                    loggedUser={loggedUser}
-                    depth={depth + 1}
-                  />
-                ))}
-              </div>
+              <p className="text-sm text-zinc-300 mt-1">{reply?.content ?? ""}</p>
             )}
           </div>
         </div>
-        {/* Menu de ações (editar/excluir) só para o autor */}
-        {canEditOrDeleteReply && (
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => setActiveReplyMenu(activeReplyMenu === reply.id ? null : reply.id)}
-              className="flex items-center gap-1 text-sm hover:opacity-80 cursor-pointer"
-            >
-              <MoreHorizontal size={14} />
-            </button>
-            {activeReplyMenu === reply.id && (
-              <div className="absolute right-0 mt-2 w-28 bg-zinc-700 border border-zinc-600 rounded shadow-md z-10">
-                <button
-                  type="button"
-                  onClick={() => {
-                    onEditReply(reply, commentId);
-                    setActiveReplyMenu(null);
-                  }}
-                  className="block w-full text-left px-4 py-2 hover:bg-zinc-600 cursor-pointer"
-                >
-                  Editar
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    openDeleteModal({
-                      type: "reply",
-                      postId,
-                      commentId,
-                      replyId: reply.id,
-                    });
-                    setActiveReplyMenu(null);
-                  }}
-                  className="block w-full text-left px-4 py-2 hover:bg-zinc-600 cursor-pointer"
-                >
-                  Excluir
-                </button>
-              </div>
-            )}
-          </div>
-        )}
+        <div className="relative">
+          {canEditOrDeleteReply && (
+            <>
+              <button
+                type="button"
+                onClick={() => setActiveReplyMenu(activeReplyMenu === reply.id ? null : reply.id)}
+                className="flex items-center gap-1 text-sm hover:opacity-80 cursor-pointer"
+              >
+                <MoreHorizontal size={16} />
+              </button>
+              {activeReplyMenu === reply.id && (
+                <div className="absolute right-0 mt-2 w-32 bg-zinc-700 border border-zinc-600 rounded shadow-md z-10">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onEditReply(reply, commentId);
+                      setActiveReplyMenu(null);
+                    }}
+                    className="block w-full text-left px-4 py-2 hover:bg-zinc-600 cursor-pointer"
+                  >
+                    Editar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      openDeleteModal({
+                        type: "reply",
+                        postId,
+                        commentId,
+                        replyId: reply.id,
+                      });
+                      setActiveReplyMenu(null);
+                    }}
+                    className="block w-full text-left px-4 py-2 hover:bg-zinc-600 cursor-pointer"
+                  >
+                    Excluir
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+        </div>
       </div>
+      <div className="flex gap-4 mt-2 text-xs text-zinc-400">
+        <span>{reply?.createdAt ? formatTime(reply.createdAt) : "Agora"}</span>
+        <button
+          type="button"
+          className="font-semibold hover:underline cursor-pointer"
+          onClick={() => setShowReplyInput(!showReplyInput)}
+        >
+          Responder
+        </button>
+      </div>
+      {showReplyInput && (
+        <div className="flex gap-2 mt-2">
+          <Input
+            className="h-8"
+            value={replyInputs?.[reply.id] ?? ""}
+            onChange={e =>
+              setReplyInputs({ ...replyInputs, [reply.id]: e.target.value })
+            }
+            placeholder={`Responder a ${getAuthorName(reply)}`}
+            onKeyDown={e => handleReplyInputKeyDown(e, commentId, reply.id)}
+          />
+          <Button
+            type="button"
+            className="h-8 py-0 px-4"
+            onClick={() => {
+              onReply(postId, commentId, String(replyInputs?.[reply.id] ?? ""), reply.id);
+              setShowReplyInput(false);
+            }}
+          >
+            Enviar
+          </Button>
+        </div>
+      )}
     </div>
   );
+}
+
+function formatTime(date) {
+  const now = new Date();
+  const d = new Date(date);
+  const diff = Math.floor((now - d) / 1000);
+  if (diff < 60) return "Agora";
+  if (diff < 3600) return `${Math.floor(diff / 60)} min`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)} h`;
+  return `${Math.floor(diff / 86400)} d`;
 }
