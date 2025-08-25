@@ -368,7 +368,8 @@ export default function PublicProfilePage() {
     <div className="min-h-screen bg-black text-white pt-24 flex flex-col items-center px-4">
       <Header />
       <h1 className="text-3xl font-bold mb-8">Perfil do Jogador</h1>
-      <ProfileCard user={user} showEdit={false} />
+      {/* showEdit só TRUE se o usuário logado está vendo seu próprio perfil */}
+      <ProfileCard user={user} showEdit={loggedUser?.id === user?.id} />
       <div className="w-full max-w-2xl space-y-6 mt-8">
         {posts.length === 0 && (
           <p className="text-center text-zinc-400">Nenhum post encontrado para este usuário.</p>

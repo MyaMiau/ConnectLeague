@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useSession } from "next-auth/react";
 import NewPostForm from "../components/NewPostForm";
 import CommentsList from "../components/CommentsList";
@@ -57,7 +58,10 @@ export default function PostsPage() {
             }}
           >
             <p>
-              <strong>{post.author?.name || "Autor desconhecido"}</strong>:
+              <Link href={`/profile/${post.author?.id || ""}`}>
+                <strong>{post.author?.name || "Autor desconhecido"}</strong>
+              </Link>
+              :
             </p>
             <p style={{ fontSize: 18 }}>{post.content}</p>
             <small>

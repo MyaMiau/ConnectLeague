@@ -33,12 +33,14 @@ export default function ProfileCard({ user, onUserUpdate, showEdit = true }) {
   // Evita erro de user nulo/undefined
   const [localUser, setLocalUser] = useState(() => ({
     ...(user || {}),
+    id: user?.id, // Garante que o ID esteja presente logo no início
     status: user?.status || "Free Agent",
   }));
 
   useEffect(() => {
     setLocalUser(prev => ({
       ...(user || {}),
+      id: user?.id, // Garante que o campo id esteja presente!
       status: user?.status || "Free Agent",
     }));
   }, [user]);
@@ -81,6 +83,8 @@ export default function ProfileCard({ user, onUserUpdate, showEdit = true }) {
 
   async function handleSave() {
     try {
+      // DEBUG: Mostra o objeto enviado ao backend
+      console.log('Enviando para o backend:', localUser);
       const response = await fetch('/api/users', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -173,6 +177,7 @@ export default function ProfileCard({ user, onUserUpdate, showEdit = true }) {
                 onChange={handleChange}
                 className="bg-zinc-800 border border-zinc-700 rounded px-2 py-1"
               >
+                <option value="">Selecione...</option>
                 {ROLES.map((r) => (
                   <option key={r.name} value={r.name}>{r.name}</option>
                 ))}
@@ -240,6 +245,7 @@ export default function ProfileCard({ user, onUserUpdate, showEdit = true }) {
                   onChange={handleChange}
                   className="bg-zinc-800 border border-zinc-700 rounded px-2 py-1"
                 >
+                  <option value="">Selecione...</option>
                   {ELOS.map((e) => (
                     <option key={e.name} value={e.name}>{e.name}</option>
                   ))}

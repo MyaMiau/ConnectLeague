@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import ReplyThread from "./ReplyThread";
 
 export default function CommentsList({ postId, currentUserId }) {
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [newComment, setNewComment] = useState("");
-  const [replyInputs, setReplyInputs] = useState({}); // { [commentId]: text }
+  const [replyInputs, setReplyInputs] = useState({});
 
-  // Busca comentários do backend
   const fetchComments = async () => {
     setLoading(true);
     const res = await fetch(`/api/comments?postId=${postId}`);
@@ -22,7 +22,6 @@ export default function CommentsList({ postId, currentUserId }) {
     // eslint-disable-next-line
   }, [postId]);
 
-  // Adiciona novo comentário inline e recarrega do backend (garante consistência)
   const handleAddComment = async () => {
     if (!newComment.trim()) return;
     await fetch("/api/comments", {
@@ -34,7 +33,6 @@ export default function CommentsList({ postId, currentUserId }) {
     fetchComments();
   };
 
-  // Adiciona reply inline e recarrega do backend
   const handleReply = async (commentId, parentReplyId = null) => {
     const text = replyInputs[parentReplyId || commentId];
     if (!text?.trim()) return;
@@ -52,7 +50,6 @@ export default function CommentsList({ postId, currentUserId }) {
     fetchComments();
   };
 
-  // Like inline: recarrega do backend após ação (garante like persistente)
   const toggleLikeComment = async (commentId) => {
     await fetch(`/api/comments/${commentId}/like`, { method: "POST" });
     fetchComments();
@@ -90,7 +87,10 @@ export default function CommentsList({ postId, currentUserId }) {
         {comments.map(c => (
           <li key={c.id} style={{ marginBottom: 16 }}>
             <div>
-              <strong>{c.author?.name || "Desconhecido"}:</strong> {c.content}
+              <Link href={`/profile/${c.author?.id || ""}`}>
+                <strong>{c.author?.name || "Desconhecido"}</strong>
+              </Link>
+              : {c.content}
               <button
                 style={{ marginLeft: 8, color: "#3498db" }}
                 onClick={() =>
@@ -113,8 +113,6 @@ export default function CommentsList({ postId, currentUserId }) {
                 <button onClick={() => handleReply(c.id)}>Enviar</button>
               </div>
             )}
-
-            {/* Replies aninhadas, recursivamente */}
             {Array.isArray(c.replies) && c.replies.length > 0 && (
               <div style={{ marginLeft: 20, marginTop: 8 }}>
                 {c.replies.map((reply) => (

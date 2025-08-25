@@ -3,7 +3,7 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import { useEffect, useRef, useState } from "react";
 import { User, Home, Briefcase, LogOut, Bell } from "lucide-react";
-import { signOut } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 
 function NotificationsPopover({ open, onClose, notifications = [], unreadCount, onRead }) {
   const ref = useRef();
@@ -111,12 +111,17 @@ function NotificationsPopover({ open, onClose, notifications = [], unreadCount, 
 
 export default function Header() {
   const router = useRouter();
+  const { data: session } = useSession(); // <-- adicionado para pegar o id do usuário logado
 
   const navItems = [
     {
       label: "Perfil",
       icon: <User size={20} />,
-      onClick: () => router.push("/profile"),
+      onClick: () => {
+        if (session?.user?.id) {
+          router.push(`/profile/${session.user.id}`);
+        }
+      },
     },
     {
       label: "Timeline",
