@@ -37,7 +37,6 @@ export default function PublicProfilePage() {
   const commentMenuRef = useRef({});
   const postMenuRef = useRef({});
 
-  // Buscar usuário logado
   useEffect(() => {
     async function fetchMe() {
       try {
@@ -53,7 +52,6 @@ export default function PublicProfilePage() {
     fetchMe();
   }, []);
 
-  // Buscar usuário visitado e seus posts
   const reloadPosts = async () => {
     setLoading(true);
     try {
@@ -74,7 +72,6 @@ export default function PublicProfilePage() {
     // eslint-disable-next-line
   }, [id]);
 
-  // Fechar menus ao clicar fora
   useEffect(() => {
     function handleClickOutside(e) {
       if (
@@ -103,11 +100,9 @@ export default function PublicProfilePage() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [activeOptions, activeCommentOptions, activeReplyMenu]);
 
-  // Helpers
   const canEditOrDeletePost = (post) => loggedUser?.id === post.authorId;
   const canEditOrDeleteComment = (comment) => loggedUser?.id === comment.authorId;
 
-  // Likes continuam iguais -------------------------------------------
   const toggleLikePost = async (postId) => {
     await fetch(`/api/posts/${postId}/like`, { method: "POST" });
     setPosts(posts =>
@@ -147,7 +142,6 @@ export default function PublicProfilePage() {
     );
   };
 
-  // Helpers aninhamento de replies
   function insertReplyNested(replies, parentReplyId, newReply) {
     if (!replies) return [];
     return replies.map(reply =>
@@ -178,9 +172,6 @@ export default function PublicProfilePage() {
       }));
   }
 
-  // =============== COMENTÁRIOS CORRIGIDOS ===============
-
-  // ADD COMMENT
   const addComment = async (postId) => {
     const text = commentInputs[postId];
     if (!text?.trim() || !loggedUser?.id) return;
@@ -209,7 +200,6 @@ export default function PublicProfilePage() {
     }
   };
 
-  // EDIT COMMENT
   const saveEditedComment = async (postId, commentId, content) => {
     const res = await fetch(`/api/comments/${commentId}`, {
       method: "PUT",
@@ -234,7 +224,6 @@ export default function PublicProfilePage() {
     }
   };
 
-  // DELETE COMMENT
   const handleDeleteComment = async (postId, commentId) => {
     const res = await fetch(`/api/comments/${commentId}`, { method: "DELETE" });
     if (res.ok) {
@@ -251,7 +240,6 @@ export default function PublicProfilePage() {
     }
   };
 
-  // ADD REPLY (corrigido para escada/duplicidade)
   const handleReply = async (postId, commentId, text, parentReplyId = null) => {
     if (!text?.trim() || !loggedUser?.id) return;
     const res = await fetch("/api/comments/reply", {
@@ -290,7 +278,6 @@ export default function PublicProfilePage() {
     }
   };
 
-  // EDIT REPLY
   const saveEditedReply = async (postId, commentId, replyId, content) => {
     const res = await fetch(`/api/comments/reply/${replyId}`, {
       method: "PUT",
@@ -298,7 +285,6 @@ export default function PublicProfilePage() {
       body: JSON.stringify({ content }),
     });
     if (res.ok) {
-      // O backend retorna apenas {id, content, ...}, manter subReplies do estado
       const updatedReply = await res.json();
       setPosts(posts =>
         posts.map(post =>
@@ -321,7 +307,6 @@ export default function PublicProfilePage() {
     }
   };
 
-  // DELETE REPLY
   const handleDeleteReply = async (postId, commentId, replyId) => {
     const res = await fetch(`/api/comments/reply/${replyId}`, { method: "DELETE" });
     if (res.ok) {
@@ -345,15 +330,12 @@ export default function PublicProfilePage() {
     }
   };
 
-  // Reply edição
   const onEditReply = (reply, commentId) => setEditingReply({ ...reply, commentId });
 
-  // Campo de resposta (reply)
   const toggleReplyInput = (commentOrReplyId) => {
-    setReplyInputs((prev) => ({ ...prev, [commentOrReplyId]: prev[commentOrReplyId] ? "" : "" }));
+    setReplyInputs(prev => ({ ...prev, [commentOrReplyId]: prev[commentOrReplyId] ? "" : "" }));
   };
 
-  // Modal de exclusão
   const openDeleteModal = ({ type, postId, commentId = null, replyId = null }) => {
     setDeleteTarget({ type, postId, commentId, replyId });
     setIsDeleteModalOpen(true);
@@ -368,7 +350,6 @@ export default function PublicProfilePage() {
     setIsDeleteModalOpen(false);
   };
 
-  // Compartilhamento
   const handleShare = (postId) => {
     if (navigator.share) {
       navigator.share({
@@ -492,28 +473,30 @@ export default function PublicProfilePage() {
                   <div key={comment.id} className="bg-zinc-800 p-4 rounded-lg">
                     <div className="flex justify-between">
                       <div className="flex gap-3 items-center">
-                        <Image src={comment.author?.image || "/default-avatar.png"} alt="Avatar" width={30} height={30} className="rounded-full" />
-                        <div>
-                          <p className="text-sm font-semibold text-zinc-100">{comment.author?.name || "Desconhecido"}</p>
-                          {editingComment?.id === comment.id ? (
-                            <>
-                              <Textarea
-                                className="text-sm"
-                                value={editingComment.content}
-                                onChange={(e) => setEditingComment({ ...editingComment, content: e.target.value })}
-                              />
-                              <Button
-                                type="button"
-                                size="sm"
-                                className="mt-1"
-                                onClick={() => saveEditedComment(post.id, comment.id, editingComment.content)}>
-                                Salvar
-                              </Button>
-                            </>
-                          ) : (
-                            <p className="text-sm text-zinc-300">{comment.content}</p>
-                          )}
-                        </div>
+                        <Link href={`/profile/${comment.author?.id || ""}`} className="flex items-center gap-2 cursor-pointer group">
+                          <Image src={comment.author?.image || "/default-avatar.png"} alt="Avatar" width={30} height={30} className="rounded-full group-hover:opacity-80 transition" />
+                          <div>
+                            <p className="text-sm font-semibold text-zinc-100 group-hover:underline">{comment.author?.name || "Desconhecido"}</p>
+                            {editingComment?.id === comment.id ? (
+                              <>
+                                <Textarea
+                                  className="text-sm"
+                                  value={editingComment.content}
+                                  onChange={(e) => setEditingComment({ ...editingComment, content: e.target.value })}
+                                />
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  className="mt-1"
+                                  onClick={() => saveEditedComment(post.id, comment.id, editingComment.content)}>
+                                  Salvar
+                                </Button>
+                              </>
+                            ) : (
+                              <p className="text-sm text-zinc-300">{comment.content}</p>
+                            )}
+                          </div>
+                        </Link>
                       </div>
                       {canEditOrDeleteComment(comment) && (
                         <div className="relative" ref={el => commentMenuRef.current[comment.id] = el}>
@@ -575,7 +558,6 @@ export default function PublicProfilePage() {
                         <span>Responder</span>
                       </button>
                     </div>
-                    {/* Campo de resposta */}
                     {replyInputs[comment.id] !== undefined && (
                       <div className="mt-2 flex gap-2">
                         <Input
@@ -594,7 +576,6 @@ export default function PublicProfilePage() {
                         </Button>
                       </div>
                     )}
-                    {/* Replies aninhadas (somente comment.replies, e subReplies recursivas são no ReplyThread) */}
                     {comment.replies?.length > 0 && (
                       <div className="mt-2 space-y-2">
                         {comment.replies.map((reply) => (

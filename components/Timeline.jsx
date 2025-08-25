@@ -11,7 +11,7 @@ import { MoreHorizontal, Heart, MessageCircle, Share2 } from "lucide-react";
 import DeleteConfirmationModal from "@/components/DeleteConfirmationModal";
 import EditPostModal from "@/components/EditPostModal";
 import CreatePost from "@/components/CreatePost";
-import ReplyThread from "@/components/ReplyThread"; // Ou ReplyRecursive, se preferir
+import ReplyThread from "@/components/ReplyThread"; 
 
 export default function Timeline() {
   const [user, setUser] = useState(null);
@@ -271,56 +271,55 @@ export default function Timeline() {
 
   // Renderização
 return (
-  <div className="w-full flex flex-col items-center">
-    <CreatePost onPost={handleNewPost} user={user} />
-
-    <div className="w-full max-w-2xl space-y-6">
-      {loading ? (
-        <p className="text-center text-zinc-400">Carregando posts...</p>
-      ) : (
-        posts.map((post) => (
-          <Card key={post.id} className="bg-zinc-900 rounded-2xl">
-            <CardContent className="p-6 space-y-4 relative">
-              <div className="flex justify-between items-start">
-                <div className="flex items-center gap-4">
-                  {/* Envolva imagem e nome com Link */}
-                  <Link href={`/profile/${post.author?.id || ""}`} className="flex items-center gap-4 cursor-pointer group">
-                    <Image
-                      src={post.author?.image || "/default-avatar.png"}
-                      alt="Avatar"
-                      width={40}
-                      height={40}
-                      className="rounded-full object-cover border border-zinc-700 group-hover:opacity-80 transition"
-                    />
-                    <div>
-                      <p className="font-semibold group-hover:underline">
-                        {post.author?.name || "Autor desconhecido"}
-                      </p>
-                      <p className="text-xs text-zinc-400">
-                        {format(new Date(post.createdAt), "d 'de' MMMM 'às' HH:mm", { locale: ptBR })}
-                      </p>
-                    </div>
-                  </Link>
+    <div className="w-full flex flex-col items-center">
+      <CreatePost onPost={handleNewPost} user={user} />
+      <div className="w-full max-w-2xl space-y-6">
+        {loading ? (
+          <p className="text-center text-zinc-400">Carregando posts...</p>
+        ) : (
+          posts.map((post) => (
+            <Card key={post.id} className="bg-zinc-900 rounded-2xl">
+              <CardContent className="p-6 space-y-4 relative">
+                <div className="flex justify-between items-start">
+                  <div className="flex items-center gap-4">
+                    {/* Envolva imagem e nome com Link */}
+                    <Link href={`/profile/${post.author?.id || ""}`} className="flex items-center gap-4 cursor-pointer group">
+                      <Image
+                        src={post.author?.image || "/default-avatar.png"}
+                        alt="Avatar"
+                        width={40}
+                        height={40}
+                        className="rounded-full object-cover border border-zinc-700 group-hover:opacity-80 transition"
+                      />
+                      <div>
+                        <p className="font-semibold group-hover:underline">
+                          {post.author?.name || "Autor desconhecido"}
+                        </p>
+                        <p className="text-xs text-zinc-400">
+                          {format(new Date(post.createdAt), "d 'de' MMMM 'às' HH:mm", { locale: ptBR })}
+                        </p>
+                      </div>
+                    </Link>
+                  </div>
+                  <div className="relative">
+                    <button type="button" onClick={() => setActiveOptions(post.id === activeOptions ? null : post.id)}>
+                      <MoreHorizontal className="text-zinc-400 hover:text-white cursor-pointer" />
+                    </button>
+                    {activeOptions === post.id && (
+                      <div className="absolute right-0 mt-2 w-32 bg-zinc-800 border border-zinc-700 rounded shadow-md z-10 cursor-pointer">
+                        <button type="button" onClick={() => handleEditPost(post)} className="block w-full text-left px-4 py-2 hover:bg-zinc-700 cursor-pointer">
+                          Editar
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => openDeleteModal({ type: "post", postId: post.id })}
+                          className="block w-full text-left px-4 py-2 hover:bg-zinc-700 cursor-pointer">
+                          Excluir
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <div className="relative">
-                  <button type="button" onClick={() => setActiveOptions(post.id === activeOptions ? null : post.id)}>
-                    <MoreHorizontal className="text-zinc-400 hover:text-white cursor-pointer" />
-                  </button>
-                  {activeOptions === post.id && (
-                    <div className="absolute right-0 mt-2 w-32 bg-zinc-800 border border-zinc-700 rounded shadow-md z-10 cursor-pointer">
-                      <button type="button" onClick={() => handleEditPost(post)} className="block w-full text-left px-4 py-2 hover:bg-zinc-700 cursor-pointer">
-                        Editar
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => openDeleteModal({ type: "post", postId: post.id })}
-                        className="block w-full text-left px-4 py-2 hover:bg-zinc-700 cursor-pointer">
-                        Excluir
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
 
                 {/* Modal de edição de post */}
                 <EditPostModal
@@ -372,27 +371,29 @@ return (
                     <div key={comment.id} className="bg-zinc-800 p-4 rounded-lg">
                       <div className="flex justify-between">
                         <div className="flex gap-3 items-center">
-                          <Image src={comment.author?.image || "/default-avatar.png"} alt="Avatar" width={30} height={30} className="rounded-full" />
-                          <div>
-                            <p className="text-sm font-semibold text-zinc-100S">{comment.author?.name || comment.author}</p>
-                            {editingComment?.id === comment.id ? (
-                              <>
-                                <Textarea
-                                  className="text-sm"
-                                  value={editingComment.content}
-                                  onChange={(e) => setEditingComment({ ...editingComment, content: e.target.value })}/>
-                                <Button
-                                  type="button"
-                                  size="sm"
-                                  className="mt-1"
-                                  onClick={() => saveEditedComment(post.id, comment.id, editingComment.content)}>
-                                  Salvar
-                                </Button>
-                              </>
-                            ) : (
-                              <p className="text-sm text-zinc-300">{comment.content}</p>
-                            )}
-                          </div>
+                          <Link href={`/profile/${comment.author?.id || ""}`} className="flex items-center gap-2 cursor-pointer group">
+                            <Image src={comment.author?.image || "/default-avatar.png"} alt="Avatar" width={30} height={30} className="rounded-full" />
+                            <div>
+                              <p className="text-sm font-semibold text-zinc-100 group-hover:underline">{comment.author?.name || comment.author}</p>
+                              {editingComment?.id === comment.id ? (
+                                <>
+                                  <Textarea
+                                    className="text-sm"
+                                    value={editingComment.content}
+                                    onChange={(e) => setEditingComment({ ...editingComment, content: e.target.value })}/>
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    className="mt-1"
+                                    onClick={() => saveEditedComment(post.id, comment.id, editingComment.content)}>
+                                    Salvar
+                                  </Button>
+                                </>
+                              ) : (
+                                <p className="text-sm text-zinc-300">{comment.content}</p>
+                              )}
+                            </div>
+                          </Link>
                         </div>
                         <div className="relative">
                           <button

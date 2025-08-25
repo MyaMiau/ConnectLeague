@@ -1,3 +1,4 @@
+import Link from "next/link";
 import Image from "next/image";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -51,39 +52,42 @@ export default function ReplyThread({
     >
       <div className="flex justify-between">
         <div className="flex gap-3 items-center">
-          <Image src={getAuthorImage(reply)} alt="Avatar" width={30} height={30} className="rounded-full" />
-          <div>
-            <span className="text-sm font-semibold text-zinc-100">{getAuthorName(reply)}</span>
-            {editingReply && editingReply.id === reply.id ? (
-              <>
-                <Textarea
-                  className="text-sm mt-1"
-                  value={editingReply.content ?? ""}
-                  onChange={e =>
-                    setEditingReply({ ...editingReply, content: e.target.value })
-                  }
-                  onKeyDown={e => {
-                    if (e.key === "Enter" && !e.shiftKey) {
-                      e.preventDefault();
-                      saveEditedReply(commentId, reply.id, editingReply.content);
+          {/* Envolva imagem e nome com Link */}
+          <Link href={`/profile/${getAuthorId(reply)}`} className="flex items-center gap-2 cursor-pointer group">
+            <Image src={getAuthorImage(reply)} alt="Avatar" width={30} height={30} className="rounded-full group-hover:opacity-80 transition" />
+            <div>
+              <span className="text-sm font-semibold text-zinc-100 group-hover:underline">{getAuthorName(reply)}</span>
+              {editingReply && editingReply.id === reply.id ? (
+                <>
+                  <Textarea
+                    className="text-sm mt-1"
+                    value={editingReply.content ?? ""}
+                    onChange={e =>
+                      setEditingReply({ ...editingReply, content: e.target.value })
                     }
-                  }}
-                />
-                <div className="mt-1 flex gap-2">
-                  <Button size="sm" type="button"
-                    onClick={() => saveEditedReply(commentId, reply.id, editingReply.content)}>
-                    Salvar
-                  </Button>
-                  <Button size="sm" type="button" variant="ghost"
-                    onClick={() => setEditingReply(null)}>
-                    Cancelar
-                  </Button>
-                </div>
-              </>
-            ) : (
-              <p className="text-sm text-zinc-300 mt-1">{reply?.content ?? ""}</p>
-            )}
-          </div>
+                    onKeyDown={e => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        saveEditedReply(commentId, reply.id, editingReply.content);
+                      }
+                    }}
+                  />
+                  <div className="mt-1 flex gap-2">
+                    <Button size="sm" type="button"
+                      onClick={() => saveEditedReply(commentId, reply.id, editingReply.content)}>
+                      Salvar
+                    </Button>
+                    <Button size="sm" type="button" variant="ghost"
+                      onClick={() => setEditingReply(null)}>
+                      Cancelar
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <p className="text-sm text-zinc-300 mt-1">{reply?.content ?? ""}</p>
+              )}
+            </div>
+          </Link>
         </div>
         <div className="relative">
           {canEditOrDeleteReply && (

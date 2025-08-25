@@ -38,35 +38,58 @@ function NotificationsPopover({ open, onClose, notifications = [], unreadCount, 
           <ul className="divide-y divide-zinc-800">
             {notifications.map(n => (
               <li key={n.id} className={`flex items-start gap-3 p-4 ${n.read ? "" : "bg-zinc-800"}`}>
-                <Image
-                  src={n.sender?.image || "/default-avatar.png"}
-                  alt="avatar"
-                  width={36}
-                  height={36}
-                  className="rounded-full"
-                />
+                {/* LINK para perfil do sender */}
+                <Link href={`/profile/${n.sender?.id || ""}`} className="group">
+                  <Image
+                    src={n.sender?.image || "/default-avatar.png"}
+                    alt="avatar"
+                    width={36}
+                    height={36}
+                    className="rounded-full group-hover:opacity-80 transition"
+                  />
+                </Link>
                 <div className="flex-1">
                   {n.type === "like" && (
                     <Link
                       href={n.postId ? `/posts/${n.postId}` : "#"}
                       className="hover:underline focus:underline"
                     >
-                      <b>{n.sender?.name || "Alguém"}</b> curtiu seu post!
+                      <b>
+                        <Link href={`/profile/${n.sender?.id || ""}`} className="hover:underline">
+                          {n.sender?.name || "Alguém"}
+                        </Link>
+                      </b>{" "}
+                      curtiu seu post!
                     </Link>
                   )}
                   {n.type === "comment_like" && (
                     <span>
-                      <b>{n.sender?.name || "Alguém"}</b> curtiu seu comentário!
+                      <b>
+                        <Link href={`/profile/${n.sender?.id || ""}`} className="hover:underline">
+                          {n.sender?.name || "Alguém"}
+                        </Link>
+                      </b>{" "}
+                      curtiu seu comentário!
                     </span>
                   )}
                   {n.type === "reply" && (
                     <span>
-                      <b>{n.sender?.name || "Alguém"}</b> respondeu seu comentário!
+                      <b>
+                        <Link href={`/profile/${n.sender?.id || ""}`} className="hover:underline">
+                          {n.sender?.name || "Alguém"}
+                        </Link>
+                      </b>{" "}
+                      respondeu seu comentário!
                     </span>
                   )}
                   {n.type === "comment" && (
                     <span>
-                      <b>{n.sender?.name || "Alguém"}</b> comentou no seu post!
+                      <b>
+                        <Link href={`/profile/${n.sender?.id || ""}`} className="hover:underline">
+                          {n.sender?.name || "Alguém"}
+                        </Link>
+                      </b>{" "}
+                      comentou no seu post!
                     </span>
                   )}
                   <div className="text-xs text-zinc-400 mt-1">
