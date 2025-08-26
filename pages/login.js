@@ -1,7 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import Image from "next/image";
-import { useEffect } from "react";
 import { FiMail as Mail, FiLock as Lock, FiEye, FiEyeOff } from "react-icons/fi";
 import { signIn, useSession } from "next-auth/react";
 import Link from "next/link";
@@ -22,7 +21,7 @@ export default function Login() {
       if (session.user.type === "organization") {
         router.push("/organization/profile");
       } else if (session.user.type === "player") {
-        router.push("/profile");
+        router.push(`/profile/${session.user.id}`);
       }
     }
   }, [status, session, router]);
