@@ -159,7 +159,8 @@ export default function Header() {
         try {
           const res = await fetch(`/api/users/${session.user.id}`);
           const data = await res.json();
-          setProfile(data);
+          // Ajuste para aceitar ambos formatos!
+          setProfile(data.user || data); // <- Corrige se vier {user: {...}}
         } catch {
           setProfile(null);
         }
@@ -238,23 +239,22 @@ export default function Header() {
 
       {/* Mini perfil do usuário logado (foto real e nome, hover roxo) */}
       {profile && (
-        <Link
-          href={`/profile/${profile.id}`}
-          className="flex items-center gap-2 mb-8 w-full px-4 group cursor-pointer"
-        >
+      <Link
+        href={`/profile/${profile.id}`}
+        className="flex items-center gap-2 mb-8 w-full px-4 group cursor-pointer">
+        <div className="relative w-[56px] h-[56px] shrink-0">
           <Image
             src={profile.image || "/default-avatar.png"}
+            fill
+            sizes="56px"
+            className="rounded-full object-cover border-2 border-zinc-600 shadow-sm"
             alt={profile.name || "Avatar"}
-            width={40}
-            height={40}
-            quality={100} // qualidade máxima da foto
-            className="rounded-full object-cover border border-zinc-700"
-            priority
-          />
-          <span className="text-zinc-100 font-semibold group-hover:text-purple-400 transition-colors truncate">
-            {profile.name}
-          </span>
-        </Link>
+            priority/>
+        </div>
+        <span className="text-zinc-100 font-semibold group-hover:text-purple-400 transition-colors truncate">
+          {profile.name}
+        </span>
+      </Link>
       )}
 
       <nav className="flex flex-col gap-4 w-full px-4">

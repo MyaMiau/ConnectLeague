@@ -283,23 +283,26 @@ return (
                 <div className="flex justify-between items-start">
                   <div className="flex items-center gap-4">
                     {/* Envolva imagem e nome com Link */}
-                    <Link href={`/profile/${post.author?.id || ""}`} className="flex items-center gap-4 cursor-pointer group">
-                      <Image
-                        src={post.author?.image || "/default-avatar.png"}
-                        alt="Avatar"
-                        width={40}
-                        height={40}
-                        className="rounded-full object-cover border border-zinc-700 group-hover:opacity-80 transition"
-                      />
-                      <div>
-                        <p className="font-semibold group-hover:underline">
-                          {post.author?.name || "Autor desconhecido"}
-                        </p>
-                        <p className="text-xs text-zinc-400">
-                          {format(new Date(post.createdAt), "d 'de' MMMM 'às' HH:mm", { locale: ptBR })}
-                        </p>
-                      </div>
-                    </Link>
+                <Link href={`/profile/${post.author?.id || ""}`} className="flex items-center gap-4 cursor-pointer group">
+                  <div className="relative w-[40px] h-[40px] rounded-full overflow-hidden border border-zinc-700 bg-zinc-800 shrink-0">
+                    <Image
+                      src={post.author?.image || "/default-avatar.png"}
+                      alt="Avatar"
+                      fill
+                      sizes="40px"
+                      className="object-cover"
+                      priority
+                    />
+                  </div>
+                  <div>
+                    <p className="font-semibold group-hover:underline">
+                      {post.author?.name || "Autor desconhecido"}
+                    </p>
+                    <p className="text-xs text-zinc-400">
+                      {format(new Date(post.createdAt), "d 'de' MMMM 'às' HH:mm", { locale: ptBR })}
+                    </p>
+                  </div>
+                </Link>
                   </div>
                   <div className="relative">
                     <button type="button" onClick={() => setActiveOptions(post.id === activeOptions ? null : post.id)}>
@@ -372,7 +375,16 @@ return (
                       <div className="flex justify-between">
                         <div className="flex gap-3 items-center">
                           <Link href={`/profile/${comment.author?.id || ""}`} className="flex items-center gap-2 cursor-pointer group">
-                            <Image src={comment.author?.image || "/default-avatar.png"} alt="Avatar" width={30} height={30} className="rounded-full" />
+                            <div className="relative w-[30px] h-[30px] rounded-full overflow-hidden border border-zinc-700 bg-zinc-800 shrink-0">
+                              <Image
+                                src={comment.author?.image || "/default-avatar.png"}
+                                alt="Avatar"
+                                fill
+                                sizes="30px"
+                                className="object-cover"
+                                priority
+                              />
+                            </div>
                             <div>
                               <p className="text-sm font-semibold text-zinc-100 group-hover:underline">{comment.author?.name || comment.author}</p>
                               {editingComment?.id === comment.id ? (

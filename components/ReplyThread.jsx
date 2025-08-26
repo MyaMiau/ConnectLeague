@@ -53,11 +53,16 @@ export default function ReplyThread({
       <div className="flex justify-between">
         <div className="flex gap-3 items-center">
           <Link href={`/profile/${getAuthorId(reply)}`} className="flex items-center gap-2 cursor-pointer group">
-            <Image src={getAuthorImage(reply)} 
-            alt="Avatar" 
-            width={30} 
-            height={30} 
-            className="rounded-full group-hover:opacity-80 transition" />
+            <div className="relative w-[32px] h-[32px] shrink-0">
+              <Image
+                src={getAuthorImage(reply)}
+                fill
+                sizes="32px"
+                className="rounded-full object-cover border border-zinc-700 group-hover:opacity-80 transition"
+                alt="Avatar"
+                priority
+              />
+            </div>
             <div>
               <span className="text-sm font-semibold text-zinc-100 group-hover:underline">{getAuthorName(reply)}</span>
               {editingReply && editingReply.id === reply.id ? (

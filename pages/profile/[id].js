@@ -364,11 +364,10 @@ export default function PublicProfilePage() {
   if (loading) return <p className="text-center text-zinc-400 mt-16">Carregando perfil...</p>;
   if (!user) return <p className="text-center text-zinc-400 mt-16">Usuário não encontrado.</p>;
 
-  return (
+ return (
     <div className="min-h-screen bg-black text-white pt-24 flex flex-col items-center px-4">
       <Header />
       <h1 className="text-3xl font-bold mb-8">Perfil do Jogador</h1>
-      {/* showEdit só TRUE se o usuário logado está vendo seu próprio perfil */}
       <ProfileCard user={user} showEdit={loggedUser?.id === user?.id} />
       <div className="w-full max-w-2xl space-y-6 mt-8">
         {posts.length === 0 && (
@@ -380,13 +379,16 @@ export default function PublicProfilePage() {
               <div className="flex justify-between items-start">
                 <div className="flex items-center gap-4">
                   <Link href={`/profile/${post.author?.id || ""}`} className="flex items-center gap-4 cursor-pointer group">
-                    <Image
-                      src={post.author?.image || "/default-avatar.png"}
-                      alt="Avatar"
-                      width={40}
-                      height={40}
-                      className="rounded-full object-cover border border-zinc-700 group-hover:opacity-80 transition"
-                    />
+                    <div className="relative w-[40px] h-[40px] rounded-full overflow-hidden border border-zinc-700 bg-zinc-800 shrink-0">
+                      <Image
+                        src={post.author?.image || "/default-avatar.png"}
+                        alt="Avatar"
+                        fill
+                        sizes="40px"
+                        className="object-cover"
+                        priority
+                      />
+                    </div>
                     <div>
                       <p className="font-semibold group-hover:underline">
                         {post.author?.name || "Autor desconhecido"}
@@ -417,7 +419,6 @@ export default function PublicProfilePage() {
                           type="button"
                           className="block w-full text-left px-4 py-2 hover:bg-zinc-700 cursor-pointer"
                           onClick={() => {
-                            // setEditingPost(post)
                             setActiveOptions(null);
                           }}
                         >
@@ -475,7 +476,16 @@ export default function PublicProfilePage() {
                     <div className="flex justify-between">
                       <div className="flex gap-3 items-center">
                         <Link href={`/profile/${comment.author?.id || ""}`} className="flex items-center gap-2 cursor-pointer group">
-                          <Image src={comment.author?.image || "/default-avatar.png"} alt="Avatar" width={30} height={30} className="rounded-full group-hover:opacity-80 transition" />
+                          <div className="relative w-[30px] h-[30px] rounded-full overflow-hidden border border-zinc-700 bg-zinc-800 shrink-0">
+                            <Image
+                              src={comment.author?.image || "/default-avatar.png"}
+                              alt="Avatar"
+                              fill
+                              sizes="30px"
+                              className="object-cover"
+                              priority
+                            />
+                          </div>
                           <div>
                             <p className="text-sm font-semibold text-zinc-100 group-hover:underline">{comment.author?.name || "Desconhecido"}</p>
                             {editingComment?.id === comment.id ? (

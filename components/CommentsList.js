@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import ReplyThread from "./ReplyThread";
+import Image from "next/image";
 
 export default function CommentsList({ postId, currentUserId }) {
   const [comments, setComments] = useState([]);
@@ -86,7 +87,32 @@ export default function CommentsList({ postId, currentUserId }) {
       <ul>
         {comments.map(c => (
           <li key={c.id} style={{ marginBottom: 16 }}>
-            <div>
+            <div className="flex items-center gap-2 mb-1">
+              <div
+                className="relative shrink-0"
+                style={{
+                  width: "36px",
+                  height: "36px",
+                  minWidth: "36px",
+                  minHeight: "36px",
+                  borderRadius: "9999px",
+                  overflow: "hidden",
+                  border: "1px solid #3f3f46",
+                  boxShadow: "0 1px 4px 0 rgba(0,0,0,0.09)",
+                  background: "#222"
+                }}
+              >
+              <div className="relative w-[40px] h-[40px] rounded-full overflow-hidden shrink-0 border border-zinc-700 bg-zinc-800">
+                <Image
+                  src={c.author?.image || "/default-avatar.png"}
+                  alt={c.author?.name || "Desconhecido"}
+                  fill
+                  sizes="40px"
+                  className="object-cover"
+                  priority
+                />
+              </div>
+              </div>
               <Link href={`/profile/${c.author?.id || ""}`}>
                 <strong>{c.author?.name || "Desconhecido"}</strong>
               </Link>
@@ -107,28 +133,21 @@ export default function CommentsList({ postId, currentUserId }) {
                   placeholder="Responder..."
                   value={replyInputs[c.id] || ""}
                   onChange={e =>
-                    setReplyInputs({ ...replyInputs, [c.id]: e.target.value })
+                    setReplyInputs(ri => ({ ...ri, [c.id]: e.target.value }))
                   }
                 />
-                <button onClick={() => handleReply(c.id)}>Enviar</button>
+                <button
+                  style={{ marginLeft: 8, color: "#27ae60" }}
+                  onClick={() => handleReply(c.id)}
+                >
+                  Enviar
+                </button>
               </div>
             )}
-            {Array.isArray(c.replies) && c.replies.length > 0 && (
-              <div style={{ marginLeft: 20, marginTop: 8 }}>
-                {c.replies.map((reply) => (
-                  <ReplyThread
-                    key={reply.id}
-                    reply={reply}
-                    postId={postId}
-                    commentId={c.id}
-                    replyInputs={replyInputs}
-                    setReplyInputs={setReplyInputs}
-                    onReply={handleReply}
-                    depth={1}
-                  />
-                ))}
-              </div>
-            )}
+            {/* Renderize replies usando ReplyThread, se existir */}
+            {c.replies && c.replies.map(reply => (
+              <ReplyThread key={reply.id} reply={reply} postId={postId} commentId={c.id} />
+            ))}
           </li>
         ))}
       </ul>
