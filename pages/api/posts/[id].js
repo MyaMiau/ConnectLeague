@@ -8,15 +8,26 @@ export default async function handler(req, res) {
       const post = await prisma.Post.findUnique({
         where: { id: postId },
         include: {
+          author: true,
+          postLikes: true,
           comments: {
             include: {
-              replies: true, 
+              author: true,
+              commentLikes: true,
+              replies: {
+                include: {
+                  author: true,
+                  subReplies: {
+                    include: { author: true }
+                  }
+                }
+              }
             },
           },
         },
       });
       if (!post) return res.status(404).json({ error: "Post não encontrado" });
-      return res.status(200).json(post);
+      return res.status(200).json({ post });
     } catch (err) {
       console.error("Erro ao buscar post:", err);
       return res.status(500).json({ error: "Erro ao buscar post." });
@@ -41,7 +52,7 @@ export default async function handler(req, res) {
         where: { id: postId },
         data: { content, image },
       });
-      return res.status(200).json(post);
+      return res.status(200).json({ post });
     } catch (err) {
       console.error("Erro ao editar post:", err);
       return res.status(500).json({ error: "Erro ao editar post." });

@@ -54,8 +54,8 @@ export default function PostPage() {
     try {
       const res = await fetch(`/api/posts/${id}`);
       if (!res.ok) return;
-      const data = await res.json();
-      setPost(data.post);
+      const data = await res.json(); // agora vem { post }
+      setPost(data.post); // pega o post da chave "post"
     } catch {
       setPost(null);
     }
@@ -380,7 +380,9 @@ export default function PostPage() {
                       {post.author?.name || "Autor desconhecido"}
                     </p>
                     <p className="text-xs text-zinc-400">
-                      {format(new Date(post.createdAt), "d 'de' MMMM 'às' HH:mm", { locale: ptBR })}
+                      {post.createdAt && !isNaN(new Date(post.createdAt)) ?
+                        format(new Date(post.createdAt), "d 'de' MMMM 'às' HH:mm", { locale: ptBR }) :
+                        ""}
                     </p>
                   </div>
                 </Link>

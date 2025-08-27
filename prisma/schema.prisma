@@ -28,6 +28,16 @@ model applications {
   vacancy    vacancies @relation(fields: [vacancy_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
 
+model VacancyFavorite {
+  id         Int       @id @default(autoincrement())
+  userId     Int
+  vacancyId  Int
+  created_at DateTime? @default(now()) @db.Timestamp(6)
+  user       users     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vacancy    vacancies @relation(fields: [vacancyId], references: [id], onDelete: Cascade)
+  @@unique([userId, vacancyId])
+}
+
 model users {
   id                   Int            @id @default(autoincrement())
   name                 String         @db.VarChar(100)
@@ -60,16 +70,27 @@ model users {
   commentLikes         CommentLike[]
   notificationsReceived Notification[] @relation("Receiver")
   notificationsSent     Notification[] @relation("Sender")
+  favorites             VacancyFavorite[]
 }
 
 model vacancies {
-  id              Int            @id @default(autoincrement())
-  title           String         @db.VarChar(100)
+  id              Int               @id @default(autoincrement())
+  title           String            @db.VarChar(100)
   description     String
+  requirements    String?
+  benefits        String?
   organization_id Int
-  created_at      DateTime?      @default(now()) @db.Timestamp(6)
+  created_at      DateTime?         @default(now()) @db.Timestamp(6)
+  status          String            @default("Aberta")
+  userTypes       String[]          // ["Jogador", "Coach", ...]
+  positions       String[]          // ["Top", "Mid", ...]
+  elos            String[]          // ["Diamante+", "Platina+", ...]
+  city            String?
+  state           String?
+  tags            String[]
   applications    applications[]
-  organization    users          @relation(fields: [organization_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  favorites       VacancyFavorite[]
+  organization    users             @relation(fields: [organization_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
 
 model accounts {
