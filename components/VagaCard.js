@@ -10,7 +10,11 @@ export default function VagaCard({ vaga, usuario, onCandidatar, onSalvar, onFech
 
   return (
     <div className="card">
-      <img src={vaga.organizacao.logo || "/default-org.png"} alt="Logo" className="logo" />
+      <img
+        src={vaga.organizacao && vaga.organizacao.logo ? vaga.organizacao.logo : "/default-org.png"}
+        alt="Logo"
+        className="logo"
+      />
       <div>
         <h2>
           {vaga.titulo}{" "}
