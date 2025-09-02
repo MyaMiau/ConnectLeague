@@ -1,15 +1,23 @@
-import Link from "next/link";
-import { Button } from "./ui/button";
 import { Bookmark, BookmarkCheck } from "lucide-react";
+import { Button } from "./ui/button";
 
-export default function VagaCard({ vaga, usuario, onCandidatar, onSalvar, onFechar, onDeletar }) {
+export default function VagaCard({
+  vaga,
+  usuario,
+  onCandidatar,
+  onSalvar,
+  onFechar,
+  onDeletar,
+  onVerDetalhes
+}) {
   const jaCandidatado = vaga.candidatos?.some(c => c.usuarioId === usuario?.id);
   const jaFavoritou = vaga.favoritos?.some(f => f.usuarioId === usuario?.id);
   const isOrg = usuario?.tipo === "organizacao" && usuario?.id === vaga.organizacaoId;
 
-  const statusClasse = vaga.status === "Aberta"
+  // Badge: verde para "Aberta", roxo para outros status
+  const badgeClasse = vaga.status === "Aberta"
     ? "bg-green-600 text-white"
-    : "bg-gray-400 text-gray-800";
+    : "bg-purple-700 text-white";
 
   return (
     <div className="bg-zinc-900 rounded-xl shadow-lg p-6 flex flex-col gap-3 border border-zinc-800">
@@ -23,7 +31,7 @@ export default function VagaCard({ vaga, usuario, onCandidatar, onSalvar, onFech
           <h2 className="text-2xl font-bold flex items-center gap-2">
             {vaga.titulo || "Vaga sem título"}
             <span
-              className={`inline-block px-2 py-1 rounded text-xs font-semibold ${statusClasse}`}
+              className={`inline-block px-2 py-1 rounded text-xs font-semibold ${badgeClasse}`}
               style={{ marginLeft: 8 }}
             >
               {vaga.status || "Aberta"}
@@ -39,23 +47,30 @@ export default function VagaCard({ vaga, usuario, onCandidatar, onSalvar, onFech
         {vaga.tags?.length > 0 && <span><strong>Tags:</strong> {vaga.tags.join(", ")}</span>}
         {vaga.cidade && <span><strong>Localização:</strong> {vaga.cidade}/{vaga.estado}</span>}
       </div>
-      <div className="flex flex-wrap gap-2 mt-1">
-        <Link href={`/vagas/${vaga.id}`}>
-          <Button variant="default">Ver detalhes</Button>
-        </Link>
+      <div className="flex flex-wrap gap-2 mt-1 items-center">
+        <Button variant="default" onClick={onVerDetalhes}>Ver detalhes</Button>
         {!isOrg && (
-          <Button variant="default" disabled={jaCandidatado} onClick={() => onCandidatar?.(vaga.id)}>
+          <Button
+            variant="default"
+            disabled={jaCandidatado}
+            onClick={() => onCandidatar?.(vaga.id)}
+            aria-label={jaCandidatado ? "Já candidatado" : "Candidatar-se"}
+          >
             {jaCandidatado ? "Candidatado" : "Candidatar-se"}
           </Button>
         )}
-        <Button
-          variant={jaFavoritou ? "secondary" : "default"}
-          onClick={() => onSalvar?.(vaga.id)}
+[]
+        <span
+          role="button"
           aria-label={jaFavoritou ? "Remover dos salvos" : "Salvar vaga"}
-          className="!border-none !shadow-none"
+          tabIndex={0}
+          onClick={() => onSalvar?.(vaga.id)}
+          onKeyPress={e => { if (e.key === 'Enter') onSalvar?.(vaga.id); }}
+          className={`ml-2 cursor-pointer transition ${jaFavoritou ? "text-purple-500" : "text-zinc-400"} hover:text-purple-600`}
+          style={{ display: 'flex', alignItems: 'center', fontSize: '1.75rem' }}
         >
-          {jaFavoritou ? <BookmarkCheck size={20} /> : <Bookmark size={20} />}
-        </Button>
+          {jaFavoritou ? <BookmarkCheck size={24} /> : <Bookmark size={24} />}
+        </span>
         {isOrg && (
           <>
             <Button variant="secondary" onClick={() => onFechar?.(vaga.id)}>
@@ -64,9 +79,6 @@ export default function VagaCard({ vaga, usuario, onCandidatar, onSalvar, onFech
             <Button variant="destructive" onClick={() => onDeletar?.(vaga.id)}>
               Deletar vaga
             </Button>
-            <Link href={`/vagas/editar/${vaga.id}`}>
-              <Button variant="outline">Editar vaga</Button>
-            </Link>
           </>
         )}
       </div>

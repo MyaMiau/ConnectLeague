@@ -58,4 +58,34 @@ export default async function handler(req, res) {
     // TODO: Notificar organização (implementação futura)
     return res.status(201).json({ candidatura });
   }
+
+  // Salvar ou remover dos salvos
+  if (req.method === "PATCH") {
+    if (!session || !session.user) return res.status(401).json({ error: "Não autenticado." });
+    const { action } = req.body;
+
+    if (action === "salvar") {
+      // Verifica se já existe
+      const jaFavoritou = await prisma.favorites.findFirst({
+        where: { vacancy_id: vagaId, user_id: session.user.id }
+      });
+      if (jaFavoritou) return res.status(200).json({ success: true, already: true });
+
+      await prisma.favorites.create({
+        data: { vacancy_id: vagaId, user_id: session.user.id }
+      });
+      return res.status(200).json({ success: true });
+    }
+
+    if (action === "remover_salvo") {
+      await prisma.favorites.deleteMany({
+        where: { vacancy_id: vagaId, user_id: session.user.id }
+      });
+      return res.status(200).json({ success: true });
+    }
+
+    return res.status(400).json({ error: "Ação inválida." });
+  }
+
+  return res.status(405).json({ error: "Método não permitido." });
 }

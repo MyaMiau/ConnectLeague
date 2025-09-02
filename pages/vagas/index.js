@@ -1,11 +1,14 @@
 import { useState, useEffect } from "react";
 import VagaCard from "../../components/VagaCard";
+import VagaDetalhesModal from "../../components/VagaDetalhesModal";
 import { useSession } from "next-auth/react";
 import Header from "../../components/Header";
 
 export default function VagasPage() {
   const { data: session } = useSession();
   const [vagas, setVagas] = useState([]);
+  const [confirmModal, setConfirmModal] = useState({ open: false, message: "" });
+  const [vagaSelecionada, setVagaSelecionada] = useState(null);
   const [filtros, setFiltros] = useState({
     pagina: 1,
     ordenar: "recentes",
@@ -52,25 +55,53 @@ export default function VagasPage() {
     );
   };
 
-  // Funções dos botões do card
+  // Funções dos botões do card e modal
   const handleCandidatar = async vagaId => {
-    if (!session?.user) return;
-    await fetch(`/api/vagas/candidatar`, {
+    if (!session?.user) {
+      setConfirmModal({ open: true, message: "Faça login para se candidatar." });
+      return;
+    }
+    const res = await fetch(`/api/vagas/candidatar`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ vagaId })
     });
+    if (res.ok) {
+      setConfirmModal({ open: true, message: "Candidatura enviada com sucesso!" });
+    } else {
+      setConfirmModal({ open: true, message: "Erro ao candidatar-se!" });
+    }
     fetchVagas();
+    // Atualiza vagaSelecionada se for do modal
+    if (vagaSelecionada && vagaSelecionada.id === vagaId) {
+      fetch(`/api/vagas/${vagaId}`)
+        .then(res => res.json())
+        .then(data => setVagaSelecionada(data.vaga));
+    }
   };
 
   const handleSalvar = async vagaId => {
-    if (!session?.user) return;
-    await fetch(`/api/vagas/salvar`, {
+    if (!session?.user) {
+      setConfirmModal({ open: true, message: "Faça login para salvar vagas." });
+      return;
+    }
+    const res = await fetch(`/api/vagas/salvar`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ vagaId })
     });
+    if (res.ok) {
+      setConfirmModal({ open: true, message: "Vaga salva!" });
+    } else {
+      setConfirmModal({ open: true, message: "Erro ao salvar vaga!" });
+    }
     fetchVagas();
+    // Atualiza vagaSelecionada se for do modal
+    if (vagaSelecionada && vagaSelecionada.id === vagaId) {
+      fetch(`/api/vagas/${vagaId}`)
+        .then(res => res.json())
+        .then(data => setVagaSelecionada(data.vaga));
+    }
   };
 
   const handleFechar = async vagaId => {
@@ -111,6 +142,7 @@ export default function VagasPage() {
                 onSalvar={handleSalvar}
                 onFechar={handleFechar}
                 onDeletar={handleDeletar}
+                onVerDetalhes={() => setVagaSelecionada(vaga)}
               />
             ))}
           </div>
@@ -134,6 +166,30 @@ export default function VagasPage() {
           </button>
         </div>
       </div>
+      {/* Modal de confirmação de ação */}
+      {confirmModal.open && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black/60 z-50">
+          <div className="bg-zinc-900 p-8 rounded-xl shadow-xl text-center">
+            <p className="text-lg">{confirmModal.message}</p>
+            <button
+              className="mt-4 px-6 py-2 bg-purple-600 text-white rounded hover:bg-purple-800"
+              onClick={() => setConfirmModal({ open: false, message: "" })}
+            >
+              Ok
+            </button>
+          </div>
+        </div>
+      )}
+      {/* Modal de detalhes da vaga */}
+      {vagaSelecionada && (
+        <VagaDetalhesModal
+          vaga={vagaSelecionada}
+          usuario={session?.user}
+          onClose={() => setVagaSelecionada(null)}
+          onCandidatar={handleCandidatar}
+          onSalvar={handleSalvar}
+        />
+      )}
     </div>
   );
 }
