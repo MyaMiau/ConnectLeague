@@ -22,12 +22,10 @@ export default async function handler(req, res) {
     if (!session || session.user.type !== "organizacao") return res.status(401).json({ error: "Não autenticado." });
 
     const { status, ...data } = req.body;
-    // Fechar ou reabrir vaga
     if (status) {
       const vaga = await prisma.vacancies.update({ where: { id: vagaId }, data: { status } });
       return res.status(200).json({ vaga });
     }
-
     const vaga = await prisma.vacancies.update({ where: { id: vagaId }, data });
     return res.status(200).json({ vaga });
   }
@@ -46,7 +44,6 @@ export default async function handler(req, res) {
     ) {
       return res.status(401).json({ error: "Não autenticado." });
     }
-    // Checa duplicidade
     const jaCandidatado = await prisma.applications.findFirst({
       where: { vacancy_id: vagaId, user_id: session.user.id }
     });
@@ -55,7 +52,6 @@ export default async function handler(req, res) {
     const candidatura = await prisma.applications.create({
       data: { vacancy_id: vagaId, user_id: session.user.id }
     });
-    // TODO: Notificar organização (implementação futura)
     return res.status(201).json({ candidatura });
   }
 
@@ -65,7 +61,6 @@ export default async function handler(req, res) {
     const { action } = req.body;
 
     if (action === "salvar") {
-      // Verifica se já existe
       const jaFavoritou = await prisma.favorites.findFirst({
         where: { vacancy_id: vagaId, user_id: session.user.id }
       });

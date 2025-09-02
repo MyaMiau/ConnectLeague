@@ -21,7 +21,6 @@ export default function VagasPage() {
     tags: []
   });
 
-  // Função para buscar vagas
   const fetchVagas = () => {
     const params = new URLSearchParams();
     params.append("pagina", filtros.pagina);
@@ -41,10 +40,8 @@ export default function VagasPage() {
 
   useEffect(() => {
     fetchVagas();
-    // eslint-disable-next-line
   }, [filtros]);
 
-  // Handlers para filtros
   const handleInput = e => setFiltros(f => ({ ...f, [e.target.name]: e.target.value, pagina: 1 }));
 
   const handleMultiSelect = (name, value) => {
@@ -55,16 +52,15 @@ export default function VagasPage() {
     );
   };
 
-  // Funções dos botões do card e modal
   const handleCandidatar = async vagaId => {
     if (!session?.user) {
       setConfirmModal({ open: true, message: "Faça login para se candidatar." });
       return;
     }
-    const res = await fetch(`/api/vagas/candidatar`, {
+    // Aqui usa PATCH para candidatura!
+    const res = await fetch(`/api/vagas/${vagaId}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ vagaId })
     });
     if (res.ok) {
       setConfirmModal({ open: true, message: "Candidatura enviada com sucesso!" });
@@ -72,7 +68,6 @@ export default function VagasPage() {
       setConfirmModal({ open: true, message: "Erro ao candidatar-se!" });
     }
     fetchVagas();
-    // Atualiza vagaSelecionada se for do modal
     if (vagaSelecionada && vagaSelecionada.id === vagaId) {
       fetch(`/api/vagas/${vagaId}`)
         .then(res => res.json())
@@ -85,10 +80,11 @@ export default function VagasPage() {
       setConfirmModal({ open: true, message: "Faça login para salvar vagas." });
       return;
     }
-    const res = await fetch(`/api/vagas/salvar`, {
-      method: "POST",
+    const res = await fetch(`/api/vagas/${vagaId}`, {
+      method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ vagaId })
+      body: JSON.stringify({ action: "salvar" }),
+      credentials: "include"
     });
     if (res.ok) {
       setConfirmModal({ open: true, message: "Vaga salva!" });
@@ -96,7 +92,30 @@ export default function VagasPage() {
       setConfirmModal({ open: true, message: "Erro ao salvar vaga!" });
     }
     fetchVagas();
-    // Atualiza vagaSelecionada se for do modal
+    if (vagaSelecionada && vagaSelecionada.id === vagaId) {
+      fetch(`/api/vagas/${vagaId}`)
+        .then(res => res.json())
+        .then(data => setVagaSelecionada(data.vaga));
+    }
+  };
+
+  const handleRemoverSalvo = async vagaId => {
+    if (!session?.user) {
+      setConfirmModal({ open: true, message: "Faça login para remover dos salvos." });
+      return;
+    }
+    const res = await fetch(`/api/vagas/${vagaId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "remover_salvo" }),
+      credentials: "include"
+    });
+    if (res.ok) {
+      setConfirmModal({ open: true, message: "Vaga removida dos salvos!" });
+    } else {
+      setConfirmModal({ open: true, message: "Erro ao remover vaga dos salvos!" });
+    }
+    fetchVagas();
     if (vagaSelecionada && vagaSelecionada.id === vagaId) {
       fetch(`/api/vagas/${vagaId}`)
         .then(res => res.json())
@@ -127,7 +146,6 @@ export default function VagasPage() {
       <Header />
       <div className="max-w-4xl mx-auto py-8 px-4">
         <h1 className="text-3xl font-bold mb-6">Vagas disponíveis</h1>
-        {/* Filtros, se quiser pode deixar aqui */}
         <div className="mb-6">{/* ...filtros... */}</div>
         {vagas.length === 0 ? (
           <p className="text-center text-zinc-400 mt-16">Nenhuma vaga encontrada.</p>
@@ -140,6 +158,7 @@ export default function VagasPage() {
                 usuario={session?.user}
                 onCandidatar={handleCandidatar}
                 onSalvar={handleSalvar}
+                onRemoverSalvo={handleRemoverSalvo}
                 onFechar={handleFechar}
                 onDeletar={handleDeletar}
                 onVerDetalhes={() => setVagaSelecionada(vaga)}
@@ -166,7 +185,6 @@ export default function VagasPage() {
           </button>
         </div>
       </div>
-      {/* Modal de confirmação de ação */}
       {confirmModal.open && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/60 z-50">
           <div className="bg-zinc-900 p-8 rounded-xl shadow-xl text-center">
@@ -180,7 +198,6 @@ export default function VagasPage() {
           </div>
         </div>
       )}
-      {/* Modal de detalhes da vaga */}
       {vagaSelecionada && (
         <VagaDetalhesModal
           vaga={vagaSelecionada}
@@ -188,6 +205,7 @@ export default function VagasPage() {
           onClose={() => setVagaSelecionada(null)}
           onCandidatar={handleCandidatar}
           onSalvar={handleSalvar}
+          onRemoverSalvo={handleRemoverSalvo}
         />
       )}
     </div>

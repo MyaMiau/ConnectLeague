@@ -6,6 +6,7 @@ export default function VagaCard({
   usuario,
   onCandidatar,
   onSalvar,
+  onRemoverSalvo,
   onFechar,
   onDeletar,
   onVerDetalhes
@@ -14,7 +15,6 @@ export default function VagaCard({
   const jaFavoritou = vaga.favoritos?.some(f => f.usuarioId === usuario?.id);
   const isOrg = usuario?.tipo === "organizacao" && usuario?.id === vaga.organizacaoId;
 
-  // Badge: verde para "Aberta", roxo para outros status
   const badgeClasse = vaga.status === "Aberta"
     ? "bg-green-600 text-white"
     : "bg-purple-700 text-white";
@@ -59,13 +59,14 @@ export default function VagaCard({
             {jaCandidatado ? "Candidatado" : "Candidatar-se"}
           </Button>
         )}
-[]
         <span
           role="button"
           aria-label={jaFavoritou ? "Remover dos salvos" : "Salvar vaga"}
           tabIndex={0}
-          onClick={() => onSalvar?.(vaga.id)}
-          onKeyPress={e => { if (e.key === 'Enter') onSalvar?.(vaga.id); }}
+          onClick={() => jaFavoritou ? onRemoverSalvo?.(vaga.id) : onSalvar?.(vaga.id)}
+          onKeyPress={e => {
+            if (e.key === 'Enter') jaFavoritou ? onRemoverSalvo?.(vaga.id) : onSalvar?.(vaga.id);
+          }}
           className={`ml-2 cursor-pointer transition ${jaFavoritou ? "text-purple-500" : "text-zinc-400"} hover:text-purple-600`}
           style={{ display: 'flex', alignItems: 'center', fontSize: '1.75rem' }}
         >

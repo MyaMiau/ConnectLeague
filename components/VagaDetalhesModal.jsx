@@ -1,12 +1,11 @@
 import { Button } from "./ui/button";
 import { Bookmark, BookmarkCheck } from "lucide-react";
 
-export default function VagaDetalhesModal({ vaga, usuario, onClose, onCandidatar, onSalvar }) {
+export default function VagaDetalhesModal({ vaga, usuario, onClose, onCandidatar, onSalvar, onRemoverSalvo }) {
   if (!vaga) return null;
   const jaCandidatado = vaga.candidatos?.some(c => c.usuarioId === usuario?.id);
   const jaFavoritou = vaga.favoritos?.some(f => f.usuarioId === usuario?.id);
 
-  // Badge: verde para "Aberta", roxo padrão para outros
   const badgeClasse = vaga.status === "Aberta"
     ? "bg-green-600 text-white"
     : "bg-purple-700 text-white";
@@ -55,7 +54,6 @@ export default function VagaDetalhesModal({ vaga, usuario, onClose, onCandidatar
         <div className="mb-6">
           <span className="text-zinc-400"><strong>Candidatos:</strong> {vaga.candidatos?.length || 0}</span>
         </div>
-        {/* Botões de ação */}
         <div className="flex gap-2 items-center">
           <Button
             variant="default"
@@ -65,13 +63,14 @@ export default function VagaDetalhesModal({ vaga, usuario, onClose, onCandidatar
           >
             {jaCandidatado ? "Candidatado" : "Candidatar-se"}
           </Button>
-          {/* Ícone de salvar, sem botão */}
           <span
             role="button"
             aria-label={jaFavoritou ? "Remover dos salvos" : "Salvar vaga"}
             tabIndex={0}
-            onClick={() => onSalvar?.(vaga.id)}
-            onKeyPress={e => { if (e.key === 'Enter') onSalvar?.(vaga.id); }}
+            onClick={() => jaFavoritou ? onRemoverSalvo?.(vaga.id) : onSalvar?.(vaga.id)}
+            onKeyPress={e => {
+              if (e.key === 'Enter') jaFavoritou ? onRemoverSalvo?.(vaga.id) : onSalvar?.(vaga.id);
+            }}
             className={`ml-3 cursor-pointer transition ${jaFavoritou ? "text-purple-500" : "text-zinc-400"} hover:text-purple-600`}
             style={{ display: 'flex', alignItems: 'center', fontSize: '2rem' }}
           >
