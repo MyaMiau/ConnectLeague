@@ -11,6 +11,7 @@ export default function VagasSalvasPage() {
     fetch("/api/vagas/salvas").then(res => res.json()).then(({ vagas }) => setVagas(vagas));
   }, [session]);
 
+  if (!session) return <p>Faça login para ver suas vagas salvas.</p>;
   if (vagas.length === 0) return <p>Nenhuma vaga salva.</p>;
   return (
     <div>

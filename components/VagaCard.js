@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Button } from "./ui/button";
+import { Bookmark, BookmarkCheck } from "lucide-react";
 
 export default function VagaCard({ vaga, usuario, onCandidatar, onSalvar, onFechar, onDeletar }) {
   const jaCandidatado = vaga.candidatos?.some(c => c.usuarioId === usuario?.id);
@@ -47,23 +48,31 @@ export default function VagaCard({ vaga, usuario, onCandidatar, onSalvar, onFech
             {jaCandidatado ? "Candidatado" : "Candidatar-se"}
           </Button>
         )}
-        <Button variant="default" onClick={() => onSalvar?.(vaga.id)}>
-          {jaFavoritou ? "Salvo" : "Salvar"}
+        <Button
+          variant={jaFavoritou ? "secondary" : "default"}
+          onClick={() => onSalvar?.(vaga.id)}
+          aria-label={jaFavoritou ? "Remover dos salvos" : "Salvar vaga"}
+          className="!border-none !shadow-none"
+        >
+          {jaFavoritou ? <BookmarkCheck size={20} /> : <Bookmark size={20} />}
         </Button>
         {isOrg && (
           <>
             <Button variant="secondary" onClick={() => onFechar?.(vaga.id)}>
               {vaga.status === "Aberta" ? "Fechar vaga" : "Reabrir vaga"}
             </Button>
-            <Button variant="destructive" onClick={() => onDeletar?.(vaga.id)}>Deletar</Button>
+            <Button variant="destructive" onClick={() => onDeletar?.(vaga.id)}>
+              Deletar vaga
+            </Button>
             <Link href={`/vagas/editar/${vaga.id}`}>
               <Button variant="outline">Editar vaga</Button>
             </Link>
           </>
         )}
       </div>
-      <div className="mt-2 text-sm text-zinc-400">
-        <span><strong>Candidatos:</strong> {vaga.candidatos?.length || 0}</span>
+      <div className="flex justify-between items-center mt-2 text-sm text-zinc-400">
+        <span>Publicada: {vaga.dataPublicacao ? new Date(vaga.dataPublicacao).toLocaleDateString() : "?"}</span>
+        <span>Candidatos: {vaga.candidatos?.length || 0}</span>
       </div>
     </div>
   );

@@ -3,6 +3,7 @@ import { Button } from "./Button";
 import Link from "next/link";
 
 export default function VagaModal({ vaga, usuario, onCandidatar, onFechar, onDeletar, onClose }) {
+  if (!vaga) return null;
   const jaCandidatado = vaga.candidatos?.some(c => c.usuarioId === usuario?.id);
   const isOrg = usuario?.tipo === "organizacao" && usuario?.id === vaga.organizacaoId;
 
@@ -13,15 +14,20 @@ export default function VagaModal({ vaga, usuario, onCandidatar, onFechar, onDel
         <img src={vaga.organizacao.logo || "/default-org.png"} alt="Logo" />
         <span>{vaga.organizacao.nome}</span>
         <div>{vaga.descricao}</div>
-        <div>Requisitos: {vaga.requisitos}</div>
-        <div>Benefícios: {vaga.beneficios}</div>
-        <div>Posições: {vaga.posicoes?.join(", ")}</div>
-        <div>Tipos: {vaga.tiposUsuario?.join(", ")}</div>
-        <div>Elo: {vaga.elos?.join(", ")}</div>
-        {vaga.cidade && <div>Localização: {vaga.cidade}/{vaga.estado}</div>}
-        <div>Tags: {vaga.tags?.join(", ")}</div>
-        <div>Status: {vaga.status}</div>
-        <div>Publicado em: {new Date(vaga.dataPublicacao).toLocaleDateString()}</div>
+        <div><strong>Requisitos:</strong> {vaga.requisitos}</div>
+        <div><strong>Benefícios:</strong> {vaga.beneficios}</div>
+        <div><strong>Posições:</strong> {vaga.posicoes?.join(", ")}</div>
+        <div><strong>Tipos de usuário:</strong> {vaga.tiposUsuario?.join(", ")}</div>
+        <div><strong>Elo:</strong> {vaga.elos?.join(", ")}</div>
+        {vaga.cidade && <div><strong>Localização:</strong> {vaga.cidade}/{vaga.estado}</div>}
+        <div><strong>Tags:</strong> {vaga.tags?.join(", ")}</div>
+        <div><strong>Status:</strong> {vaga.status}</div>
+        <div><strong>Publicado em:</strong> {vaga.dataPublicacao ? new Date(vaga.dataPublicacao).toLocaleDateString() : "?"}</div>
+        <div style={{ margin: "12px 0" }}>
+          <Link href={`/organizacao/${vaga.organizacaoId}`}>
+            <Button variant="outline">Ver perfil da organização</Button>
+          </Link>
+        </div>
         {!isOrg && (
           <Button disabled={jaCandidatado} onClick={() => onCandidatar(vaga.id)}>
             {jaCandidatado ? "Candidatado" : "Candidatar-se"}
@@ -32,13 +38,17 @@ export default function VagaModal({ vaga, usuario, onCandidatar, onFechar, onDel
             <Button onClick={() => onFechar(vaga.id)}>
               {vaga.status === "Aberta" ? "Fechar vaga" : "Reabrir vaga"}
             </Button>
-            <Button onClick={() => onDeletar(vaga.id)}>Deletar</Button>
+            <Button variant="destructive" onClick={() => onDeletar(vaga.id)}>Deletar</Button>
             <Link href={`/vagas/editar/${vaga.id}`}><Button>Editar vaga</Button></Link>
-            <div>
+            <div style={{ marginTop: "16px" }}>
               <h3>Candidatos:</h3>
-              {vaga.candidatos?.map(c => (
-                <div key={c.usuarioId}>{c.usuario.nome} ({c.usuario.tipo})</div>
-              ))}
+              {vaga.candidatos?.length > 0 ? (
+                vaga.candidatos.map(c => (
+                  <div key={c.usuarioId}>{c.usuario.nome} ({c.usuario.tipo})</div>
+                ))
+              ) : (
+                <div>Nenhum candidato ainda.</div>
+              )}
             </div>
           </>
         )}

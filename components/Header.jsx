@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useEffect, useRef, useState } from "react";
-import { Home, Briefcase, LogOut, Bell } from "lucide-react";
+import { Home, Briefcase, LogOut, Bell, Bookmark } from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
 
 // Função utilitária para criar link seguro para notificações
@@ -159,8 +159,7 @@ export default function Header() {
         try {
           const res = await fetch(`/api/users/${session.user.id}`);
           const data = await res.json();
-          // Ajuste para aceitar ambos formatos!
-          setProfile(data.user || data); // <- Corrige se vier {user: {...}}
+          setProfile(data.user || data);
         } catch {
           setProfile(null);
         }
@@ -169,13 +168,12 @@ export default function Header() {
     fetchProfile();
   }, [session]);
 
-  // Ordem de navegação: Notificações, Timeline, Vagas, Sair
   const navItems = [
     {
       label: "Notificações",
       icon: <Bell size={20} />,
       onClick: () => setShowNotifications((prev) => !prev),
-      custom: true, // para renderizar o popover
+      custom: true,
     },
     {
       label: "Timeline",
@@ -186,6 +184,11 @@ export default function Header() {
       label: "Vagas",
       icon: <Briefcase size={20} />,
       onClick: () => router.push("/vagas"),
+    },
+    {
+      label: "Salvos",
+      icon: <Bookmark size={20} />,
+      onClick: () => router.push("/vagas/salvos"),
     },
     {
       label: "Sair",
@@ -239,22 +242,22 @@ export default function Header() {
 
       {/* Mini perfil do usuário logado (foto real e nome, hover roxo) */}
       {profile && (
-      <Link
-        href={`/profile/${profile.id}`}
-        className="flex items-center gap-2 mb-8 w-full px-4 group cursor-pointer">
-        <div className="relative w-[56px] h-[56px] shrink-0">
-          <Image
-            src={profile.image || "/default-avatar.png"}
-            fill
-            sizes="56px"
-            className="rounded-full object-cover border-2 border-zinc-600 shadow-sm"
-            alt={profile.name || "Avatar"}
-            priority/>
-        </div>
-        <span className="text-zinc-100 font-semibold group-hover:text-purple-400 transition-colors truncate">
-          {profile.name}
-        </span>
-      </Link>
+        <Link
+          href={`/profile/${profile.id}`}
+          className="flex items-center gap-2 mb-8 w-full px-4 group cursor-pointer">
+          <div className="relative w-[56px] h-[56px] shrink-0">
+            <Image
+              src={profile.image || "/default-avatar.png"}
+              fill
+              sizes="56px"
+              className="rounded-full object-cover border-2 border-zinc-600 shadow-sm"
+              alt={profile.name || "Avatar"}
+              priority/>
+          </div>
+          <span className="text-zinc-100 font-semibold group-hover:text-purple-400 transition-colors truncate">
+            {profile.name}
+          </span>
+        </Link>
       )}
 
       <nav className="flex flex-col gap-4 w-full px-4">
