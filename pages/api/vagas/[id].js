@@ -1,9 +1,10 @@
 import prisma from "@/lib/prisma";
-import { getSession } from "next-auth/react";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "../auth/[...nextauth]"; 
 
 export default async function handler(req, res) {
   const vagaId = Number(req.query.id);
-  const session = await getSession({ req });
+  const session = await getServerSession(req, res, authOptions);
 
   if (req.method === "GET") {
     const vaga = await prisma.vacancies.findUnique({
@@ -61,20 +62,20 @@ export default async function handler(req, res) {
     const { action } = req.body;
 
     if (action === "salvar") {
-      const jaFavoritou = await prisma.favorites.findFirst({
-        where: { vacancy_id: vagaId, user_id: session.user.id }
+      const jaFavoritou = await prisma.vacancyFavorite.findFirst({
+        where: { vacancyId: vagaId, userId: session.user.id }
       });
       if (jaFavoritou) return res.status(200).json({ success: true, already: true });
 
-      await prisma.favorites.create({
-        data: { vacancy_id: vagaId, user_id: session.user.id }
+      await prisma.vacancyFavorite.create({
+        data: { vacancyId: vagaId, userId: session.user.id }
       });
       return res.status(200).json({ success: true });
     }
 
     if (action === "remover_salvo") {
-      await prisma.favorites.deleteMany({
-        where: { vacancy_id: vagaId, user_id: session.user.id }
+      await prisma.vacancyFavorite.deleteMany({
+        where: { vacancyId: vagaId, userId: session.user.id }
       });
       return res.status(200).json({ success: true });
     }

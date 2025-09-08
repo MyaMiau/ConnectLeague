@@ -1,5 +1,6 @@
 import { Button } from "./ui/button";
 import { Bookmark, BookmarkCheck } from "lucide-react";
+import Link from "next/link";
 
 export default function VagaDetalhesModal({ vaga, usuario, onClose, onCandidatar, onSalvar, onRemoverSalvo }) {
   if (!vaga) return null;
@@ -22,9 +23,9 @@ export default function VagaDetalhesModal({ vaga, usuario, onClose, onCandidatar
           <img src={vaga.organizacao?.logo || "/default-org.png"} alt="Logo" className="w-16 h-16 rounded-full bg-zinc-800 border mb-2" />
           <div>
             <p className="font-semibold">{vaga.organizacao?.nome}</p>
-            <Button variant="outline" asChild>
-              <a href={`/profile/${vaga.organizacao?.id}`}>Perfil da organização</a>
-            </Button>
+            <Link href={`/profile/${vaga.organizacao?.id}`}>
+              <Button variant="outline">Perfil da organização</Button>
+            </Link>
           </div>
         </div>
         <span className={`inline-block px-3 py-1 rounded-full font-semibold mb-2 ${badgeClasse}`}>{vaga.status}</span>
