@@ -2,10 +2,17 @@ import { Button } from "./ui/button";
 import { Bookmark, BookmarkCheck } from "lucide-react";
 import Link from "next/link";
 
-export default function VagaDetalhesModal({ vaga, usuario, onClose, onCandidatar, onSalvar, onRemoverSalvo }) {
+export default function VagaDetalhesModal({
+  vaga,
+  usuario,
+  onClose,
+  onCandidatar,
+  onSalvar,
+  onRemoverSalvo
+}) {
   if (!vaga) return null;
   const jaCandidatado = vaga.candidatos?.some(c => c.usuarioId === usuario?.id);
-  const jaFavoritou = vaga.favorites?.some(f => f.userId === usuario?.id);
+  const jaFavoritou = vaga.favoritos?.some(f => f.usuarioId === usuario?.id);
 
   const badgeClasse = vaga.status === "Aberta"
     ? "bg-green-600 text-white"
@@ -18,42 +25,79 @@ export default function VagaDetalhesModal({ vaga, usuario, onClose, onCandidatar
           className="absolute top-3 right-3 text-white text-xl"
           onClick={onClose}
         >×</button>
-        <h2 className="text-2xl font-bold mb-4">{vaga.titulo}</h2>
+        <h2 className="text-2xl font-bold mb-4">{vaga.titulo || "Vaga sem título"}</h2>
         <div className="flex gap-6 items-center mb-4">
-          <img src={vaga.organizacao?.logo || "/default-org.png"} alt="Logo" className="w-16 h-16 rounded-full bg-zinc-800 border mb-2" />
+          <img
+            src={vaga.organizacao?.logo || "/default-org.png"}
+            alt="Logo"
+            className="w-16 h-16 rounded-full bg-zinc-800 border mb-2"
+          />
           <div>
-            <p className="font-semibold">{vaga.organizacao?.nome}</p>
-            <Link href={`/profile/${vaga.organizacao?.id}`}>
+            <p className="font-semibold">{vaga.organizacao?.nome || "Organização desconhecida"}</p>
+            <Link href={`/profile/${vaga.organizacao?.id || ""}`}>
               <Button variant="outline">Perfil da organização</Button>
             </Link>
           </div>
         </div>
-        <span className={`inline-block px-3 py-1 rounded-full font-semibold mb-2 ${badgeClasse}`}>{vaga.status}</span>
-        <span className="ml-3 text-zinc-400">Publicada em {vaga.dataPublicacao ? new Date(vaga.dataPublicacao).toLocaleDateString() : "?"}</span>
+        <span className={`inline-block px-3 py-1 rounded-full font-semibold mb-2 ${badgeClasse}`}>
+          {vaga.status || "Status desconhecido"}
+        </span>
+        <span className="ml-3 text-zinc-400">
+          Publicada em {vaga.dataPublicacao ? new Date(vaga.dataPublicacao).toLocaleDateString() : "?"}
+        </span>
         <div className="my-4">
           <h3 className="font-bold mb-2">Descrição completa</h3>
-          <p className="text-zinc-200">{vaga.descricaoCompleta || vaga.descricao}</p>
+          <p className="text-zinc-200 whitespace-pre-line">
+            {vaga.descricaoCompleta || vaga.descricao || "Sem descrição."}
+          </p>
         </div>
+        {vaga.requisitos && (
+          <div className="mb-3">
+            <h3 className="font-bold mb-2">Requisitos</h3>
+            <ul className="list-disc pl-6 text-zinc-200">
+              {Array.isArray(vaga.requisitos)
+                ? vaga.requisitos.map((r, i) => <li key={i}>{r}</li>)
+                : <li>{vaga.requisitos}</li>
+              }
+            </ul>
+          </div>
+        )}
+        {vaga.beneficios && (
+          <div className="mb-3">
+            <h3 className="font-bold mb-2">Benefícios</h3>
+            <ul className="list-disc pl-6 text-zinc-200">
+              {Array.isArray(vaga.beneficios)
+                ? vaga.beneficios.map((b, i) => <li key={i}>{b}</li>)
+                : <li>{vaga.beneficios}</li>
+              }
+            </ul>
+          </div>
+        )}
         <div className="mb-3">
-          <h3 className="font-bold mb-2">Requisitos</h3>
-          <ul className="list-disc pl-6 text-zinc-200">
-            {vaga.requisitos?.map((r, i) => <li key={i}>{r}</li>)}
-          </ul>
-        </div>
-        <div className="mb-3">
-          <h3 className="font-bold mb-2">Benefícios</h3>
-          <ul className="list-disc pl-6 text-zinc-200">
-            {vaga.beneficios?.map((b, i) => <li key={i}>{b}</li>)}
-          </ul>
-        </div>
-        <div className="mb-3">
-          <span className="text-zinc-400"><strong>Posições:</strong> {vaga.posicoes?.join(", ")}</span> <br />
-          <span className="text-zinc-400"><strong>Elo mínimo:</strong> {vaga.elos?.join(", ")}</span> <br />
-          <span className="text-zinc-400"><strong>Localização:</strong> {vaga.cidade}/{vaga.estado}</span> <br />
-          {vaga.tags?.length > 0 && <span className="text-zinc-400"><strong>Tags:</strong> {vaga.tags.join(", ")}</span>}
+          <span className="text-zinc-400">
+            <strong>Posições:</strong> {vaga.posicoes?.join(", ") || "—"}
+          </span>
+          <br />
+          <span className="text-zinc-400">
+            <strong>Elo mínimo:</strong> {vaga.elos?.join(", ") || "—"}
+          </span>
+          <br />
+          {(vaga.cidade || vaga.estado) && (
+            <span className="text-zinc-400">
+              <strong>Localização:</strong> {vaga.cidade || ""}{vaga.cidade && vaga.estado ? "/" : ""}{vaga.estado || ""}
+            </span>
+          )}
+          <br />
+          {vaga.tags?.length > 0 && (
+            <span className="text-zinc-400">
+              <strong>Tags:</strong> {vaga.tags.join(", ")}
+            </span>
+          )}
         </div>
         <div className="mb-6">
-          <span className="text-zinc-400"><strong>Candidatos:</strong> {vaga.candidatos?.length || 0}</span>
+          <span className="text-zinc-400">
+            <strong>Candidatos:</strong> {vaga.candidatos?.length || 0}
+          </span>
         </div>
         <div className="flex gap-2 items-center">
           <Button

@@ -1,5 +1,6 @@
 import prisma from "@/lib/prisma";
-import { getSession } from "next-auth/react";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "../auth/[...nextauth]";
 
 export default async function handler(req, res) {
   if (req.method === "GET") {
@@ -50,8 +51,9 @@ export default async function handler(req, res) {
   }
 
   if (req.method === "POST") {
-    const session = await getSession({ req });
-    if (!session || session.user.type !== "organizacao") return res.status(401).json({ error: "Não autenticado como organização." });
+    const session = await getServerSession(req, res, authOptions);
+    if (!session || session.user.type !== "organizacao")
+      return res.status(401).json({ error: "Não autenticado como organização." });
 
     const { title, description, requirements, benefits, userTypes, positions, elos, city, state, tags } = req.body;
     const vaga = await prisma.vacancies.create({

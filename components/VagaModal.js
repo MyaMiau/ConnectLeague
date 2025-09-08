@@ -1,6 +1,6 @@
+import Modal from "./Modal";
 import { Button } from "./ui/button";
 import Link from "next/link";
-import { Bookmark, BookmarkCheck } from "lucide-react";
 
 export default function VagaModal({
   vaga,
@@ -8,75 +8,101 @@ export default function VagaModal({
   onCandidatar,
   onFechar,
   onDeletar,
-  onSalvar,
-  onRemoverSalvo,
   onClose
 }) {
   if (!vaga) return null;
-  const jaCandidatado = vaga.candidatos?.some(c => c.usuarioId === usuario?.id);
-  const jaFavoritou = vaga.favorites?.some(f => f.userId === usuario?.id);
-  const isOrg = usuario?.tipo === "organizacao" && usuario?.id === vaga.organizacaoId;
+
+  // Dados e relações conforme seu prisma/schema
+  const candidatos = vaga.applications || [];
+  const organizacao = vaga.organization || {};
+
+  const jaCandidatado = candidatos.some(
+    c => c.user_id === usuario?.id
+  );
+  const isOrg =
+    usuario?.type === "organizacao" && usuario?.id === organizacao.id;
+
+  // Montagem de localização (Cidade/UF)
+  const localizacao =
+    vaga.city && vaga.state
+      ? `${vaga.city}/${vaga.state}`
+      : vaga.city || vaga.state || "";
 
   return (
     <Modal open={!!vaga} onClose={onClose}>
       <div>
-        <h2>{vaga.titulo}</h2>
-        <img src={vaga.organizacao.logo || "/default-org.png"} alt="Logo" />
-        <span>{vaga.organizacao.nome}</span>
-        <div>{vaga.descricao}</div>
-        <div><strong>Requisitos:</strong> {vaga.requisitos}</div>
-        <div><strong>Benefícios:</strong> {vaga.beneficios}</div>
-        <div><strong>Posições:</strong> {vaga.posicoes?.join(", ")}</div>
-        <div><strong>Tipos de usuário:</strong> {vaga.tiposUsuario?.join(", ")}</div>
-        <div><strong>Elo:</strong> {vaga.elos?.join(", ")}</div>
-        {vaga.cidade && <div><strong>Localização:</strong> {vaga.cidade}/{vaga.estado}</div>}
-        <div><strong>Tags:</strong> {vaga.tags?.join(", ")}</div>
-        <div><strong>Status:</strong> {vaga.status}</div>
-        <div><strong>Publicado em:</strong> {vaga.dataPublicacao ? new Date(vaga.dataPublicacao).toLocaleDateString() : "?"}</div>
-        <div style={{ margin: "12px 0" }}>
-          <Link href={`/organizacao/${vaga.organizacaoId}`}>
-            <Button variant="outline">Ver perfil da organização</Button>
-          </Link>
+        {/* Título e Organização */}
+        <h2 className="text-2xl font-bold mb-2">{vaga.title}</h2>
+        <div className="flex items-center gap-3 mb-2">
+          <img
+            src={organizacao.image || "/default-org.png"}
+            alt="Logo"
+            className="w-12 h-12 rounded-full bg-zinc-800 object-cover border"
+          />
+          <span className="block text-zinc-400">{organizacao.orgName || organizacao.name}</span>
         </div>
-        {!isOrg && (
-          <>
-            <Button disabled={jaCandidatado} onClick={() => onCandidatar(vaga.id)}>
+
+        {/* Descrição */}
+        <div className="mb-2">{vaga.description}</div>
+
+        {/* Requisitos e Benefícios */}
+        {vaga.requirements && (
+          <div className="mb-1"><strong>Requisitos:</strong> {vaga.requirements}</div>
+        )}
+        {vaga.benefits && (
+          <div className="mb-1"><strong>Benefícios:</strong> {vaga.benefits}</div>
+        )}
+
+        {/* Posições, Tipos de Usuário, Elo, Localização, Tags */}
+        <div className="mb-1"><strong>Posições:</strong> {vaga.positions?.join(", ") || "Não informado"}</div>
+        <div className="mb-1"><strong>Tipos de usuário:</strong> {vaga.userTypes?.join(", ") || "Não informado"}</div>
+        <div className="mb-1"><strong>Elo:</strong> {vaga.elos?.join(", ") || "Não informado"}</div>
+        <div className="mb-1"><strong>Localização:</strong> {localizacao || "Não informado"}</div>
+        <div className="mb-1"><strong>Tags:</strong> {vaga.tags?.join(", ") || "Nenhuma"}</div>
+        <div className="mb-1"><strong>Status:</strong> {vaga.status}</div>
+        <div className="mb-1"><strong>Publicado em:</strong> {vaga.created_at ? new Date(vaga.created_at).toLocaleDateString() : "?"}</div>
+
+        {/* Candidatos (contagem) */}
+        <div className="mb-3 text-zinc-400 text-sm">
+          <strong>Candidatos:</strong> {candidatos.length}
+        </div>
+
+        {/* Botões */}
+        <div className="flex flex-wrap gap-2 mb-1">
+          <Link href={`/organizacao/${organizacao.id}`}>
+            <Button variant="outline" className="mb-2">Ver perfil da organização</Button>
+          </Link>
+          {!isOrg && (
+            <Button
+              disabled={jaCandidatado}
+              onClick={() => onCandidatar?.(vaga.id)}
+              className="mb-2"
+            >
               {jaCandidatado ? "Candidatado" : "Candidatar-se"}
             </Button>
-            <span
-              role="button"
-              aria-label={jaFavoritou ? "Remover dos salvos" : "Salvar vaga"}
-              tabIndex={0}
-              onClick={() => jaFavoritou ? onRemoverSalvo?.(vaga.id) : onSalvar?.(vaga.id)}
-              onKeyPress={e => {
-                if (e.key === 'Enter') jaFavoritou ? onRemoverSalvo?.(vaga.id) : onSalvar?.(vaga.id);
-              }}
-              className={`ml-3 cursor-pointer transition ${jaFavoritou ? "text-purple-500" : "text-zinc-400"} hover:text-purple-600`}
-              style={{ display: 'inline-flex', alignItems: 'center', fontSize: '1.75rem', marginLeft: 8 }}
-            >
-              {jaFavoritou ? <BookmarkCheck size={24} /> : <Bookmark size={24} />}
-            </span>
-          </>
-        )}
-        {isOrg && (
-          <>
-            <Button onClick={() => onFechar(vaga.id)}>
-              {vaga.status === "Aberta" ? "Fechar vaga" : "Reabrir vaga"}
-            </Button>
-            <Button variant="destructive" onClick={() => onDeletar(vaga.id)}>Deletar</Button>
-            <Link href={`/vagas/editar/${vaga.id}`}><Button>Editar vaga</Button></Link>
-            <div style={{ marginTop: "16px" }}>
-              <h3>Candidatos:</h3>
-              {vaga.candidatos?.length > 0 ? (
-                vaga.candidatos.map(c => (
-                  <div key={c.usuarioId}>{c.usuario.nome} ({c.usuario.tipo})</div>
-                ))
-              ) : (
-                <div>Nenhum candidato ainda.</div>
-              )}
-            </div>
-          </>
-        )}
+          )}
+          {isOrg && (
+            <>
+              <Button onClick={() => onFechar?.(vaga.id)}>
+                {vaga.status === "Aberta" ? "Fechar vaga" : "Reabrir vaga"}
+              </Button>
+              <Button variant="destructive" onClick={() => onDeletar?.(vaga.id)}>Deletar</Button>
+              <Link href={`/vagas/editar/${vaga.id}`}><Button>Editar vaga</Button></Link>
+              <div style={{ marginTop: "16px" }}>
+                <h3 className="font-semibold mb-1">Candidatos:</h3>
+                {candidatos.length > 0 ? (
+                  candidatos.map(c => (
+                    <div key={c.user_id}>
+                      {c.user?.name || "Sem nome"} ({c.user?.type || "?"})
+                    </div>
+                  ))
+                ) : (
+                  <div>Nenhum candidato ainda.</div>
+                )}
+              </div>
+            </>
+          )}
+        </div>
       </div>
     </Modal>
   );

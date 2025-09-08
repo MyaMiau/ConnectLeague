@@ -7,9 +7,10 @@ import VagaModal from "../../components/VagaModal";
 export default function VagasSalvasPage() {
   const { data: session } = useSession();
   const [vagas, setVagas] = useState([]);
-  const [confirmModal, setConfirmModal] = useState({ open: false, message: "" });
   const [detalheVaga, setDetalheVaga] = useState(null);
+  const [confirmModal, setConfirmModal] = useState({ open: false, message: "" });
 
+  // Busca as vagas salvas do usuário autenticado
   const fetchSalvos = () => {
     fetch("/api/vagas/salvas")
       .then(res => res.json())
@@ -21,26 +22,30 @@ export default function VagasSalvasPage() {
     fetchSalvos();
   }, [session]);
 
-  // Remove dos salvos imediatamente da lista
+  // Remove vaga dos salvos e já remove da lista local
   const handleRemoverSalvo = async vagaId => {
-    await fetch(`/api/vagas/${vagaId}`, {
-      method: "PATCH",
+    const res = await fetch(`/api/vagas/remover-salvo`, {
+      method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "remover_salvo" }),
+      body: JSON.stringify({ vagaId })
     });
-    setVagas(prev => prev.filter(v => v.id !== vagaId));
-    setConfirmModal({ open: true, message: "Vaga removida dos salvos!" });
+    if (res.ok) {
+      setVagas(vagas => vagas.filter(v => v.id !== vagaId));
+      setConfirmModal({ open: true, message: "Vaga removida dos salvos!" });
+    } else {
+      setConfirmModal({ open: true, message: "Erro ao remover vaga dos salvos!" });
+    }
   };
 
-  // Opcional: handler para salvar caso deseje permitir salvar novamente na página de salvos
-  const handleSalvar = async vagaId => {
+  // Permite salvar vaga de novo, caso deseje (opcional, normalmente não usado em "salvos")
+  const handleSalvarVaga = async vagaId => {
     await fetch(`/api/vagas/${vagaId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "salvar" }),
+      body: JSON.stringify({ action: "salvar" })
     });
-    // Aqui normalmente não precisa atualizar a lista porque já está em salvos
     setConfirmModal({ open: true, message: "Vaga salva!" });
+    fetchSalvos();
   };
 
   const handleCandidatar = async vagaId => {
@@ -50,6 +55,7 @@ export default function VagasSalvasPage() {
       body: JSON.stringify({ vagaId })
     });
     setConfirmModal({ open: true, message: "Candidatado com sucesso!" });
+    fetchSalvos();
   };
 
   if (!session) {
@@ -77,10 +83,10 @@ export default function VagasSalvasPage() {
                 key={vaga.id}
                 vaga={vaga}
                 usuario={session?.user}
-                onSalvar={handleSalvar}
                 onRemoverSalvo={handleRemoverSalvo}
+                onSalvar={handleSalvarVaga}
                 onCandidatar={handleCandidatar}
-                onShowDetails={setDetalheVaga}
+                onShowDetails={() => setDetalheVaga(vaga)}
               />
             ))
           )}
