@@ -40,6 +40,7 @@ export default function VagasPage() {
 
   useEffect(() => {
     fetchVagas();
+    // eslint-disable-next-line
   }, [filtros]);
 
   const handleInput = e => setFiltros(f => ({ ...f, [e.target.name]: e.target.value, pagina: 1 }));
@@ -74,6 +75,7 @@ export default function VagasPage() {
     }
   };
 
+  // ATUALIZADO: favorites/userId padrão e atualização também no modal
   const handleSalvar = async vagaId => {
     if (!session?.user) {
       setConfirmModal({ open: true, message: "Faça login para salvar vagas." });
@@ -90,10 +92,15 @@ export default function VagasPage() {
           v.id === vagaId
             ? {
                 ...v,
-                favoritos: [...(v.favoritos || []), { usuarioId: session.user.id }],
+                favorites: [...(v.favorites || []), { userId: session.user.id }],
               }
             : v
         )
+      );
+      setVagaSelecionada(v =>
+        v && v.id === vagaId
+          ? { ...v, favorites: [...(v.favorites || []), { userId: session.user.id }] }
+          : v
       );
       setConfirmModal({ open: true, message: "Vaga salva!" });
     } else {
@@ -117,10 +124,15 @@ export default function VagasPage() {
           v.id === vagaId
             ? {
                 ...v,
-                favoritos: (v.favoritos || []).filter(f => f.usuarioId !== session.user.id),
+                favorites: (v.favorites || []).filter(f => f.userId !== session.user.id),
               }
             : v
         )
+      );
+      setVagaSelecionada(v =>
+        v && v.id === vagaId
+          ? { ...v, favorites: (v.favorites || []).filter(f => f.userId !== session.user.id) }
+          : v
       );
       setConfirmModal({ open: true, message: "Vaga removida dos salvos!" });
     } else {
@@ -166,7 +178,10 @@ export default function VagasPage() {
                 onRemoverSalvo={handleRemoverSalvo}
                 onFechar={handleFechar}
                 onDeletar={handleDeletar}
-                onShowDetails={() => setVagaSelecionada(vaga)}
+                onShowDetails={() => {
+                  const vagaAtual = vagas.find(v => v.id === vaga.id);
+                  setVagaSelecionada(vagaAtual || vaga);
+                }}
               />
             ))}
           </div>

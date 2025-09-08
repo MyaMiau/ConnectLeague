@@ -12,9 +12,10 @@ export default function VagaCard({
   onDeletar,
   onShowDetails,
 }) {
-  const jaFavoritou = vaga.favoritos?.some(f => f.usuarioId === usuario?.id);
+  // Sempre verifica nos favorites e userId para garantir consistência
+  const jaFavoritou = vaga.favorites?.some(f => f.userId === usuario?.id);
   const jaCandidatado = vaga.candidatos?.some(c => c.usuarioId === usuario?.id);
-  const isOrg = usuario?.tipo === "organizacao" && usuario?.id === vaga.organization_id;
+  const isOrg = usuario?.tipo === "organizacao" && usuario?.id === vaga.organizacaoId;
 
   const statusClasse = vaga.status === "Aberta"
     ? "bg-green-600 text-white"
@@ -24,7 +25,7 @@ export default function VagaCard({
     <div className="bg-zinc-900 rounded-xl shadow-lg p-6 flex flex-col gap-3 border border-zinc-800">
       <div className="flex items-center gap-4 mb-3">
         <img
-          src={vaga.organization?.logo || "/default-org.png"}
+          src={vaga.organizacao?.logo || vaga.organization?.logo || "/default-org.png"}
           alt="Logo"
           className="w-20 h-20 rounded-full bg-zinc-800 object-cover border"
         />
@@ -39,7 +40,7 @@ export default function VagaCard({
             </span>
           </h2>
           <span className="block text-zinc-400 font-semibold text-lg mb-1">
-            {vaga.organization?.name || "Organização desconhecida"}
+            {vaga.organizacao?.nome || vaga.organization?.name || "Organização desconhecida"}
           </span>
           <p className="text-zinc-300 text-sm">{vaga.descricao || vaga.description}</p>
         </div>
@@ -48,6 +49,7 @@ export default function VagaCard({
         <span><strong>Posições:</strong> {vaga.posicoes?.join(", ") || vaga.positions?.join(", ") || "Não informado"}</span>
         <span><strong>Elo:</strong> {vaga.elos?.join(", ") || "Não informado"}</span>
         <span><strong>Tipos:</strong> {vaga.tiposUsuario?.join(", ") || vaga.userTypes?.join(", ") || "Não informado"}</span>
+        {vaga.tags?.length > 0 && <span><strong>Tags:</strong> {vaga.tags.join(", ")}</span>}
       </div>
       <div className="flex flex-wrap gap-2 mt-1">
         <Button variant="default" onClick={() => onShowDetails?.(vaga)}>
@@ -72,6 +74,7 @@ export default function VagaCard({
           aria-label={jaFavoritou ? "Remover dos salvos" : "Salvar vaga"}
           className="!border-none !shadow-none"
         >
+          {/* Mantém o check SEMPRE que o user já salvou, e só volta se realmente não estiver salvo */}
           {jaFavoritou ? <BookmarkCheck size={20} /> : <Bookmark size={20} />}
         </Button>
         {isOrg && (

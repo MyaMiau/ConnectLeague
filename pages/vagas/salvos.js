@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import VagaCard from "../../components/VagaCard";
 import { useSession } from "next-auth/react";
 import Header from "../../components/Header";
-import VagaModal from "../../components/VagaModal";
+import VagaDetalhesModal from "../../components/VagaDetalhesModal";
 
 export default function VagasSalvasPage() {
   const { data: session } = useSession();
@@ -22,7 +22,7 @@ export default function VagasSalvasPage() {
     fetchSalvos();
   }, [session]);
 
-  // Remove vaga dos salvos e já remove da lista local
+  // Remove vaga dos salvos e já remove da lista local e do modal se for a mesma
   const handleRemoverSalvo = async vagaId => {
     const res = await fetch(`/api/vagas/remover-salvo`, {
       method: "POST",
@@ -31,21 +31,34 @@ export default function VagasSalvasPage() {
     });
     if (res.ok) {
       setVagas(vagas => vagas.filter(v => v.id !== vagaId));
+      setDetalheVaga(det => det && det.id === vagaId ? null : det);
       setConfirmModal({ open: true, message: "Vaga removida dos salvos!" });
     } else {
       setConfirmModal({ open: true, message: "Erro ao remover vaga dos salvos!" });
     }
   };
 
-  // Permite salvar vaga de novo, caso deseje (opcional, normalmente não usado em "salvos")
+  // Salva a vaga e já atualiza localmente para refletir no modal/card
   const handleSalvarVaga = async vagaId => {
-    await fetch(`/api/vagas/${vagaId}`, {
+    const res = await fetch(`/api/vagas/${vagaId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "salvar" })
     });
-    setConfirmModal({ open: true, message: "Vaga salva!" });
-    fetchSalvos();
+    if (res.ok) {
+      setVagas(vagas => vagas.map(v =>
+        v.id === vagaId
+          ? { ...v, favorites: [...(v.favorites || []), { userId: session.user.id }] }
+          : v
+      ));
+      setDetalheVaga(det => det && det.id === vagaId
+        ? { ...det, favorites: [...(det.favorites || []), { userId: session.user.id }] }
+        : det
+      );
+      setConfirmModal({ open: true, message: "Vaga salva!" });
+    } else {
+      setConfirmModal({ open: true, message: "Erro ao salvar vaga!" });
+    }
   };
 
   const handleCandidatar = async vagaId => {
@@ -86,7 +99,10 @@ export default function VagasSalvasPage() {
                 onRemoverSalvo={handleRemoverSalvo}
                 onSalvar={handleSalvarVaga}
                 onCandidatar={handleCandidatar}
-                onShowDetails={() => setDetalheVaga(vaga)}
+                onShowDetails={() => {
+                  const vagaAtual = vagas.find(v => v.id === vaga.id);
+                  setDetalheVaga(vagaAtual || vaga);
+                }}
               />
             ))
           )}
@@ -106,13 +122,15 @@ export default function VagasSalvasPage() {
           </div>
         </div>
       )}
-      {/* Modal de detalhes igual página de vagas */}
+      {/* Modal de detalhes usando VagaDetalhesModal */}
       {detalheVaga && (
-        <VagaModal
+        <VagaDetalhesModal
           vaga={detalheVaga}
           usuario={session?.user}
-          onCandidatar={handleCandidatar}
           onClose={() => setDetalheVaga(null)}
+          onCandidatar={handleCandidatar}
+          onSalvar={handleSalvarVaga}
+          onRemoverSalvo={handleRemoverSalvo}
         />
       )}
     </div>
