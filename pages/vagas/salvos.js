@@ -2,15 +2,14 @@ import { useEffect, useState } from "react";
 import VagaCard from "../../components/VagaCard";
 import { useSession } from "next-auth/react";
 import Header from "../../components/Header";
-import VagaModal from "../../components/VagaModal"; // Certifique-se de ter esse componente
+import VagaModal from "../../components/VagaModal";
 
 export default function VagasSalvasPage() {
   const { data: session } = useSession();
   const [vagas, setVagas] = useState([]);
-  const [detalheVaga, setDetalheVaga] = useState(null);
   const [confirmModal, setConfirmModal] = useState({ open: false, message: "" });
+  const [detalheVaga, setDetalheVaga] = useState(null);
 
-  // Busca as vagas salvas do usuário autenticado
   const fetchSalvos = () => {
     fetch("/api/vagas/salvas")
       .then(res => res.json())
@@ -22,26 +21,26 @@ export default function VagasSalvasPage() {
     fetchSalvos();
   }, [session]);
 
-  // Remove vaga dos salvos
+  // Remove dos salvos imediatamente da lista
   const handleRemoverSalvo = async vagaId => {
-    await fetch(`/api/vagas/remover-salvo`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ vagaId })
-    });
-    setConfirmModal({ open: true, message: "Vaga removida dos salvos!" });
-    fetchSalvos();
-  };
-
-  // Permite salvar vaga de novo, caso suporte múltiplos caminhos de salvar
-  const handleSalvarVaga = async vagaId => {
     await fetch(`/api/vagas/${vagaId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "salvar" })
+      body: JSON.stringify({ action: "remover_salvo" }),
     });
+    setVagas(prev => prev.filter(v => v.id !== vagaId));
+    setConfirmModal({ open: true, message: "Vaga removida dos salvos!" });
+  };
+
+  // Opcional: handler para salvar caso deseje permitir salvar novamente na página de salvos
+  const handleSalvar = async vagaId => {
+    await fetch(`/api/vagas/${vagaId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "salvar" }),
+    });
+    // Aqui normalmente não precisa atualizar a lista porque já está em salvos
     setConfirmModal({ open: true, message: "Vaga salva!" });
-    fetchSalvos();
   };
 
   const handleCandidatar = async vagaId => {
@@ -51,11 +50,18 @@ export default function VagasSalvasPage() {
       body: JSON.stringify({ vagaId })
     });
     setConfirmModal({ open: true, message: "Candidatado com sucesso!" });
-    fetchSalvos();
   };
 
-  if (!session) return <p>Faça login para ver suas vagas salvas.</p>;
-  if (vagas.length === 0) return <p>Nenhuma vaga salva.</p>;
+  if (!session) {
+    return (
+      <div className="min-h-screen bg-black text-white">
+        <Header />
+        <div className="max-w-4xl mx-auto py-8 px-4">
+          <p>Faça login para ver suas vagas salvas.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-black text-white">
@@ -63,17 +69,21 @@ export default function VagasSalvasPage() {
       <div className="max-w-4xl mx-auto py-8 px-4">
         <h1 className="text-3xl font-bold mb-6">Vagas salvas</h1>
         <div className="space-y-6">
-          {vagas.map(vaga => (
-            <VagaCard
-              key={vaga.id}
-              vaga={vaga}
-              usuario={session?.user}
-              onRemoverSalvo={handleRemoverSalvo}
-              onSalvar={handleSalvarVaga}
-              onCandidatar={handleCandidatar}
-              onShowDetails={() => setDetalheVaga(vaga)}
-            />
-          ))}
+          {vagas.length === 0 ? (
+            <p className="text-center text-zinc-400 mt-16">Nenhuma vaga salva.</p>
+          ) : (
+            vagas.map(vaga => (
+              <VagaCard
+                key={vaga.id}
+                vaga={vaga}
+                usuario={session?.user}
+                onSalvar={handleSalvar}
+                onRemoverSalvo={handleRemoverSalvo}
+                onCandidatar={handleCandidatar}
+                onShowDetails={setDetalheVaga}
+              />
+            ))
+          )}
         </div>
       </div>
       {/* Modal de confirmação */}

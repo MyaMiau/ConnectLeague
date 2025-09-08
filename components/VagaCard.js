@@ -1,5 +1,6 @@
-import { Bookmark, BookmarkCheck } from "lucide-react";
+import Link from "next/link";
 import { Button } from "./ui/button";
+import { Bookmark, BookmarkCheck } from "lucide-react";
 
 export default function VagaCard({
   vaga,
@@ -9,14 +10,15 @@ export default function VagaCard({
   onRemoverSalvo,
   onFechar,
   onDeletar,
-  onVerDetalhes
+  onShowDetails,
 }) {
+  const jaFavoritou = vaga.favoritos?.some(f => f.usuarioId === usuario?.id);
   const jaCandidatado = vaga.candidatos?.some(c => c.usuarioId === usuario?.id);
-  const jaFavoritou = vaga.favorites?.some(f => f.userId === usuario?.id);
   const isOrg = usuario?.tipo === "organizacao" && usuario?.id === vaga.organizacaoId;
-  const badgeClasse = vaga.status === "Aberta"
+
+  const statusClasse = vaga.status === "Aberta"
     ? "bg-green-600 text-white"
-    : "bg-purple-700 text-white";
+    : "bg-gray-400 text-gray-800";
 
   return (
     <div className="bg-zinc-900 rounded-xl shadow-lg p-6 flex flex-col gap-3 border border-zinc-800">
@@ -30,7 +32,7 @@ export default function VagaCard({
           <h2 className="text-2xl font-bold flex items-center gap-2">
             {vaga.titulo || "Vaga sem título"}
             <span
-              className={`inline-block px-2 py-1 rounded text-xs font-semibold ${badgeClasse}`}
+              className={`inline-block px-2 py-1 rounded text-xs font-semibold ${statusClasse}`}
               style={{ marginLeft: 8 }}
             >
               {vaga.status || "Aberta"}
@@ -46,8 +48,8 @@ export default function VagaCard({
         {vaga.tags?.length > 0 && <span><strong>Tags:</strong> {vaga.tags.join(", ")}</span>}
         {vaga.cidade && <span><strong>Localização:</strong> {vaga.cidade}/{vaga.estado}</span>}
       </div>
-      <div className="flex flex-wrap gap-2 mt-1 items-center">
-        <Button variant="default" onClick={() => onVerDetalhes?.(vaga)}>
+      <div className="flex flex-wrap gap-2 mt-1">
+        <Button variant="default" onClick={() => onShowDetails?.(vaga)}>
           Ver detalhes
         </Button>
         {!isOrg && (
@@ -55,24 +57,22 @@ export default function VagaCard({
             variant="default"
             disabled={jaCandidatado}
             onClick={() => onCandidatar?.(vaga.id)}
-            aria-label={jaCandidatado ? "Já candidatado" : "Candidatar-se"}
           >
             {jaCandidatado ? "Candidatado" : "Candidatar-se"}
           </Button>
         )}
-        <span
-          role="button"
+        <Button
+          variant={jaFavoritou ? "secondary" : "default"}
+          onClick={() =>
+            jaFavoritou
+              ? onRemoverSalvo?.(vaga.id)
+              : onSalvar?.(vaga.id)
+          }
           aria-label={jaFavoritou ? "Remover dos salvos" : "Salvar vaga"}
-          tabIndex={0}
-          onClick={() => jaFavoritou ? onRemoverSalvo?.(vaga.id) : onSalvar?.(vaga.id)}
-          onKeyPress={e => {
-            if (e.key === 'Enter') jaFavoritou ? onRemoverSalvo?.(vaga.id) : onSalvar?.(vaga.id);
-          }}
-          className={`ml-2 cursor-pointer transition ${jaFavoritou ? "text-purple-500" : "text-zinc-400"} hover:text-purple-600`}
-          style={{ display: 'flex', alignItems: 'center', fontSize: '1.75rem' }}
+          className="!border-none !shadow-none"
         >
-          {jaFavoritou ? <BookmarkCheck size={24} /> : <Bookmark size={24} />}
-        </span>
+          {jaFavoritou ? <BookmarkCheck size={20} /> : <Bookmark size={20} />}
+        </Button>
         {isOrg && (
           <>
             <Button variant="secondary" onClick={() => onFechar?.(vaga.id)}>
@@ -81,6 +81,9 @@ export default function VagaCard({
             <Button variant="destructive" onClick={() => onDeletar?.(vaga.id)}>
               Deletar vaga
             </Button>
+            <Link href={`/vagas/editar/${vaga.id}`}>
+              <Button variant="outline">Editar vaga</Button>
+            </Link>
           </>
         )}
       </div>

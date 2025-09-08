@@ -57,7 +57,6 @@ export default function VagasPage() {
       setConfirmModal({ open: true, message: "Faça login para se candidatar." });
       return;
     }
-    // Aqui usa PATCH para candidatura!
     const res = await fetch(`/api/vagas/${vagaId}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -84,18 +83,21 @@ export default function VagasPage() {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "salvar" }),
-      credentials: "include"
     });
     if (res.ok) {
+      setVagas(vagas =>
+        vagas.map(v =>
+          v.id === vagaId
+            ? {
+                ...v,
+                favoritos: [...(v.favoritos || []), { usuarioId: session.user.id }],
+              }
+            : v
+        )
+      );
       setConfirmModal({ open: true, message: "Vaga salva!" });
     } else {
       setConfirmModal({ open: true, message: "Erro ao salvar vaga!" });
-    }
-    fetchVagas();
-    if (vagaSelecionada && vagaSelecionada.id === vagaId) {
-      fetch(`/api/vagas/${vagaId}`)
-        .then(res => res.json())
-        .then(data => setVagaSelecionada(data.vaga));
     }
   };
 
@@ -108,18 +110,21 @@ export default function VagasPage() {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "remover_salvo" }),
-      credentials: "include"
     });
     if (res.ok) {
+      setVagas(vagas =>
+        vagas.map(v =>
+          v.id === vagaId
+            ? {
+                ...v,
+                favoritos: (v.favoritos || []).filter(f => f.usuarioId !== session.user.id),
+              }
+            : v
+        )
+      );
       setConfirmModal({ open: true, message: "Vaga removida dos salvos!" });
     } else {
       setConfirmModal({ open: true, message: "Erro ao remover vaga dos salvos!" });
-    }
-    fetchVagas();
-    if (vagaSelecionada && vagaSelecionada.id === vagaId) {
-      fetch(`/api/vagas/${vagaId}`)
-        .then(res => res.json())
-        .then(data => setVagaSelecionada(data.vaga));
     }
   };
 
@@ -161,7 +166,7 @@ export default function VagasPage() {
                 onRemoverSalvo={handleRemoverSalvo}
                 onFechar={handleFechar}
                 onDeletar={handleDeletar}
-                onVerDetalhes={() => setVagaSelecionada(vaga)}
+                onShowDetails={() => setVagaSelecionada(vaga)}
               />
             ))}
           </div>
