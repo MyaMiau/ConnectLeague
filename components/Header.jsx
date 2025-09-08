@@ -74,60 +74,72 @@ function NotificationsPopover({ open, onClose, notifications = [], unreadCount, 
                 </Link>
                 <div className="flex-1">
                   {n.type === "like" && (
-                    <Link
-                      href={getNotificationLink(n)}
-                      className="hover:underline focus:underline"
-                      onClick={e => handleNotificationClick(e, n)}
-                    >
+                    <span>
                       <b>
                         <Link href={`/profile/${n.sender?.id || ""}`} className="hover:underline">
                           {n.sender?.name || "Alguém"}
                         </Link>
                       </b>{" "}
-                      curtiu seu post!
-                    </Link>
+                      curtiu seu post!{" "}
+                      <Link
+                        href={getNotificationLink(n)}
+                        className="hover:underline focus:underline"
+                        onClick={e => handleNotificationClick(e, n)}
+                      >
+                        Ver post
+                      </Link>
+                    </span>
                   )}
                   {n.type === "comment_like" && (
-                    <Link
-                      href={getNotificationLink(n)}
-                      className="hover:underline focus:underline"
-                      onClick={e => handleNotificationClick(e, n)}
-                    >
+                    <span>
                       <b>
                         <Link href={`/profile/${n.sender?.id || ""}`} className="hover:underline">
                           {n.sender?.name || "Alguém"}
                         </Link>
                       </b>{" "}
-                      curtiu seu comentário!
-                    </Link>
+                      curtiu seu comentário!{" "}
+                      <Link
+                        href={getNotificationLink(n)}
+                        className="hover:underline focus:underline"
+                        onClick={e => handleNotificationClick(e, n)}
+                      >
+                        Ver comentário
+                      </Link>
+                    </span>
                   )}
                   {n.type === "reply" && (
-                    <Link
-                      href={getNotificationLink(n)}
-                      className="hover:underline focus:underline"
-                      onClick={e => handleNotificationClick(e, n)}
-                    >
+                    <span>
                       <b>
                         <Link href={`/profile/${n.sender?.id || ""}`} className="hover:underline">
                           {n.sender?.name || "Alguém"}
                         </Link>
                       </b>{" "}
-                      respondeu seu comentário!
-                    </Link>
+                      respondeu seu comentário!{" "}
+                      <Link
+                        href={getNotificationLink(n)}
+                        className="hover:underline focus:underline"
+                        onClick={e => handleNotificationClick(e, n)}
+                      >
+                        Ver resposta
+                      </Link>
+                    </span>
                   )}
                   {n.type === "comment" && (
-                    <Link
-                      href={getNotificationLink(n)}
-                      className="hover:underline focus:underline"
-                      onClick={e => handleNotificationClick(e, n)}
-                    >
+                    <span>
                       <b>
                         <Link href={`/profile/${n.sender?.id || ""}`} className="hover:underline">
                           {n.sender?.name || "Alguém"}
                         </Link>
                       </b>{" "}
-                      comentou no seu post!
-                    </Link>
+                      comentou no seu post!{" "}
+                      <Link
+                        href={getNotificationLink(n)}
+                        className="hover:underline focus:underline"
+                        onClick={e => handleNotificationClick(e, n)}
+                      >
+                        Ver comentário
+                      </Link>
+                    </span>
                   )}
                   <div className="text-xs text-zinc-400 mt-1">
                     {new Date(n.createdAt).toLocaleString("pt-BR", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "short" })}
@@ -270,11 +282,9 @@ export default function Header() {
                   bg-transparent border-none outline-none px-0 py-0
                   hover:underline hover:underline-offset-4 hover:decoration-2 hover:decoration-purple-500
                   transition-all duration-150
-                  text-left cursor-pointer hover:text-purple-400
-                `}
+                  text-left cursor-pointer hover:text-purple-400`}
                 style={{ boxShadow: "none", borderRadius: 0 }}
-                onClick={item.onClick}
-              >
+                onClick={item.onClick}>
                 {item.icon}
                 {item.label}
                 {unreadCount > 0 && (
@@ -301,13 +311,11 @@ export default function Header() {
                 hover:underline hover:underline-offset-4 hover:decoration-2 hover:decoration-purple-500
                 transition-all duration-150
                 text-left cursor-pointer
-                ${item.color || "hover:text-purple-400"}
-              `}
+                ${item.color || "hover:text-purple-400"}`}
               style={{
                 boxShadow: "none",
                 borderRadius: 0,
-              }}
-            >
+              }}>
               {item.icon}
               {item.label}
             </button>

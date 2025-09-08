@@ -1,10 +1,20 @@
-import { Modal } from "./Modal";
-import { Button } from "./Button";
+import { Button } from "./ui/button";
 import Link from "next/link";
+import { Bookmark, BookmarkCheck } from "lucide-react";
 
-export default function VagaModal({ vaga, usuario, onCandidatar, onFechar, onDeletar, onClose }) {
+export default function VagaModal({
+  vaga,
+  usuario,
+  onCandidatar,
+  onFechar,
+  onDeletar,
+  onSalvar,
+  onRemoverSalvo,
+  onClose
+}) {
   if (!vaga) return null;
   const jaCandidatado = vaga.candidatos?.some(c => c.usuarioId === usuario?.id);
+  const jaFavoritou = vaga.favorites?.some(f => f.userId === usuario?.id);
   const isOrg = usuario?.tipo === "organizacao" && usuario?.id === vaga.organizacaoId;
 
   return (
@@ -29,9 +39,24 @@ export default function VagaModal({ vaga, usuario, onCandidatar, onFechar, onDel
           </Link>
         </div>
         {!isOrg && (
-          <Button disabled={jaCandidatado} onClick={() => onCandidatar(vaga.id)}>
-            {jaCandidatado ? "Candidatado" : "Candidatar-se"}
-          </Button>
+          <>
+            <Button disabled={jaCandidatado} onClick={() => onCandidatar(vaga.id)}>
+              {jaCandidatado ? "Candidatado" : "Candidatar-se"}
+            </Button>
+            <span
+              role="button"
+              aria-label={jaFavoritou ? "Remover dos salvos" : "Salvar vaga"}
+              tabIndex={0}
+              onClick={() => jaFavoritou ? onRemoverSalvo?.(vaga.id) : onSalvar?.(vaga.id)}
+              onKeyPress={e => {
+                if (e.key === 'Enter') jaFavoritou ? onRemoverSalvo?.(vaga.id) : onSalvar?.(vaga.id);
+              }}
+              className={`ml-3 cursor-pointer transition ${jaFavoritou ? "text-purple-500" : "text-zinc-400"} hover:text-purple-600`}
+              style={{ display: 'inline-flex', alignItems: 'center', fontSize: '1.75rem', marginLeft: 8 }}
+            >
+              {jaFavoritou ? <BookmarkCheck size={24} /> : <Bookmark size={24} />}
+            </span>
+          </>
         )}
         {isOrg && (
           <>

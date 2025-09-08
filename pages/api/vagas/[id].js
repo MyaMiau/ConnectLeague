@@ -4,6 +4,12 @@ import { authOptions } from "../auth/[...nextauth]";
 
 export default async function handler(req, res) {
   const vagaId = Number(req.query.id);
+
+  // Proteção para id inválido ou ausente
+  if (!vagaId || isNaN(vagaId)) {
+    return res.status(400).json({ error: "ID de vaga inválido." });
+  }
+
   const session = await getServerSession(req, res, authOptions);
 
   if (req.method === "GET") {
@@ -46,12 +52,12 @@ export default async function handler(req, res) {
       return res.status(401).json({ error: "Não autenticado." });
     }
     const jaCandidatado = await prisma.applications.findFirst({
-      where: { vacancy_id: vagaId, user_id: session.user.id }
+      where: { vacancy_id: vagaId, user_id: Number(session.user.id) }
     });
     if (jaCandidatado) return res.status(400).json({ error: "Você já se candidatou." });
 
     const candidatura = await prisma.applications.create({
-      data: { vacancy_id: vagaId, user_id: session.user.id }
+      data: { vacancy_id: vagaId, user_id: Number(session.user.id) }
     });
     return res.status(201).json({ candidatura });
   }
@@ -63,19 +69,19 @@ export default async function handler(req, res) {
 
     if (action === "salvar") {
       const jaFavoritou = await prisma.vacancyFavorite.findFirst({
-        where: { vacancyId: vagaId, userId: session.user.id }
+        where: { vacancyId: vagaId, userId: Number(session.user.id) }
       });
       if (jaFavoritou) return res.status(200).json({ success: true, already: true });
 
       await prisma.vacancyFavorite.create({
-        data: { vacancyId: vagaId, userId: session.user.id }
+        data: { vacancyId: vagaId, userId: Number(session.user.id) }
       });
       return res.status(200).json({ success: true });
     }
 
     if (action === "remover_salvo") {
       await prisma.vacancyFavorite.deleteMany({
-        where: { vacancyId: vagaId, userId: session.user.id }
+        where: { vacancyId: vagaId, userId: Number(session.user.id) }
       });
       return res.status(200).json({ success: true });
     }

@@ -12,9 +12,8 @@ export default function VagaCard({
   onVerDetalhes
 }) {
   const jaCandidatado = vaga.candidatos?.some(c => c.usuarioId === usuario?.id);
-  const jaFavoritou = vaga.favoritos?.some(f => f.usuarioId === usuario?.id);
+  const jaFavoritou = vaga.favorites?.some(f => f.userId === usuario?.id);
   const isOrg = usuario?.tipo === "organizacao" && usuario?.id === vaga.organizacaoId;
-
   const badgeClasse = vaga.status === "Aberta"
     ? "bg-green-600 text-white"
     : "bg-purple-700 text-white";
@@ -48,7 +47,9 @@ export default function VagaCard({
         {vaga.cidade && <span><strong>Localização:</strong> {vaga.cidade}/{vaga.estado}</span>}
       </div>
       <div className="flex flex-wrap gap-2 mt-1 items-center">
-        <Button variant="default" onClick={onVerDetalhes}>Ver detalhes</Button>
+        <Button variant="default" onClick={() => onVerDetalhes?.(vaga)}>
+          Ver detalhes
+        </Button>
         {!isOrg && (
           <Button
             variant="default"

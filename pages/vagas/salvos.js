@@ -2,16 +2,19 @@ import { useEffect, useState } from "react";
 import VagaCard from "../../components/VagaCard";
 import { useSession } from "next-auth/react";
 import Header from "../../components/Header";
+import VagaModal from "../../components/VagaModal"; // Certifique-se de ter esse componente
 
 export default function VagasSalvasPage() {
   const { data: session } = useSession();
   const [vagas, setVagas] = useState([]);
+  const [detalheVaga, setDetalheVaga] = useState(null);
   const [confirmModal, setConfirmModal] = useState({ open: false, message: "" });
 
+  // Busca as vagas salvas do usuário autenticado
   const fetchSalvos = () => {
     fetch("/api/vagas/salvas")
       .then(res => res.json())
-      .then(({ vagas }) => setVagas(vagas));
+      .then(({ vagas }) => setVagas(Array.isArray(vagas) ? vagas : []));
   };
 
   useEffect(() => {
@@ -19,6 +22,7 @@ export default function VagasSalvasPage() {
     fetchSalvos();
   }, [session]);
 
+  // Remove vaga dos salvos
   const handleRemoverSalvo = async vagaId => {
     await fetch(`/api/vagas/remover-salvo`, {
       method: "POST",
@@ -29,8 +33,30 @@ export default function VagasSalvasPage() {
     fetchSalvos();
   };
 
+  // Permite salvar vaga de novo, caso suporte múltiplos caminhos de salvar
+  const handleSalvarVaga = async vagaId => {
+    await fetch(`/api/vagas/${vagaId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "salvar" })
+    });
+    setConfirmModal({ open: true, message: "Vaga salva!" });
+    fetchSalvos();
+  };
+
+  const handleCandidatar = async vagaId => {
+    await fetch(`/api/vagas/candidatar`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ vagaId })
+    });
+    setConfirmModal({ open: true, message: "Candidatado com sucesso!" });
+    fetchSalvos();
+  };
+
   if (!session) return <p>Faça login para ver suas vagas salvas.</p>;
   if (vagas.length === 0) return <p>Nenhuma vaga salva.</p>;
+
   return (
     <div className="min-h-screen bg-black text-white">
       <Header />
@@ -42,7 +68,10 @@ export default function VagasSalvasPage() {
               key={vaga.id}
               vaga={vaga}
               usuario={session?.user}
-              onSalvar={handleRemoverSalvo}
+              onRemoverSalvo={handleRemoverSalvo}
+              onSalvar={handleSalvarVaga}
+              onCandidatar={handleCandidatar}
+              onShowDetails={() => setDetalheVaga(vaga)}
             />
           ))}
         </div>
@@ -60,6 +89,15 @@ export default function VagasSalvasPage() {
             </button>
           </div>
         </div>
+      )}
+      {/* Modal de detalhes igual página de vagas */}
+      {detalheVaga && (
+        <VagaModal
+          vaga={detalheVaga}
+          usuario={session?.user}
+          onCandidatar={handleCandidatar}
+          onClose={() => setDetalheVaga(null)}
+        />
       )}
     </div>
   );

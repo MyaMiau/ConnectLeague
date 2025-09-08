@@ -5,7 +5,7 @@ import Link from "next/link";
 export default function VagaDetalhesModal({ vaga, usuario, onClose, onCandidatar, onSalvar, onRemoverSalvo }) {
   if (!vaga) return null;
   const jaCandidatado = vaga.candidatos?.some(c => c.usuarioId === usuario?.id);
-  const jaFavoritou = vaga.favoritos?.some(f => f.usuarioId === usuario?.id);
+  const jaFavoritou = vaga.favorites?.some(f => f.userId === usuario?.id);
 
   const badgeClasse = vaga.status === "Aberta"
     ? "bg-green-600 text-white"
