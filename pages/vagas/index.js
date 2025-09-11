@@ -75,7 +75,7 @@ export default function VagasPage() {
     }
   };
 
-  // ATUALIZADO: favorites/userId padrão e atualização também no modal
+  // CORRIGIDO: favorites e userId
   const handleSalvar = async vagaId => {
     if (!session?.user) {
       setConfirmModal({ open: true, message: "Faça login para salvar vagas." });

@@ -12,13 +12,11 @@ export default function VagaDetalhesModal({
 }) {
   if (!vaga) return null;
   const jaCandidatado = vaga.candidatos?.some(c => c.usuarioId === usuario?.id) || vaga.applications?.some(c => c.user_id === usuario?.id);
-  // Atualizado: sempre usa favorites e userId
+  // CORRIGIDO: use sempre favorites e userId
   const jaFavoritou = vaga.favorites?.some(f => f.userId === usuario?.id);
 
-  const org = vaga.organizacao || vaga.organization || {};
-  const orgName = org.nome || org.name || "Organização desconhecida";
-  const orgLogo = org.logo || org.logoUrl || "/default-org.png";
-  const orgId = org.id;
+  const org = vaga.organization || {};
+  const orgName = org.name || "Organização desconhecida";
 
   const badgeClasse = vaga.status === "Aberta"
     ? "bg-green-600 text-white"
@@ -31,31 +29,24 @@ export default function VagaDetalhesModal({
           className="absolute top-3 right-3 text-white text-xl"
           onClick={onClose}
         >×</button>
-        <h2 className="text-2xl font-bold mb-4">{vaga.titulo || vaga.title || "Vaga sem título"}</h2>
+        <h2 className="text-2xl font-bold mb-1">{vaga.titulo || vaga.title}</h2>
+        {/* Nome da organização logo abaixo do nome da vaga */}
+        <div className="text-zinc-400 font-semibold text-lg mb-4">
+          {orgName}
+        </div>
         <div className="flex gap-6 items-center mb-4">
-          <img
-            src={orgLogo}
-            alt="Logo"
-            className="w-16 h-16 rounded-full bg-zinc-800 border mb-2"
-          />
+          <img src={org.logo || org.logoUrl || "/default-org.png"} alt="Logo" className="w-16 h-16 rounded-full bg-zinc-800 border mb-2" />
           <div>
-            <p className="font-semibold">{orgName}</p>
-            <Link href={`/profile/${orgId || ""}`}>
+            <Link href={`/profile/${org.id}`}>
               <Button variant="outline">Perfil da organização</Button>
             </Link>
           </div>
         </div>
-        <span className={`inline-block px-3 py-1 rounded-full font-semibold mb-2 ${badgeClasse}`}>
-          {vaga.status || "Status desconhecido"}
-        </span>
-        <span className="ml-3 text-zinc-400">
-          Publicada em {vaga.dataPublicacao ? new Date(vaga.dataPublicacao).toLocaleDateString() : vaga.created_at ? new Date(vaga.created_at).toLocaleDateString() : "?"}
-        </span>
+        <span className={`inline-block px-3 py-1 rounded-full font-semibold mb-2 ${badgeClasse}`}>{vaga.status}</span>
+        <span className="ml-3 text-zinc-400">Publicada em {vaga.dataPublicacao ? new Date(vaga.dataPublicacao).toLocaleDateString() : vaga.created_at ? new Date(vaga.created_at).toLocaleDateString() : "?"}</span>
         <div className="my-4">
           <h3 className="font-bold mb-2">Descrição completa</h3>
-          <p className="text-zinc-200 whitespace-pre-line">
-            {vaga.descricaoCompleta || vaga.descricao || vaga.description || "Sem descrição."}
-          </p>
+          <p className="text-zinc-200">{vaga.descricaoCompleta || vaga.descricao || vaga.description}</p>
         </div>
         {vaga.requisitos && (
           <div className="mb-3">
@@ -125,7 +116,6 @@ export default function VagaDetalhesModal({
             className={`ml-3 cursor-pointer transition ${jaFavoritou ? "text-purple-500" : "text-zinc-400"} hover:text-purple-600`}
             style={{ display: 'flex', alignItems: 'center', fontSize: '2rem' }}
           >
-            {/* Mantém o check SEMPRE que o user já salvou, e só volta se realmente não estiver salvo */}
             {jaFavoritou ? <BookmarkCheck size={28} /> : <Bookmark size={28} />}
           </span>
         </div>
