@@ -12,8 +12,9 @@ export default function VagaCard({
   onDeletar,
   onShowDetails,
 }) {
-  // CORRIGIDO: use sempre favorites e userId
-  const jaFavoritou = vaga.favorites?.some(f => f.userId === usuario?.id);
+console.log("Vaga recebida:", vaga);
+console.log("Usuário logado:", usuario);
+const jaFavoritou = vaga.favorites?.some(f => Number(f.userId) === Number(usuario?.id));
   const jaCandidatado = vaga.candidatos?.some(c => c.usuarioId === usuario?.id);
   const isOrg = usuario?.tipo === "organizacao" && usuario?.id === vaga.organization_id;
 

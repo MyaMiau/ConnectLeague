@@ -35,13 +35,14 @@ export default function VagasPage() {
 
     fetch(`/api/vagas?${params.toString()}`)
       .then(res => res.json())
-      .then(({ vagas }) => setVagas(vagas));
+      .then(({ vagas }) => {
+      console.log("Todas as vagas recebidas:", vagas); 
+      setVagas(vagas);
+      });
   };
-
-  useEffect(() => {
-    fetchVagas();
-    // eslint-disable-next-line
-  }, [filtros]);
+      useEffect(() => {
+        fetchVagas();
+      }, [filtros]);
 
   const handleInput = e => setFiltros(f => ({ ...f, [e.target.name]: e.target.value, pagina: 1 }));
 
