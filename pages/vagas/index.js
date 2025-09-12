@@ -36,13 +36,13 @@ export default function VagasPage() {
     fetch(`/api/vagas?${params.toString()}`)
       .then(res => res.json())
       .then(({ vagas }) => {
-      console.log("Todas as vagas recebidas:", vagas); 
-      setVagas(vagas);
+        setVagas(vagas);
       });
   };
-      useEffect(() => {
-        fetchVagas();
-      }, [filtros]);
+
+  useEffect(() => {
+    fetchVagas();
+  }, [filtros]);
 
   const handleInput = e => setFiltros(f => ({ ...f, [e.target.name]: e.target.value, pagina: 1 }));
 
@@ -76,7 +76,30 @@ export default function VagasPage() {
     }
   };
 
-  // CORRIGIDO: favorites e userId
+  // NOVO: descandidatar (cancelar candidatura)
+  const handleDescandidatar = async vagaId => {
+    if (!session?.user) {
+      setConfirmModal({ open: true, message: "Faça login para cancelar a candidatura." });
+      return;
+    }
+    const res = await fetch(`/api/vagas/${vagaId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "descandidatar" }),
+    });
+    if (res.ok) {
+      setConfirmModal({ open: true, message: "Candidatura cancelada!" });
+    } else {
+      setConfirmModal({ open: true, message: "Erro ao cancelar candidatura!" });
+    }
+    fetchVagas();
+    if (vagaSelecionada && vagaSelecionada.id === vagaId) {
+      fetch(`/api/vagas/${vagaId}`)
+        .then(res => res.json())
+        .then(data => setVagaSelecionada(data.vaga));
+    }
+  };
+
   const handleSalvar = async vagaId => {
     if (!session?.user) {
       setConfirmModal({ open: true, message: "Faça login para salvar vagas." });
@@ -175,6 +198,7 @@ export default function VagasPage() {
                 vaga={vaga}
                 usuario={session?.user}
                 onCandidatar={handleCandidatar}
+                onDescandidatar={handleDescandidatar} 
                 onSalvar={handleSalvar}
                 onRemoverSalvo={handleRemoverSalvo}
                 onFechar={handleFechar}
@@ -225,6 +249,7 @@ export default function VagasPage() {
           usuario={session?.user}
           onClose={() => setVagaSelecionada(null)}
           onCandidatar={handleCandidatar}
+          onDescandidatar={handleDescandidatar} 
           onSalvar={handleSalvar}
           onRemoverSalvo={handleRemoverSalvo}
         />

@@ -7,13 +7,15 @@ export default function VagaDetalhesModal({
   usuario,
   onClose,
   onCandidatar,
+  onDescandidatar,
   onSalvar,
   onRemoverSalvo
 }) {
   if (!vaga) return null;
-  const jaCandidatado = vaga.candidatos?.some(c => c.usuarioId === usuario?.id) || vaga.applications?.some(c => c.user_id === usuario?.id);
-  // CORRIGIDO: use sempre favorites e userId
-  const jaFavoritou = vaga.favorites?.some(f => f.userId === usuario?.id);
+
+  // Checagem correta de candidatura e favorito
+  const jaCandidatado = vaga.applications?.some(app => Number(app.user_id) === Number(usuario?.id));
+  const jaFavoritou = vaga.favorites?.some(f => Number(f.userId) === Number(usuario?.id));
 
   const org = vaga.organization || {};
   const orgName = org.name || "Organização desconhecida";
@@ -93,17 +95,25 @@ export default function VagaDetalhesModal({
         </div>
         <div className="mb-6">
           <span className="text-zinc-400">
-            <strong>Candidatos:</strong> {vaga.candidatos?.length || vaga.applications?.length || 0}
+            <strong>Candidatos:</strong> {vaga.applications?.length || 0}
           </span>
         </div>
         <div className="flex gap-2 items-center">
           <Button
-            variant="default"
-            disabled={jaCandidatado}
-            onClick={() => onCandidatar?.(vaga.id)}
-            aria-label={jaCandidatado ? "Já candidatado" : "Candidatar-se"}
+            variant={jaCandidatado ? "secondary" : "default"}
+            disabled={false}
+            onClick={() =>
+              jaCandidatado
+                ? onDescandidatar?.(vaga.id)
+                : onCandidatar?.(vaga.id)
+            }
+            aria-label={
+              jaCandidatado
+                ? "Cancelar candidatura"
+                : "Candidatar-se"
+            }
           >
-            {jaCandidatado ? "Candidatado" : "Candidatar-se"}
+            {jaCandidatado ? "Cancelar candidatura" : "Candidatar-se"}
           </Button>
           <span
             role="button"

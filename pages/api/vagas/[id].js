@@ -5,7 +5,6 @@ import { authOptions } from "../auth/[...nextauth]";
 export default async function handler(req, res) {
   const vagaId = Number(req.query.id);
 
-  // Proteção para id inválido ou ausente
   if (!vagaId || isNaN(vagaId)) {
     return res.status(400).json({ error: "ID de vaga inválido." });
   }
@@ -59,13 +58,37 @@ export default async function handler(req, res) {
     const candidatura = await prisma.applications.create({
       data: { vacancy_id: vagaId, user_id: Number(session.user.id) }
     });
+
+    // Cria notificação para a organização
+    const vaga = await prisma.vacancies.findUnique({ where: { id: vagaId } });
+    if (vaga && vaga.organization_id) {
+      await prisma.notification.create({
+        data: {
+          type: "candidatura",
+          userId: vaga.organization_id,
+          senderId: Number(session.user.id),
+          postId: null,
+          commentId: null,
+          read: false,
+          createdAt: new Date(),
+        },
+      });
+    }
+
     return res.status(201).json({ candidatura });
   }
 
-  // Salvar ou remover dos salvos
+  // PATCH: Salvar/remover favoritos OU descandidatar
   if (req.method === "PATCH") {
     if (!session || !session.user) return res.status(401).json({ error: "Não autenticado." });
     const { action } = req.body;
+
+    if (action === "descandidatar") {
+      await prisma.applications.deleteMany({
+        where: { vacancy_id: vagaId, user_id: Number(session.user.id) }
+      });
+      return res.status(200).json({ success: true });
+    }
 
     if (action === "salvar") {
       const jaFavoritou = await prisma.vacancyFavorite.findFirst({
@@ -88,6 +111,4 @@ export default async function handler(req, res) {
 
     return res.status(400).json({ error: "Ação inválida." });
   }
-
-  return res.status(405).json({ error: "Método não permitido." });
 }

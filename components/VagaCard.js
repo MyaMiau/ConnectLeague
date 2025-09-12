@@ -6,16 +6,15 @@ export default function VagaCard({
   vaga,
   usuario,
   onCandidatar,
+  onDescandidatar,
   onSalvar,
   onRemoverSalvo,
   onFechar,
   onDeletar,
   onShowDetails,
 }) {
-console.log("Vaga recebida:", vaga);
-console.log("Usuário logado:", usuario);
-const jaFavoritou = vaga.favorites?.some(f => Number(f.userId) === Number(usuario?.id));
-  const jaCandidatado = vaga.candidatos?.some(c => c.usuarioId === usuario?.id);
+  const jaFavoritou = vaga.favorites?.some(f => Number(f.userId) === Number(usuario?.id));
+  const jaCandidatado = vaga.applications?.some(app => Number(app.user_id) === Number(usuario?.id));
   const isOrg = usuario?.tipo === "organizacao" && usuario?.id === vaga.organization_id;
 
   const statusClasse = vaga.status === "Aberta"
@@ -57,11 +56,15 @@ const jaFavoritou = vaga.favorites?.some(f => Number(f.userId) === Number(usuari
         </Button>
         {!isOrg && (
           <Button
-            variant="default"
-            disabled={jaCandidatado}
-            onClick={() => onCandidatar?.(vaga.id)}
+            variant={jaCandidatado ? "secondary" : "default"}
+            disabled={false}
+            onClick={() =>
+              jaCandidatado
+                ? onDescandidatar?.(vaga.id)
+                : onCandidatar?.(vaga.id)
+            }
           >
-            {jaCandidatado ? "Candidatado" : "Candidatar-se"}
+            {jaCandidatado ? "Cancelar candidatura" : "Candidatar-se"}
           </Button>
         )}
         <Button
@@ -92,7 +95,7 @@ const jaFavoritou = vaga.favorites?.some(f => Number(f.userId) === Number(usuari
       </div>
       <div className="flex justify-between items-center mt-2 text-sm text-zinc-400">
         <span>Publicada: {vaga.dataPublicacao ? new Date(vaga.dataPublicacao).toLocaleDateString() : vaga.created_at ? new Date(vaga.created_at).toLocaleDateString() : "?"}</span>
-        <span>Candidatos: {vaga.candidatos?.length || vaga.applications?.length || 0}</span>
+        <span>Candidatos: {vaga.applications?.length || 0}</span>
       </div>
     </div>
   );
