@@ -32,7 +32,6 @@ export default function VagaDetalhesModal({
           onClick={onClose}
         >×</button>
         <h2 className="text-2xl font-bold mb-1">{vaga.titulo || vaga.title}</h2>
-        {/* Nome da organização logo abaixo do nome da vaga */}
         <div className="text-zinc-400 font-semibold text-lg mb-4">
           {orgName}
         </div>

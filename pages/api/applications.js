@@ -1,4 +1,3 @@
-// src/pages/api/applications.js
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
@@ -6,10 +5,10 @@ const prisma = new PrismaClient();
 export default async function handler(req, res) {
   if (req.method === 'GET') {
     try {
-      const applications = await prisma.application.findMany({
+      const applications = await prisma.applications.findMany({
         include: {
           user: true,
-          job: true,
+          vacancy: true,
         },
       });
       res.status(200).json(applications);
@@ -19,12 +18,12 @@ export default async function handler(req, res) {
     }
   } else if (req.method === 'POST') {
     try {
-      const { userId, jobId, status } = req.body;
+      const { user_id, vacancy_id, status } = req.body;
 
-      const newApplication = await prisma.application.create({
+      const newApplication = await prisma.applications.create({
         data: {
-          userId,
-          jobId,
+          user_id,
+          vacancy_id,
           status,
         },
       });

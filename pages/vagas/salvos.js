@@ -61,14 +61,73 @@ export default function VagasSalvasPage() {
     }
   };
 
+  // Candidatar-se e atualizar estado local/modal
   const handleCandidatar = async vagaId => {
-    await fetch(`/api/vagas/candidatar`, {
+    if (!session?.user) {
+      setConfirmModal({ open: true, message: "Faça login para se candidatar." });
+      return;
+    }
+    const res = await fetch(`/api/vagas/${vagaId}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ vagaId })
     });
-    setConfirmModal({ open: true, message: "Candidatado com sucesso!" });
-    fetchSalvos();
+    if (res.ok) {
+      setConfirmModal({ open: true, message: "Candidatado com sucesso!" });
+      // Atualiza localmente a lista e modal
+      setVagas(vagas =>
+        vagas.map(v =>
+          v.id === vagaId
+            ? {
+                ...v,
+                applications: [...(v.applications || []), { user_id: session.user.id, user: session.user }],
+              }
+            : v
+        )
+      );
+      setDetalheVaga(det =>
+        det && det.id === vagaId
+          ? {
+              ...det,
+              applications: [...(det.applications || []), { user_id: session.user.id, user: session.user }],
+            }
+          : det
+      );
+    } else {
+      setConfirmModal({ open: true, message: "Erro ao candidatar-se!" });
+    }
+  };
+
+  // Descandidatar-se e atualizar estado local/modal
+  const handleDescandidatar = async vagaId => {
+    if (!session?.user) return;
+    const res = await fetch(`/api/vagas/${vagaId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "descandidatar" }),
+    });
+    if (res.ok) {
+      setConfirmModal({ open: true, message: "Candidatura cancelada!" });
+      setVagas(vagas =>
+        vagas.map(v =>
+          v.id === vagaId
+            ? {
+                ...v,
+                applications: (v.applications || []).filter(app => Number(app.user_id) !== Number(session.user.id)),
+              }
+            : v
+        )
+      );
+      setDetalheVaga(det =>
+        det && det.id === vagaId
+          ? {
+              ...det,
+              applications: (det.applications || []).filter(app => Number(app.user_id) !== Number(session.user.id)),
+            }
+          : det
+      );
+    } else {
+      setConfirmModal({ open: true, message: "Erro ao cancelar candidatura!" });
+    }
   };
 
   if (!session) {
@@ -99,6 +158,7 @@ export default function VagasSalvasPage() {
                 onRemoverSalvo={handleRemoverSalvo}
                 onSalvar={handleSalvarVaga}
                 onCandidatar={handleCandidatar}
+                onDescandidatar={handleDescandidatar}
                 onShowDetails={() => {
                   const vagaAtual = vagas.find(v => v.id === vaga.id);
                   setDetalheVaga(vagaAtual || vaga);
@@ -129,6 +189,7 @@ export default function VagasSalvasPage() {
           usuario={session?.user}
           onClose={() => setDetalheVaga(null)}
           onCandidatar={handleCandidatar}
+          onDescandidatar={handleDescandidatar}
           onSalvar={handleSalvarVaga}
           onRemoverSalvo={handleRemoverSalvo}
         />

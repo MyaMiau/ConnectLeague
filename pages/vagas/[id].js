@@ -20,7 +20,7 @@ export default function VagaDetalhes() {
       .then(data => {
         setVaga(data.vaga);
         setLoading(false);
-        if (session?.user && data.vaga?.candidatos?.some(c => c.usuarioId === session.user.id)) {
+        if (session?.user && data.vaga?.applications?.some(app => Number(app.user_id) === Number(session.user.id))) {
           setJaCandidatado(true);
         }
       });
@@ -31,16 +31,50 @@ export default function VagaDetalhes() {
       setConfirmModal({ open: true, message: "Faça login para se candidatar." });
       return;
     }
-    const res = await fetch(`/api/vagas/candidatar`, {
+    const res = await fetch(`/api/vagas/${id}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ vagaId: vaga.id })
     });
     if (res.ok) {
       setConfirmModal({ open: true, message: "Candidatura enviada com sucesso!" });
       setJaCandidatado(true);
+      // Atualiza candidatos localmente
+      setVaga(prev =>
+        prev
+          ? {
+              ...prev,
+              applications: [
+                ...(prev.applications || []),
+                { user_id: session.user.id, user: session.user }
+              ]
+            }
+          : prev
+      );
     } else {
       setConfirmModal({ open: true, message: "Erro ao candidatar-se!" });
+    }
+  };
+
+  const handleDescandidatar = async () => {
+    if (!session?.user) return;
+    const res = await fetch(`/api/vagas/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "descandidatar" }),
+    });
+    if (res.ok) {
+      setConfirmModal({ open: true, message: "Candidatura cancelada!" });
+      setJaCandidatado(false);
+      setVaga(prev =>
+        prev
+          ? {
+              ...prev,
+              applications: (prev.applications || []).filter(app => Number(app.user_id) !== Number(session.user.id))
+            }
+          : prev
+      );
+    } else {
+      setConfirmModal({ open: true, message: "Erro ao cancelar candidatura!" });
     }
   };
 
@@ -51,27 +85,27 @@ export default function VagaDetalhes() {
     <div className="min-h-screen bg-black text-white">
       <Header />
       <div className="max-w-3xl mx-auto py-8 px-4">
-        <h1 className="text-3xl font-bold mb-4">{vaga.titulo}</h1>
+        <h1 className="text-3xl font-bold mb-4">{vaga.titulo || vaga.title}</h1>
         <div className="flex gap-6 items-center mb-6">
           <img
-            src={vaga.organizacao?.logo || "/default-org.png"}
+            src={vaga.organization?.logo || "/default-org.png"}
             alt="Logo Organização"
             className="w-16 h-16 rounded-full bg-zinc-800 border"
           />
           <div>
-            <p className="font-semibold text-lg">{vaga.organizacao?.nome}</p>
+            <p className="font-semibold text-lg">{vaga.organization?.name}</p>
             <Button variant="outline" asChild>
-              <a href={`/profile/${vaga.organizacao?.id}`}>Ver perfil da organização</a>
+              <a href={`/profile/${vaga.organization?.id}`}>Ver perfil da organização</a>
             </Button>
           </div>
         </div>
         <div className="mb-4">
           <span className="inline-block px-3 py-1 rounded-full bg-purple-700 text-white font-semibold">{vaga.status}</span>
-          <span className="ml-3 text-zinc-400">Publicada em {vaga.dataPublicacao ? new Date(vaga.dataPublicacao).toLocaleDateString() : "?"}</span>
+          <span className="ml-3 text-zinc-400">Publicada em {vaga.dataPublicacao ? new Date(vaga.dataPublicacao).toLocaleDateString() : vaga.created_at ? new Date(vaga.created_at).toLocaleDateString() : "?"}</span>
         </div>
         <div className="mb-6">
           <h2 className="text-lg font-bold mb-2">Descrição completa</h2>
-          <p className="text-zinc-200">{vaga.descricaoCompleta || vaga.descricao}</p>
+          <p className="text-zinc-200">{vaga.descricaoCompleta || vaga.descricao || vaga.description}</p>
         </div>
         <div className="mb-6">
           <h2 className="text-lg font-bold mb-2">Requisitos</h2>
@@ -86,22 +120,21 @@ export default function VagaDetalhes() {
           </ul>
         </div>
         <div className="mb-6">
-          <span className="text-zinc-400"><strong>Posições:</strong> {vaga.posicoes?.join(", ")}</span> <br />
-          <span className="text-zinc-400"><strong>Elo mínimo:</strong> {vaga.elos?.join(", ")}</span> <br />
-          <span className="text-zinc-400"><strong>Localização:</strong> {vaga.cidade}/{vaga.estado}</span> <br />
+          <span className="text-zinc-400"><strong>Posições:</strong> {vaga.posicoes?.join(", ") || vaga.positions?.join(", ") || "—"}</span> <br />
+          <span className="text-zinc-400"><strong>Elo mínimo:</strong> {vaga.elos?.join(", ") || "—"}</span> <br />
+          <span className="text-zinc-400"><strong>Localização:</strong> {vaga.cidade || vaga.city || ""}{(vaga.cidade || vaga.city) && (vaga.estado || vaga.state) ? "/" : ""}{vaga.estado || vaga.state || ""}</span> <br />
           {vaga.tags?.length > 0 && <span className="text-zinc-400"><strong>Tags:</strong> {vaga.tags.join(", ")}</span>}
         </div>
         <div className="mb-6">
-          <span className="text-zinc-400"><strong>Candidatos:</strong> {vaga.candidatos?.length || 0}</span>
+          <span className="text-zinc-400"><strong>Candidatos:</strong> {vaga.applications?.length || 0}</span>
         </div>
-        {/* Botão de candidatura */}
         <Button
-          variant="default"
-          disabled={jaCandidatado}
-          onClick={handleCandidatar}
-          aria-label={jaCandidatado ? "Já candidatado" : "Candidatar-se"}
+          variant={jaCandidatado ? "secondary" : "default"}
+          disabled={false}
+          onClick={jaCandidatado ? handleDescandidatar : handleCandidatar}
+          aria-label={jaCandidatado ? "Cancelar candidatura" : "Candidatar-se"}
         >
-          {jaCandidatado ? "Candidatado" : "Candidatar-se"}
+          {jaCandidatado ? "Cancelar candidatura" : "Candidatar-se"}
         </Button>
       </div>
       {/* Modal de confirmação */}

@@ -6,6 +6,7 @@ export default function VagaModal({
   vaga,
   usuario,
   onCandidatar,
+  onDescandidatar,
   onFechar,
   onDeletar,
   onClose
@@ -17,7 +18,7 @@ export default function VagaModal({
   const organizacao = vaga.organization || {};
 
   const jaCandidatado = candidatos.some(
-    c => c.user_id === usuario?.id
+    app => Number(app.user_id) === Number(usuario?.id)
   );
   const isOrg =
     usuario?.type === "organizacao" && usuario?.id === organizacao.id;
@@ -74,11 +75,16 @@ export default function VagaModal({
           </Link>
           {!isOrg && (
             <Button
-              disabled={jaCandidatado}
-              onClick={() => onCandidatar?.(vaga.id)}
+              variant={jaCandidatado ? "secondary" : "default"}
+              disabled={false}
+              onClick={() =>
+                jaCandidatado
+                  ? onDescandidatar?.(vaga.id)
+                  : onCandidatar?.(vaga.id)
+              }
               className="mb-2"
             >
-              {jaCandidatado ? "Candidatado" : "Candidatar-se"}
+              {jaCandidatado ? "Cancelar candidatura" : "Candidatar-se"}
             </Button>
           )}
           {isOrg && (
