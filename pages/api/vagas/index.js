@@ -52,6 +52,7 @@ export default async function handler(req, res) {
 
   if (req.method === "POST") {
     const session = await getServerSession(req, res, authOptions);
+    console.log("SESSION DEBUG:", session);
     if (!session || session.user.type !== "organizacao")
       return res.status(401).json({ error: "Não autenticado como organização." });
 

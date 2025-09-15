@@ -10,6 +10,7 @@ export default async function handler(req, res) {
   }
 
   const session = await getServerSession(req, res, authOptions);
+  console.log("SESSION DEBUG:", session);
 
   if (req.method === "GET") {
     const vaga = await prisma.vacancies.findUnique({
@@ -37,7 +38,8 @@ export default async function handler(req, res) {
   }
 
   if (req.method === "DELETE") {
-    if (!session || session.user.type !== "organizacao") return res.status(401).json({ error: "Não autenticado." });
+if (!session || !["organizacao", "organization"].includes(session.user.type))
+  return res.status(401).json({ error: "Não autenticado como organização." });
     await prisma.vacancies.delete({ where: { id: vagaId } });
     return res.status(204).end();
   }
@@ -46,7 +48,7 @@ export default async function handler(req, res) {
   if (req.method === "POST") {
     if (
       !session ||
-      !["jogador", "coach", "manager", "psicologo", "designer"].includes(session.user.type)
+      !["player", "jogador", "coach", "manager", "psychologist", "psicologo", "designer"].includes(session.user.type)
     ) {
       return res.status(401).json({ error: "Não autenticado." });
     }

@@ -56,14 +56,12 @@ export default function VagaCard({
         </Button>
         {!isOrg && (
           <Button
-            variant={jaCandidatado ? "secondary" : "default"}
+            className={jaCandidatado
+            ? "bg-red-600 hover:bg-red-700 text-white"
+            : "bg-green-600 hover:bg-green-700 text-white"}
             disabled={false}
             onClick={() =>
-              jaCandidatado
-                ? onDescandidatar?.(vaga.id)
-                : onCandidatar?.(vaga.id)
-            }
-          >
+              jaCandidatado ? onDescandidatar?.(vaga.id) : onCandidatar?.(vaga.id)}>
             {jaCandidatado ? "Cancelar candidatura" : "Candidatar-se"}
           </Button>
         )}
