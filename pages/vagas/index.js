@@ -33,7 +33,9 @@ export default function VagasPage() {
     if (filtros.state) params.append("estado", filtros.state);
     filtros.tags.forEach(tag => params.append("tags", tag));
 
-    fetch(`/api/vagas?${params.toString()}`)
+    fetch(`/api/vagas?${params.toString()}`, {
+      credentials: "include",
+    })
       .then(res => res.json())
       .then(({ vagas }) => {
         setVagas(vagas);
@@ -42,6 +44,7 @@ export default function VagasPage() {
 
   useEffect(() => {
     fetchVagas();
+    // eslint-disable-next-line
   }, [filtros]);
 
   const handleInput = e => setFiltros(f => ({ ...f, [e.target.name]: e.target.value, pagina: 1 }));
@@ -62,6 +65,7 @@ export default function VagasPage() {
     const res = await fetch(`/api/vagas/${vagaId}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      credentials: "include",
     });
     if (res.ok) {
       setConfirmModal({ open: true, message: "Candidatura enviada com sucesso!" });
@@ -70,7 +74,7 @@ export default function VagasPage() {
     }
     fetchVagas();
     if (vagaSelecionada && vagaSelecionada.id === vagaId) {
-      fetch(`/api/vagas/${vagaId}`)
+      fetch(`/api/vagas/${vagaId}`, { credentials: "include" })
         .then(res => res.json())
         .then(data => setVagaSelecionada(data.vaga));
     }
@@ -86,6 +90,7 @@ export default function VagasPage() {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "descandidatar" }),
+      credentials: "include",
     });
     if (res.ok) {
       setConfirmModal({ open: true, message: "Candidatura cancelada!" });
@@ -94,7 +99,7 @@ export default function VagasPage() {
     }
     fetchVagas();
     if (vagaSelecionada && vagaSelecionada.id === vagaId) {
-      fetch(`/api/vagas/${vagaId}`)
+      fetch(`/api/vagas/${vagaId}`, { credentials: "include" })
         .then(res => res.json())
         .then(data => setVagaSelecionada(data.vaga));
     }
@@ -109,6 +114,7 @@ export default function VagasPage() {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "salvar" }),
+      credentials: "include",
     });
     if (res.ok) {
       setVagas(vagas =>
@@ -141,6 +147,7 @@ export default function VagasPage() {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "remover_salvo" }),
+      credentials: "include",
     });
     if (res.ok) {
       setVagas(vagas =>
@@ -168,7 +175,8 @@ export default function VagasPage() {
     await fetch(`/api/vagas/fechar`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ vagaId })
+      body: JSON.stringify({ vagaId }),
+      credentials: "include",
     });
     fetchVagas();
   };
@@ -177,7 +185,8 @@ export default function VagasPage() {
     await fetch(`/api/vagas/deletar`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ vagaId })
+      body: JSON.stringify({ vagaId }),
+      credentials: "include",
     });
     fetchVagas();
   };

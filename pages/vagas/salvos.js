@@ -12,7 +12,9 @@ export default function VagasSalvasPage() {
 
   // Busca as vagas salvas do usuário autenticado
   const fetchSalvos = () => {
-    fetch("/api/vagas/salvas")
+    fetch("/api/vagas/salvas", {
+      credentials: "include",
+    })
       .then(res => res.json())
       .then(({ vagas }) => setVagas(Array.isArray(vagas) ? vagas : []));
   };
@@ -27,7 +29,8 @@ export default function VagasSalvasPage() {
     const res = await fetch(`/api/vagas/remover-salvo`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ vagaId })
+      body: JSON.stringify({ vagaId }),
+      credentials: "include",
     });
     if (res.ok) {
       setVagas(vagas => vagas.filter(v => v.id !== vagaId));
@@ -43,7 +46,8 @@ export default function VagasSalvasPage() {
     const res = await fetch(`/api/vagas/${vagaId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "salvar" })
+      body: JSON.stringify({ action: "salvar" }),
+      credentials: "include",
     });
     if (res.ok) {
       setVagas(vagas => vagas.map(v =>
@@ -70,6 +74,7 @@ export default function VagasSalvasPage() {
     const res = await fetch(`/api/vagas/${vagaId}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      credentials: "include",
     });
     if (res.ok) {
       setConfirmModal({ open: true, message: "Candidatado com sucesso!" });
@@ -104,6 +109,7 @@ export default function VagasSalvasPage() {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "descandidatar" }),
+      credentials: "include",
     });
     if (res.ok) {
       setConfirmModal({ open: true, message: "Candidatura cancelada!" });

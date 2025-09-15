@@ -15,7 +15,9 @@ export default function VagaDetalhes() {
 
   useEffect(() => {
     if (!id) return;
-    fetch(`/api/vagas/${id}`)
+    fetch(`/api/vagas/${id}`, {
+      credentials: "include",
+    })
       .then(res => res.json())
       .then(data => {
         setVaga(data.vaga);
@@ -34,6 +36,7 @@ export default function VagaDetalhes() {
     const res = await fetch(`/api/vagas/${id}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      credentials: "include",
     });
     if (res.ok) {
       setConfirmModal({ open: true, message: "Candidatura enviada com sucesso!" });
@@ -61,6 +64,7 @@ export default function VagaDetalhes() {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "descandidatar" }),
+      credentials: "include",
     });
     if (res.ok) {
       setConfirmModal({ open: true, message: "Candidatura cancelada!" });
