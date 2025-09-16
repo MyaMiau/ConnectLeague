@@ -13,7 +13,6 @@ export default function VagaModal({
 }) {
   if (!vaga) return null;
 
-  // Dados e relações conforme seu prisma/schema
   const candidatos = vaga.applications || [];
   const organizacao = vaga.organization || {};
 
@@ -23,7 +22,6 @@ export default function VagaModal({
   const isOrg =
     usuario?.type === "organizacao" && usuario?.id === organizacao.id;
 
-  // Montagem de localização (Cidade/UF)
   const localizacao =
     vaga.city && vaga.state
       ? `${vaga.city}/${vaga.state}`
@@ -32,7 +30,6 @@ export default function VagaModal({
   return (
     <Modal open={!!vaga} onClose={onClose}>
       <div>
-        {/* Título e Organização */}
         <h2 className="text-2xl font-bold mb-2">{vaga.title}</h2>
         <div className="flex items-center gap-3 mb-2">
           <img
@@ -43,10 +40,8 @@ export default function VagaModal({
           <span className="block text-zinc-400">{organizacao.orgName || organizacao.name}</span>
         </div>
 
-        {/* Descrição */}
         <div className="mb-2">{vaga.description}</div>
 
-        {/* Requisitos e Benefícios */}
         {vaga.requirements && (
           <div className="mb-1"><strong>Requisitos:</strong> {vaga.requirements}</div>
         )}
@@ -54,7 +49,6 @@ export default function VagaModal({
           <div className="mb-1"><strong>Benefícios:</strong> {vaga.benefits}</div>
         )}
 
-        {/* Posições, Tipos de Usuário, Elo, Localização, Tags */}
         <div className="mb-1"><strong>Posições:</strong> {vaga.positions?.join(", ") || "Não informado"}</div>
         <div className="mb-1"><strong>Tipos de usuário:</strong> {vaga.userTypes?.join(", ") || "Não informado"}</div>
         <div className="mb-1"><strong>Elo:</strong> {vaga.elos?.join(", ") || "Não informado"}</div>
@@ -63,21 +57,17 @@ export default function VagaModal({
         <div className="mb-1"><strong>Status:</strong> {vaga.status}</div>
         <div className="mb-1"><strong>Publicado em:</strong> {vaga.created_at ? new Date(vaga.created_at).toLocaleDateString() : "?"}</div>
 
-        {/* Candidatos (contagem) */}
         <div className="mb-3 text-zinc-400 text-sm">
           <strong>Candidatos:</strong> {candidatos.length}
         </div>
 
-        {/* Botões */}
         <div className="flex flex-wrap gap-2 mb-1">
           <Link href={`/organizacao/${organizacao.id}`}>
             <Button variant="outline" className="mb-2">Ver perfil da organização</Button>
           </Link>
           {!isOrg && (
             <Button
-              className={jaCandidatado
-                ? "bg-red-600 hover:bg-red-700 text-white"
-                : "bg-green-600 hover:bg-green-700 text-white"}
+              color={jaCandidatado ? "red" : "green"}
               disabled={false}
               onClick={() =>
                 jaCandidatado ? onDescandidatar?.(vaga.id) : onCandidatar?.(vaga.id)
@@ -92,7 +82,7 @@ export default function VagaModal({
               <Button onClick={() => onFechar?.(vaga.id)}>
                 {vaga.status === "Aberta" ? "Fechar vaga" : "Reabrir vaga"}
               </Button>
-              <Button variant="destructive" onClick={() => onDeletar?.(vaga.id)}>Deletar</Button>
+              <Button color="red" onClick={() => onDeletar?.(vaga.id)}>Deletar</Button>
               <Link href={`/vagas/editar/${vaga.id}`}><Button>Editar vaga</Button></Link>
               <div style={{ marginTop: "16px" }}>
                 <h3 className="font-semibold mb-1">Candidatos:</h3>

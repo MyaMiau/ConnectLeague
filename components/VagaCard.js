@@ -56,9 +56,7 @@ export default function VagaCard({
         </Button>
         {!isOrg && (
           <Button
-            className={jaCandidatado
-            ? "bg-red-600 hover:bg-red-700 text-white"
-            : "bg-green-600 hover:bg-green-700 text-white"}
+            color={jaCandidatado ? "red" : "green"}
             disabled={false}
             onClick={() =>
               jaCandidatado ? onDescandidatar?.(vaga.id) : onCandidatar?.(vaga.id)}>
@@ -82,7 +80,7 @@ export default function VagaCard({
             <Button variant="secondary" onClick={() => onFechar?.(vaga.id)}>
               {vaga.status === "Aberta" ? "Fechar vaga" : "Reabrir vaga"}
             </Button>
-            <Button variant="destructive" onClick={() => onDeletar?.(vaga.id)}>
+            <Button color="red" onClick={() => onDeletar?.(vaga.id)}>
               Deletar vaga
             </Button>
             <Link href={`/vagas/editar/${vaga.id}`}>

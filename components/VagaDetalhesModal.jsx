@@ -13,7 +13,6 @@ export default function VagaDetalhesModal({
 }) {
   if (!vaga) return null;
 
-  // Checagem correta de candidatura e favorito
   const jaCandidatado = vaga.applications?.some(app => Number(app.user_id) === Number(usuario?.id));
   const jaFavoritou = vaga.favorites?.some(f => Number(f.userId) === Number(usuario?.id));
 
@@ -99,7 +98,7 @@ export default function VagaDetalhesModal({
         </div>
         <div className="flex gap-2 items-center">
           <Button
-            className={jaCandidatado ? "bg-red-600 hover:bg-red-700 text-white": "bg-green-600 hover:bg-green-700 text-white"}
+            color={jaCandidatado ? "red" : "green"}
             disabled={false}
             onClick={() =>
               jaCandidatado ? onDescandidatar?.(vaga.id) : onCandidatar?.(vaga.id)}

@@ -131,13 +131,13 @@ export default function VagaDetalhes() {
         <div className="mb-6">
           <span className="text-zinc-400"><strong>Candidatos:</strong> {vaga.applications?.length || 0}</span>
         </div>
-          <Button
-            variant={jaCandidatado ? "destructive" : "success"}
-            disabled={false}
-            onClick={jaCandidatado ? handleDescandidatar : handleCandidatar}
-            aria-label={jaCandidatado ? "Cancelar candidatura" : "Candidatar-se"}>
-            {jaCandidatado ? "Cancelar candidatura" : "Candidatar-se"}
-          </Button>
+        <Button
+          color={jaCandidatado ? "red" : "green"}
+          disabled={false}
+          onClick={jaCandidatado ? handleDescandidatar : handleCandidatar}
+          aria-label={jaCandidatado ? "Cancelar candidatura" : "Candidatar-se"}>
+          {jaCandidatado ? "Cancelar candidatura" : "Candidatar-se"}
+        </Button>
       </div>
       {/* Modal de confirmação */}
       {confirmModal.open && (
