@@ -1,6 +1,7 @@
 import prisma from "../../../lib/prisma";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../auth/[...nextauth]"; 
+
 export default async function handler(req, res) {
   const { id } = req.query;
   if (!id) return res.status(400).json({ error: "ID é obrigatório" });
@@ -20,13 +21,14 @@ export default async function handler(req, res) {
           type: true,
           orgName: true,
           orgDesc: true,
-          cnpj: true
+          cnpj: true,
+          image: true
         }
       });
       if (!org || org.type !== "organization") {
         return res.status(404).json({ error: "Organização não encontrada" });
       }
-      res.status(200).json({ organization: org });
+      res.status(200).json({ organization: { ...org, isCurrentUser: Number(loggedUserId) === Number(id) } });
     } catch (err) {
       res.status(500).json({ error: "Erro ao buscar organização" });
     }
@@ -37,11 +39,11 @@ export default async function handler(req, res) {
     if (!loggedUserId || Number(loggedUserId) !== Number(id)) {
       return res.status(403).json({ error: "Você não tem permissão para editar este perfil." });
     }
-    const { logo, name, bio, email, orgName, orgDesc, cnpj } = req.body;
+    const { logo, name, bio, email, orgName, orgDesc, cnpj, image } = req.body;
     try {
       const org = await prisma.users.update({
         where: { id: Number(id) },
-        data: { logo, name, bio, email, orgName, orgDesc, cnpj }
+        data: { logo, name, bio, email, orgName, orgDesc, cnpj, image }
       });
       res.status(200).json({ organization: org });
     } catch (err) {

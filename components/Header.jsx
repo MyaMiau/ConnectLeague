@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { Home, Briefcase, LogOut, Bell, Bookmark } from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
 
-// Função utilitária para criar link seguro para notificações
+
 function getNotificationLink(n) {
   if (n.type === "like" && n.postId) {
     return `/post/${n.postId}`;
@@ -20,6 +20,13 @@ function getNotificationLink(n) {
     return `/post/${n.postId}#reply-${n.replyId}`;
   }
   return "#";
+}
+
+function getProfileUrl(user) {
+  if (!user) return "/profile";
+  return user.type === "organization"
+    ? `/organization/${user.id}`
+    : `/profile/${user.id}`;
 }
 
 function NotificationsPopover({ open, onClose, notifications = [], unreadCount, onRead }) {
@@ -63,7 +70,7 @@ function NotificationsPopover({ open, onClose, notifications = [], unreadCount, 
           <ul className="divide-y divide-zinc-800">
             {notifications.map(n => (
               <li key={n.id} className={`flex items-start gap-3 p-4 ${n.read ? "" : "bg-zinc-800"}`}>
-                <Link href={`/profile/${n.sender?.id || ""}`} className="group">
+                <Link href={getProfileUrl(n.sender)} className="group">
                   <Image
                     src={n.sender?.image || "/default-avatar.png"}
                     alt="avatar"
@@ -76,7 +83,7 @@ function NotificationsPopover({ open, onClose, notifications = [], unreadCount, 
                   {n.type === "like" && (
                     <span>
                       <b>
-                        <Link href={`/profile/${n.sender?.id || ""}`} className="hover:underline">
+                        <Link href={getProfileUrl(n.sender)} className="hover:underline">
                           {n.sender?.name || "Alguém"}
                         </Link>
                       </b>{" "}
@@ -93,7 +100,7 @@ function NotificationsPopover({ open, onClose, notifications = [], unreadCount, 
                   {n.type === "comment_like" && (
                     <span>
                       <b>
-                        <Link href={`/profile/${n.sender?.id || ""}`} className="hover:underline">
+                        <Link href={getProfileUrl(n.sender)} className="hover:underline">
                           {n.sender?.name || "Alguém"}
                         </Link>
                       </b>{" "}
@@ -110,7 +117,7 @@ function NotificationsPopover({ open, onClose, notifications = [], unreadCount, 
                   {n.type === "reply" && (
                     <span>
                       <b>
-                        <Link href={`/profile/${n.sender?.id || ""}`} className="hover:underline">
+                        <Link href={getProfileUrl(n.sender)} className="hover:underline">
                           {n.sender?.name || "Alguém"}
                         </Link>
                       </b>{" "}
@@ -127,7 +134,7 @@ function NotificationsPopover({ open, onClose, notifications = [], unreadCount, 
                   {n.type === "comment" && (
                     <span>
                       <b>
-                        <Link href={`/profile/${n.sender?.id || ""}`} className="hover:underline">
+                        <Link href={getProfileUrl(n.sender)} className="hover:underline">
                           {n.sender?.name || "Alguém"}
                         </Link>
                       </b>{" "}
@@ -255,7 +262,7 @@ export default function Header() {
       {/* Mini perfil do usuário logado (foto real e nome, hover roxo) */}
       {profile && (
         <Link
-          href={`/profile/${profile.id}`}
+          href={getProfileUrl(profile)}
           className="flex items-center gap-2 mb-8 w-full px-4 group cursor-pointer">
           <div className="relative w-[56px] h-[56px] shrink-0">
             <Image
