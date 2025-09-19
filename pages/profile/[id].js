@@ -14,7 +14,6 @@ import Header from "@/components/Header";
 import ProfileCard from "@/components/ProfileCard";
 import ProfileCardGeneric from "@/components/ProfileCardGeneric";
 import ReplyThread from "@/components/ReplyThread";
-import VagaCard from "@/components/VagaCard";
 
 export default function PublicProfilePage() {
   const router = useRouter();
@@ -372,593 +371,327 @@ export default function PublicProfilePage() {
     }
   };
 
-  // Redirecionamento imediato para a página da organização
-  useEffect(() => {
-    if (user && (user.type === "organization" || user.role === "organization")) {
-      router.replace(`/organization/${user.id}`);
-    }
-  }, [user, router]);
-
   if (loading) return <p className="text-center text-zinc-400 mt-16">Carregando perfil...</p>;
   if (!user) return <p className="text-center text-zinc-400 mt-16">Usuário não encontrado.</p>;
 
-  // Perfis genéricos: coach, headcoach, manager, psychologist
-  const isGeneric =
-    user.type === "coach" ||
-    user.type === "headcoach" ||
-    user.type === "manager" ||
-    user.type === "psychologist";
-
+  // Renderiza card correto: player ou genérico
   return (
     <div className="min-h-screen bg-black text-white pt-24 flex flex-col items-center px-4">
       <Header />
       <h1 className="text-3xl font-bold mb-8">
-        {user.type === "player"
-          ? "Perfil do Jogador"
-          : isGeneric
-            ? "Perfil"
-            : "Perfil"}
+        {user.type === "player" ? "Perfil do Jogador" : "Perfil"}
       </h1>
 
       {user.type === "player" ? (
-        <>
-          <ProfileCard user={user} showEdit={loggedUser?.id === user?.id} />
-          <div className="w-full max-w-2xl space-y-6 mt-8">
-            {posts.length === 0 && (
-              <p className="text-center text-zinc-400">Nenhum post encontrado para este usuário.</p>
-            )}
-            {posts.map((post) => (
-              <Card key={post.id} className="bg-zinc-900 rounded-2xl">
-                <CardContent className="p-6 space-y-4 relative">
-                  <div className="flex justify-between items-start">
-                    <div className="flex items-center gap-4">
-                      <Link href={`/profile/${post.author?.id || ""}`} className="flex items-center gap-4 cursor-pointer group">
-                        <div className="relative w-[40px] h-[40px] rounded-full overflow-hidden border border-zinc-700 bg-zinc-800 shrink-0">
-                          <Image
-                            src={post.author?.image || "/default-avatar.png"}
-                            alt="Avatar"
-                            fill
-                            sizes="40px"
-                            className="object-cover"
-                            priority
-                          />
-                        </div>
-                        <div>
-                          <p className="font-semibold group-hover:underline">
-                            {post.author?.name || "Autor desconhecido"}
-                          </p>
-                          <p className="text-xs text-zinc-400">
-                            {format(new Date(post.createdAt), "d 'de' MMMM 'às' HH:mm", { locale: ptBR })}
-                          </p>
-                        </div>
-                      </Link>
-                    </div>
-                    {canEditOrDeletePost(post) && (
-                      <div className="relative" ref={el => postMenuRef.current[post.id] = el}>
-                        <button
-                          type="button"
-                          aria-label="Abrir menu de opções do post"
-                          onClick={e => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            setActiveOptions(activeOptions === post.id ? null : post.id);
-                          }}
-                          className="flex items-center"
-                        >
-                          <MoreHorizontal className="text-zinc-400 hover:text-white cursor-pointer" />
-                        </button>
-                        {activeOptions === post.id && (
-                          <div className="absolute right-0 mt-2 w-32 bg-zinc-800 border border-zinc-700 rounded shadow-md z-10">
-                            <button
-                              type="button"
-                              className="block w-full text-left px-4 py-2 hover:bg-zinc-700 cursor-pointer"
-                              onClick={() => {
-                                setActiveOptions(null);
-                              }}
-                            >
-                              Editar
-                            </button>
-                            <button
-                              type="button"
-                              className="block w-full text-left px-4 py-2 hover:bg-zinc-700 cursor-pointer"
-                              onClick={() => {
-                                setDeleteTarget({ type: "post", postId: post.id });
-                                setIsDeleteModalOpen(true);
-                                setActiveOptions(null);
-                              }}
-                            >
-                              Excluir
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                  <p className="whitespace-pre-line">{post.content}</p>
-                  {post.image && (
-                    <Image
-                      src={post.image}
-                      alt="Imagem do post"
-                      width={800}
-                      height={400}
-                      className="rounded-xl object-cover"
-                    />
-                  )}
-                  <div className="flex gap-6 pt-2 border-t border-zinc-800 mt-2 text-sm text-zinc-400 ">
-                    <button
-                      type="button"
-                      onClick={() => toggleLikePost(post.id)}
-                      className="flex items-center gap-1 text-sm hover:opacity-80 cursor-pointer">
-                      <Heart className={post.postLikes?.some(l => l.userId === loggedUser?.id) ? "text-pink-500" : ""} size={18} />
-                      <span>{post.postLikes?.length || 0}</span>
-                    </button>
-                    <button
-                      type="button"
-                      className="flex items-center gap-1 text-sm hover:opacity-80 cursor-pointer">
-                      <MessageCircle size={18} />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleShare(post.id)}
-                      className="flex items-center gap-1 text-sm hover:opacity-80 cursor-pointer">
-                      <Share2 size={18} />
-                    </button>
-                  </div>
-                  <div className="mt-4 space-y-4">
-                    {post.comments?.map((comment) => (
-                      <div key={comment.id} className="bg-zinc-800 p-4 rounded-lg">
-                        <div className="flex justify-between">
-                          <div className="flex gap-3 items-center">
-                            <Link href={`/profile/${comment.author?.id || ""}`} className="flex items-center gap-2 cursor-pointer group">
-                              <div className="relative w-[30px] h-[30px] rounded-full overflow-hidden border border-zinc-700 bg-zinc-800 shrink-0">
-                                <Image
-                                  src={comment.author?.image || "/default-avatar.png"}
-                                  alt="Avatar"
-                                  fill
-                                  sizes="30px"
-                                  className="object-cover"
-                                  priority
-                                />
-                              </div>
-                              <div>
-                                <p className="text-sm font-semibold text-zinc-100 group-hover:underline">{comment.author?.name || "Desconhecido"}</p>
-                                {editingComment?.id === comment.id ? (
-                                  <>
-                                    <Textarea
-                                      className="text-sm"
-                                      value={editingComment.content}
-                                      onChange={(e) => setEditingComment({ ...editingComment, content: e.target.value })}
-                                    />
-                                    <Button
-                                      type="button"
-                                      size="sm"
-                                      className="mt-1"
-                                      onClick={() => saveEditedComment(post.id, comment.id, editingComment.content)}>
-                                      Salvar
-                                    </Button>
-                                  </>
-                                ) : (
-                                  <p className="text-sm text-zinc-300">{comment.content}</p>
-                                )}
-                              </div>
-                            </Link>
-                          </div>
-                          {canEditOrDeleteComment(comment) && (
-                            <div className="relative" ref={el => commentMenuRef.current[comment.id] = el}>
-                              <button
-                                type="button"
-                                tabIndex={0}
-                                aria-label="Abrir menu de opções do comentário"
-                                onClick={e => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  setActiveCommentOptions(
-                                    activeCommentOptions === comment.id ? null : comment.id
-                                  );
-                                }}
-                                className="flex items-center gap-1 text-sm hover:opacity-80 cursor-pointer">
-                                <MoreHorizontal size={16} />
-                              </button>
-                              {activeCommentOptions === comment.id && (
-                                <div
-                                  className="absolute right-0 mt-2 w-32 bg-zinc-700 border border-zinc-600 rounded shadow-md z-10"
-                                  onClick={e => e.stopPropagation()}
-                                >
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      setEditingComment(comment);
-                                      setActiveCommentOptions(null);
-                                    }}
-                                    className="block w-full text-left px-4 py-2 hover:bg-zinc-600 cursor-pointer">
-                                    Editar
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      openDeleteModal({ type: "comment", postId: post.id, commentId: comment.id });
-                                      setActiveCommentOptions(null);
-                                    }}
-                                    className="block w-full text-left px-4 py-2 hover:bg-zinc-600 cursor-pointer">
-                                    Excluir
-                                  </button>
-                                </div>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex gap-4 mt-2 text-xs text-zinc-400">
-                          <button
-                            type="button"
-                            onClick={() => toggleLikeComment(comment.id, post.id)}
-                            className="flex items-center gap-1 text-sm hover:opacity-80 cursor-pointer">
-                            <Heart className={comment.commentLikes?.some(l => l.userId === loggedUser?.id) ? "text-pink-500" : ""} size={14} />
-                            <span>{comment.commentLikes?.length || 0}</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => toggleReplyInput(comment.id)}
-                            className="flex items-center gap-1 text-sm hover:underline cursor-pointer">
-                            <MessageCircle size={14} />
-                            <span>Responder</span>
-                          </button>
-                        </div>
-                        {replyInputs[comment.id] !== undefined && (
-                          <div className="mt-2 flex gap-2">
-                            <Input
-                              className="h-10"
-                              value={replyInputs[comment.id]}
-                              onChange={(e) =>
-                                setReplyInputs({ ...replyInputs, [comment.id]: e.target.value })
-                              }
-                              placeholder="Responder..."
-                            />
-                            <Button
-                              type="button"
-                              className="h-10 py-0 px-4"
-                              onClick={() => handleReply(post.id, comment.id, replyInputs[comment.id])}>
-                              Enviar
-                            </Button>
-                          </div>
-                        )}
-                        {comment.replies?.length > 0 && (
-                          <div className="mt-2 space-y-2">
-                            {comment.replies.map((reply) => (
-                              <ReplyThread
-                                key={reply.id}
-                                reply={reply}
-                                postId={post.id}
-                                commentId={comment.id}
-                                editingReply={editingReply}
-                                setEditingReply={setEditingReply}
-                                saveEditedReply={saveEditedReply}
-                                openDeleteModal={openDeleteModal}
-                                activeReplyMenu={activeReplyMenu}
-                                setActiveReplyMenu={setActiveReplyMenu}
-                                replyInputs={replyInputs}
-                                setReplyInputs={setReplyInputs}
-                                onReply={handleReply}
-                                onEditReply={onEditReply}
-                                loggedUser={loggedUser}
-                                depth={1}
-                              />
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                    <div className="flex gap-2 mt-2">
-                      <Input
-                        className="h-10"
-                        value={commentInputs[post.id] || ""}
-                        onChange={(e) =>
-                          setCommentInputs({ ...commentInputs, [post.id]: e.target.value })}
-                        placeholder="Escreva um comentário..."
-                      />
-                      <Button
-                        type="button"
-                        className="h-10 py-0 px-4"
-                        onClick={() => addComment(post.id)}>
-                        Enviar
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-          <DeleteConfirmationModal
-            isOpen={isDeleteModalOpen}
-            onClose={() => setIsDeleteModalOpen(false)}
-            onConfirm={handleConfirmDelete}
-            itemType={deleteTarget.type}
-          />
-        </>
-      ) : isGeneric ? (
-        <>
-          <ProfileCardGeneric
-            user={user}
-            showEdit={loggedUser?.id === user.id}
-            onEdit={() => router.push(`/editar/${user.id}`)}
-          />
-          <div className="w-full max-w-2xl space-y-6 mt-8">
-            {posts.length === 0 && (
-              <p className="text-center text-zinc-400">Nenhum post encontrado para este usuário.</p>
-            )}
-            {posts.map((post) => (
-              <Card key={post.id} className="bg-zinc-900 rounded-2xl">
-                <CardContent className="p-6 space-y-4 relative">
-                  <div className="flex justify-between items-start">
-                    <div className="flex items-center gap-4">
-                      <Link href={`/profile/${post.author?.id || ""}`} className="flex items-center gap-4 cursor-pointer group">
-                        <div className="relative w-[40px] h-[40px] rounded-full overflow-hidden border border-zinc-700 bg-zinc-800 shrink-0">
-                          <Image
-                            src={post.author?.image || "/default-avatar.png"}
-                            alt="Avatar"
-                            fill
-                            sizes="40px"
-                            className="object-cover"
-                            priority
-                          />
-                        </div>
-                        <div>
-                          <p className="font-semibold group-hover:underline">
-                            {post.author?.name || "Autor desconhecido"}
-                          </p>
-                          <p className="text-xs text-zinc-400">
-                            {format(new Date(post.createdAt), "d 'de' MMMM 'às' HH:mm", { locale: ptBR })}
-                          </p>
-                        </div>
-                      </Link>
-                    </div>
-                    {canEditOrDeletePost(post) && (
-                      <div className="relative" ref={el => postMenuRef.current[post.id] = el}>
-                        <button
-                          type="button"
-                          aria-label="Abrir menu de opções do post"
-                          onClick={e => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            setActiveOptions(activeOptions === post.id ? null : post.id);
-                          }}
-                          className="flex items-center"
-                        >
-                          <MoreHorizontal className="text-zinc-400 hover:text-white cursor-pointer" />
-                        </button>
-                        {activeOptions === post.id && (
-                          <div className="absolute right-0 mt-2 w-32 bg-zinc-800 border border-zinc-700 rounded shadow-md z-10">
-                            <button
-                              type="button"
-                              className="block w-full text-left px-4 py-2 hover:bg-zinc-700 cursor-pointer"
-                              onClick={() => {
-                                setActiveOptions(null);
-                              }}
-                            >
-                              Editar
-                            </button>
-                            <button
-                              type="button"
-                              className="block w-full text-left px-4 py-2 hover:bg-zinc-700 cursor-pointer"
-                              onClick={() => {
-                                setDeleteTarget({ type: "post", postId: post.id });
-                                setIsDeleteModalOpen(true);
-                                setActiveOptions(null);
-                              }}
-                            >
-                              Excluir
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                  <p className="whitespace-pre-line">{post.content}</p>
-                  {post.image && (
-                    <Image
-                      src={post.image}
-                      alt="Imagem do post"
-                      width={800}
-                      height={400}
-                      className="rounded-xl object-cover"
-                    />
-                  )}
-                  <div className="flex gap-6 pt-2 border-t border-zinc-800 mt-2 text-sm text-zinc-400 ">
-                    <button
-                      type="button"
-                      onClick={() => toggleLikePost(post.id)}
-                      className="flex items-center gap-1 text-sm hover:opacity-80 cursor-pointer">
-                      <Heart className={post.postLikes?.some(l => l.userId === loggedUser?.id) ? "text-pink-500" : ""} size={18} />
-                      <span>{post.postLikes?.length || 0}</span>
-                    </button>
-                    <button
-                      type="button"
-                      className="flex items-center gap-1 text-sm hover:opacity-80 cursor-pointer">
-                      <MessageCircle size={18} />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleShare(post.id)}
-                      className="flex items-center gap-1 text-sm hover:opacity-80 cursor-pointer">
-                      <Share2 size={18} />
-                    </button>
-                  </div>
-                  <div className="mt-4 space-y-4">
-                    {post.comments?.map((comment) => (
-                      <div key={comment.id} className="bg-zinc-800 p-4 rounded-lg">
-                        <div className="flex justify-between">
-                          <div className="flex gap-3 items-center">
-                            <Link href={`/profile/${comment.author?.id || ""}`} className="flex items-center gap-2 cursor-pointer group">
-                              <div className="relative w-[30px] h-[30px] rounded-full overflow-hidden border border-zinc-700 bg-zinc-800 shrink-0">
-                                <Image
-                                  src={comment.author?.image || "/default-avatar.png"}
-                                  alt="Avatar"
-                                  fill
-                                  sizes="30px"
-                                  className="object-cover"
-                                  priority
-                                />
-                              </div>
-                              <div>
-                                <p className="text-sm font-semibold text-zinc-100 group-hover:underline">{comment.author?.name || "Desconhecido"}</p>
-                                {editingComment?.id === comment.id ? (
-                                  <>
-                                    <Textarea
-                                      className="text-sm"
-                                      value={editingComment.content}
-                                      onChange={(e) => setEditingComment({ ...editingComment, content: e.target.value })}
-                                    />
-                                    <Button
-                                      type="button"
-                                      size="sm"
-                                      className="mt-1"
-                                      onClick={() => saveEditedComment(post.id, comment.id, editingComment.content)}>
-                                      Salvar
-                                    </Button>
-                                  </>
-                                ) : (
-                                  <p className="text-sm text-zinc-300">{comment.content}</p>
-                                )}
-                              </div>
-                            </Link>
-                          </div>
-                          {canEditOrDeleteComment(comment) && (
-                            <div className="relative" ref={el => commentMenuRef.current[comment.id] = el}>
-                              <button
-                                type="button"
-                                tabIndex={0}
-                                aria-label="Abrir menu de opções do comentário"
-                                onClick={e => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  setActiveCommentOptions(
-                                    activeCommentOptions === comment.id ? null : comment.id
-                                  );
-                                }}
-                                className="flex items-center gap-1 text-sm hover:opacity-80 cursor-pointer">
-                                <MoreHorizontal size={16} />
-                              </button>
-                              {activeCommentOptions === comment.id && (
-                                <div
-                                  className="absolute right-0 mt-2 w-32 bg-zinc-700 border border-zinc-600 rounded shadow-md z-10"
-                                  onClick={e => e.stopPropagation()}
-                                >
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      setEditingComment(comment);
-                                      setActiveCommentOptions(null);
-                                    }}
-                                    className="block w-full text-left px-4 py-2 hover:bg-zinc-600 cursor-pointer">
-                                    Editar
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      openDeleteModal({ type: "comment", postId: post.id, commentId: comment.id });
-                                      setActiveCommentOptions(null);
-                                    }}
-                                    className="block w-full text-left px-4 py-2 hover:bg-zinc-600 cursor-pointer">
-                                    Excluir
-                                  </button>
-                                </div>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex gap-4 mt-2 text-xs text-zinc-400">
-                          <button
-                            type="button"
-                            onClick={() => toggleLikeComment(comment.id, post.id)}
-                            className="flex items-center gap-1 text-sm hover:opacity-80 cursor-pointer">
-                            <Heart className={comment.commentLikes?.some(l => l.userId === loggedUser?.id) ? "text-pink-500" : ""} size={14} />
-                            <span>{comment.commentLikes?.length || 0}</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => toggleReplyInput(comment.id)}
-                            className="flex items-center gap-1 text-sm hover:underline cursor-pointer">
-                            <MessageCircle size={14} />
-                            <span>Responder</span>
-                          </button>
-                        </div>
-                        {replyInputs[comment.id] !== undefined && (
-                          <div className="mt-2 flex gap-2">
-                            <Input
-                              className="h-10"
-                              value={replyInputs[comment.id]}
-                              onChange={(e) =>
-                                setReplyInputs({ ...replyInputs, [comment.id]: e.target.value })
-                              }
-                              placeholder="Responder..."
-                            />
-                            <Button
-                              type="button"
-                              className="h-10 py-0 px-4"
-                              onClick={() => handleReply(post.id, comment.id, replyInputs[comment.id])}>
-                              Enviar
-                            </Button>
-                          </div>
-                        )}
-                        {comment.replies?.length > 0 && (
-                          <div className="mt-2 space-y-2">
-                            {comment.replies.map((reply) => (
-                              <ReplyThread
-                                key={reply.id}
-                                reply={reply}
-                                postId={post.id}
-                                commentId={comment.id}
-                                editingReply={editingReply}
-                                setEditingReply={setEditingReply}
-                                saveEditedReply={saveEditedReply}
-                                openDeleteModal={openDeleteModal}
-                                activeReplyMenu={activeReplyMenu}
-                                setActiveReplyMenu={setActiveReplyMenu}
-                                replyInputs={replyInputs}
-                                setReplyInputs={setReplyInputs}
-                                onReply={handleReply}
-                                onEditReply={onEditReply}
-                                loggedUser={loggedUser}
-                                depth={1}
-                              />
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                    <div className="flex gap-2 mt-2">
-                      <Input
-                        className="h-10"
-                        value={commentInputs[post.id] || ""}
-                        onChange={(e) =>
-                          setCommentInputs({ ...commentInputs, [post.id]: e.target.value })}
-                        placeholder="Escreva um comentário..."
-                      />
-                      <Button
-                        type="button"
-                        className="h-10 py-0 px-4"
-                        onClick={() => addComment(post.id)}>
-                        Enviar
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-          <DeleteConfirmationModal
-            isOpen={isDeleteModalOpen}
-            onClose={() => setIsDeleteModalOpen(false)}
-            onConfirm={handleConfirmDelete}
-            itemType={deleteTarget.type}
-          />
-        </>
+        <ProfileCard
+          user={user}
+          showEdit={loggedUser?.id === user?.id}
+          onUserUpdate={reloadPosts}
+        />
       ) : (
         <ProfileCardGeneric
           user={user}
           showEdit={loggedUser?.id === user.id}
-          onEdit={() => router.push(`/editar/${user.id}`)}
+          onUserUpdate={reloadPosts}
         />
       )}
+
+      {/* Vagas só para organização */}
+      {user.type === "organization" && (
+        <div className="w-full max-w-2xl space-y-6 mt-8">
+          <h2 className="text-xl font-bold mb-4">Vagas abertas pela organização</h2>
+          {vagas.length === 0 && (
+            <p className="text-center text-zinc-400">Nenhuma vaga encontrada para esta organização.</p>
+          )}
+          {vagas.map((vaga) => (
+            <Card key={vaga.id} className="bg-zinc-900 rounded-2xl">
+              <CardContent className="p-6">
+                <Link href={`/vagas/${vaga.id}`}>
+                  <h3 className="text-lg font-bold mb-2 hover:underline cursor-pointer">{vaga.titulo}</h3>
+                </Link>
+                <p className="text-zinc-300 mb-2">{vaga.descricao}</p>
+                <div className="flex gap-3 text-sm text-zinc-400">
+                  <span>Status: {vaga.status}</span>
+                  <span>Candidatos: {vaga.candidatos?.length || 0}</span>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {/* Posts */}
+      <div className="w-full max-w-2xl space-y-6 mt-8">
+        <h2 className="text-xl font-bold mb-4">Posts</h2>
+        {posts.length === 0 && (
+          <p className="text-center text-zinc-400">Nenhum post encontrado para este usuário.</p>
+        )}
+        {posts.map((post) => (
+          <Card key={post.id} className="bg-zinc-900 rounded-2xl">
+            <CardContent className="p-6 space-y-4 relative">
+              <div className="flex justify-between items-start">
+                <div className="flex items-center gap-4">
+                  <Link href={`/profile/${post.author?.id || ""}`} className="flex items-center gap-4 cursor-pointer group">
+                    <div className="relative w-[40px] h-[40px] rounded-full overflow-hidden border border-zinc-700 bg-zinc-800 shrink-0">
+                      <Image
+                        src={post.author?.image || "/default-avatar.png"}
+                        alt="Avatar"
+                        fill
+                        sizes="40px"
+                        className="object-cover"
+                        priority
+                      />
+                    </div>
+                    <div>
+                      <p className="font-semibold group-hover:underline">
+                        {post.author?.name || "Autor desconhecido"}
+                      </p>
+                      <p className="text-xs text-zinc-400">
+                        {format(new Date(post.createdAt), "d 'de' MMMM 'às' HH:mm", { locale: ptBR })}
+                      </p>
+                    </div>
+                  </Link>
+                </div>
+                {canEditOrDeletePost(post) && (
+                  <div className="relative" ref={el => postMenuRef.current[post.id] = el}>
+                    <button
+                      type="button"
+                      aria-label="Abrir menu de opções do post"
+                      onClick={e => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setActiveOptions(activeOptions === post.id ? null : post.id);
+                      }}
+                      className="flex items-center"
+                    >
+                      <MoreHorizontal className="text-zinc-400 hover:text-white cursor-pointer" />
+                    </button>
+                    {activeOptions === post.id && (
+                      <div className="absolute right-0 mt-2 w-32 bg-zinc-800 border border-zinc-700 rounded shadow-md z-10">
+                        <button
+                          type="button"
+                          className="block w-full text-left px-4 py-2 hover:bg-zinc-700 cursor-pointer"
+                          onClick={() => {
+                            setActiveOptions(null);
+                          }}
+                        >
+                          Editar
+                        </button>
+                        <button
+                          type="button"
+                          className="block w-full text-left px-4 py-2 hover:bg-zinc-700 cursor-pointer"
+                          onClick={() => {
+                            setDeleteTarget({ type: "post", postId: post.id });
+                            setIsDeleteModalOpen(true);
+                            setActiveOptions(null);
+                          }}
+                        >
+                          Excluir
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+              <p className="whitespace-pre-line">{post.content}</p>
+              {post.image && (
+                <Image
+                  src={post.image}
+                  alt="Imagem do post"
+                  width={800}
+                  height={400}
+                  className="rounded-xl object-cover"
+                />
+              )}
+              <div className="flex gap-6 pt-2 border-t border-zinc-800 mt-2 text-sm text-zinc-400 ">
+                <button
+                  type="button"
+                  onClick={() => toggleLikePost(post.id)}
+                  className="flex items-center gap-1 text-sm hover:opacity-80 cursor-pointer">
+                  <Heart className={post.postLikes?.some(l => l.userId === loggedUser?.id) ? "text-pink-500" : ""} size={18} />
+                  <span>{post.postLikes?.length || 0}</span>
+                </button>
+                <button
+                  type="button"
+                  className="flex items-center gap-1 text-sm hover:opacity-80 cursor-pointer">
+                  <MessageCircle size={18} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleShare(post.id)}
+                  className="flex items-center gap-1 text-sm hover:opacity-80 cursor-pointer">
+                  <Share2 size={18} />
+                </button>
+              </div>
+              <div className="mt-4 space-y-4">
+                {post.comments?.map((comment) => (
+                  <div key={comment.id} className="bg-zinc-800 p-4 rounded-lg">
+                    <div className="flex justify-between">
+                      <div className="flex gap-3 items-center">
+                        <Link href={`/profile/${comment.author?.id || ""}`} className="flex items-center gap-2 cursor-pointer group">
+                          <div className="relative w-[30px] h-[30px] rounded-full overflow-hidden border border-zinc-700 bg-zinc-800 shrink-0">
+                            <Image
+                              src={comment.author?.image || "/default-avatar.png"}
+                              alt="Avatar"
+                              fill
+                              sizes="30px"
+                              className="object-cover"
+                              priority
+                            />
+                          </div>
+                          <div>
+                            <p className="text-sm font-semibold text-zinc-100 group-hover:underline">{comment.author?.name || "Desconhecido"}</p>
+                            {editingComment?.id === comment.id ? (
+                              <>
+                                <Textarea
+                                  className="text-sm"
+                                  value={editingComment.content}
+                                  onChange={(e) => setEditingComment({ ...editingComment, content: e.target.value })}
+                                />
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  className="mt-1"
+                                  onClick={() => saveEditedComment(post.id, comment.id, editingComment.content)}>
+                                  Salvar
+                                </Button>
+                              </>
+                            ) : (
+                              <p className="text-sm text-zinc-300">{comment.content}</p>
+                            )}
+                          </div>
+                        </Link>
+                      </div>
+                      {canEditOrDeleteComment(comment) && (
+                        <div className="relative" ref={el => commentMenuRef.current[comment.id] = el}>
+                          <button
+                            type="button"
+                            tabIndex={0}
+                            aria-label="Abrir menu de opções do comentário"
+                            onClick={e => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setActiveCommentOptions(
+                                activeCommentOptions === comment.id ? null : comment.id
+                              );
+                            }}
+                            className="flex items-center gap-1 text-sm hover:opacity-80 cursor-pointer">
+                            <MoreHorizontal size={16} />
+                          </button>
+                          {activeCommentOptions === comment.id && (
+                            <div
+                              className="absolute right-0 mt-2 w-32 bg-zinc-700 border border-zinc-600 rounded shadow-md z-10"
+                              onClick={e => e.stopPropagation()}
+                            >
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setEditingComment(comment);
+                                  setActiveCommentOptions(null);
+                                }}
+                                className="block w-full text-left px-4 py-2 hover:bg-zinc-600 cursor-pointer">
+                                Editar
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  openDeleteModal({ type: "comment", postId: post.id, commentId: comment.id });
+                                  setActiveCommentOptions(null);
+                                }}
+                                className="block w-full text-left px-4 py-2 hover:bg-zinc-600 cursor-pointer">
+                                Excluir
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex gap-4 mt-2 text-xs text-zinc-400">
+                      <button
+                        type="button"
+                        onClick={() => toggleLikeComment(comment.id, post.id)}
+                        className="flex items-center gap-1 text-sm hover:opacity-80 cursor-pointer">
+                        <Heart className={comment.commentLikes?.some(l => l.userId === loggedUser?.id) ? "text-pink-500" : ""} size={14} />
+                        <span>{comment.commentLikes?.length || 0}</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => toggleReplyInput(comment.id)}
+                        className="flex items-center gap-1 text-sm hover:underline cursor-pointer">
+                        <MessageCircle size={14} />
+                        <span>Responder</span>
+                      </button>
+                    </div>
+                    {replyInputs[comment.id] !== undefined && (
+                      <div className="mt-2 flex gap-2">
+                        <Input
+                          className="h-10"
+                          value={replyInputs[comment.id]}
+                          onChange={(e) =>
+                            setReplyInputs({ ...replyInputs, [comment.id]: e.target.value })
+                          }
+                          placeholder="Responder..."
+                        />
+                        <Button
+                          type="button"
+                          className="h-10 py-0 px-4"
+                          onClick={() => handleReply(post.id, comment.id, replyInputs[comment.id])}>
+                          Enviar
+                        </Button>
+                      </div>
+                    )}
+                    {comment.replies?.length > 0 && (
+                      <div className="mt-2 space-y-2">
+                        {comment.replies.map((reply) => (
+                          <ReplyThread
+                            key={reply.id}
+                            reply={reply}
+                            postId={post.id}
+                            commentId={comment.id}
+                            editingReply={editingReply}
+                            setEditingReply={setEditingReply}
+                            saveEditedReply={saveEditedReply}
+                            openDeleteModal={openDeleteModal}
+                            activeReplyMenu={activeReplyMenu}
+                            setActiveReplyMenu={setActiveReplyMenu}
+                            replyInputs={replyInputs}
+                            setReplyInputs={setReplyInputs}
+                            onReply={handleReply}
+                            onEditReply={onEditReply}
+                            loggedUser={loggedUser}
+                            depth={1}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+                <div className="flex gap-2 mt-2">
+                  <Input
+                    className="h-10"
+                    value={commentInputs[post.id] || ""}
+                    onChange={(e) =>
+                      setCommentInputs({ ...commentInputs, [post.id]: e.target.value })}
+                    placeholder="Escreva um comentário..."
+                  />
+                  <Button
+                    type="button"
+                    className="h-10 py-0 px-4"
+                    onClick={() => addComment(post.id)}>
+                    Enviar
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+        <DeleteConfirmationModal
+          isOpen={isDeleteModalOpen}
+          onClose={() => setIsDeleteModalOpen(false)}
+          onConfirm={handleConfirmDelete}
+          itemType={deleteTarget.type}
+        />
+      </div>
     </div>
   );
 }
