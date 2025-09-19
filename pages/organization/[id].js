@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import Image from "next/image";
 import { Button } from "../../components/ui/button";
+import { Input } from "../../components/ui/input";
+import { Textarea } from "../../components/ui/textarea";
 
 export default function OrganizationProfile() {
   const router = useRouter();
@@ -9,6 +11,8 @@ export default function OrganizationProfile() {
   const [org, setOrg] = useState(null);
   const [vagas, setVagas] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [editMode, setEditMode] = useState(false);
+  const [localOrg, setLocalOrg] = useState(null);
 
   useEffect(() => {
     if (!id) return;
@@ -16,6 +20,7 @@ export default function OrganizationProfile() {
       .then(res => res.json())
       .then(data => {
         setOrg(data.organization);
+        setLocalOrg(data.organization);
         setLoading(false);
       });
     fetch(`/api/vagas?organizationId=${id}`)
@@ -23,35 +28,89 @@ export default function OrganizationProfile() {
       .then(data => setVagas(data.vagas || []));
   }, [id]);
 
+  function handleChange(e) {
+    const { name, value } = e.target;
+    setLocalOrg(prev => ({ ...prev, [name]: value }));
+  }
+
+  async function handleSave() {
+    const res = await fetch(`/api/organization/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(localOrg),
+    });
+    if (res.ok) {
+      const updated = await res.json();
+      setOrg(updated.organization);
+      setLocalOrg(updated.organization);
+      setEditMode(false);
+      alert("Perfil salvo com sucesso!");
+    } else {
+      alert("Erro ao salvar perfil.");
+    }
+  }
+
   if (loading) return <div className="min-h-screen bg-black text-white flex items-center justify-center">Carregando...</div>;
   if (!org) return <div className="min-h-screen bg-black text-white flex items-center justify-center">Organização não encontrada.</div>;
+
+  const displayName = localOrg?.orgName || localOrg?.name;
+  const displayBio = localOrg?.orgDesc || localOrg?.bio;
+  const displayImage = localOrg?.logo || localOrg?.image || "/default-org.png";
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col items-center py-10 px-4">
       <h1 className="text-3xl font-bold mb-8">Perfil da Organização</h1>
-      <div className="flex flex-col items-center mb-8">
+      <div className="flex flex-col items-center mb-8 relative w-full max-w-2xl">
         <Image
-          src={org.logo || org.image || "/default-org.png"}
+          src={displayImage}
           width={120}
           height={120}
           className="rounded-full border-4 border-zinc-700"
           alt="Logo da organização"
         />
-        <h2 className="text-2xl font-semibold mt-4 mb-2">{org.orgName || org.name}</h2>
-        {org.cnpj && (
-          <p className="text-zinc-500 mb-2">CNPJ: {org.cnpj}</p>
-        )}
-        <p className="text-zinc-400 mb-2">{org.email}</p>
-        {org.orgDesc || org.bio ? (
-          <p className="text-zinc-300 mb-2">{org.orgDesc || org.bio}</p>
-        ) : (
-          <p className="italic text-zinc-600 mb-2">Nenhuma descrição ainda.</p>
-        )}
-        {/* Botão de edição se for a própria org logada */}
         {org.isCurrentUser && (
-          <Button onClick={() => router.push(`/organization/edit?id=${org.id}`)}>
-            Editar Perfil
-          </Button>
+          <div className="absolute top-4 right-4">
+            {!editMode ? (
+              <Button size="sm" onClick={() => setEditMode(true)}>Editar Perfil</Button>
+            ) : (
+              <Button size="sm" onClick={handleSave}>Salvar</Button>
+            )}
+          </div>
+        )}
+        {editMode ? (
+          <>
+            <Input
+              name="orgName"
+              value={localOrg.orgName || ""}
+              onChange={handleChange}
+              className="text-2xl font-semibold mt-4 mb-2"
+              placeholder="Nome da Organização"
+            />
+            <Input
+              name="email"
+              value={localOrg.email || ""}
+              onChange={handleChange}
+              className="mb-2"
+              placeholder="Email"
+            />
+            <Textarea
+              name="orgDesc"
+              value={localOrg.orgDesc || ""}
+              onChange={handleChange}
+              className="mb-2"
+              placeholder="Descrição/Bio"
+            />
+          </>
+        ) : (
+          <>
+            <h2 className="text-2xl font-semibold mt-4 mb-2">{displayName}</h2>
+            <p className="text-zinc-400 mb-2">{org.email}</p>
+            {displayBio ? (
+              <p className="text-zinc-300 mb-2">{displayBio}</p>
+            ) : (
+              <p className="italic text-zinc-600 mb-2">Nenhuma descrição ainda.</p>
+            )}
+          </>
         )}
       </div>
       <div className="w-full max-w-2xl">

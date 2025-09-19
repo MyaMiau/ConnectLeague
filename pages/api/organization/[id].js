@@ -21,7 +21,6 @@ export default async function handler(req, res) {
           type: true,
           orgName: true,
           orgDesc: true,
-          cnpj: true,
           image: true
         }
       });
@@ -39,11 +38,11 @@ export default async function handler(req, res) {
     if (!loggedUserId || Number(loggedUserId) !== Number(id)) {
       return res.status(403).json({ error: "Você não tem permissão para editar este perfil." });
     }
-    const { logo, name, bio, email, orgName, orgDesc, cnpj, image } = req.body;
+    const { logo, name, bio, email, orgName, orgDesc, image } = req.body;
     try {
       const org = await prisma.users.update({
         where: { id: Number(id) },
-        data: { logo, name, bio, email, orgName, orgDesc, cnpj, image }
+        data: { logo, name, bio, email, orgName, orgDesc, image }
       });
       res.status(200).json({ organization: org });
     } catch (err) {
