@@ -25,7 +25,8 @@ export default async function handler(req, res) {
         role: true,
         elo: true,
         status: true,
-        birthDate: true
+        birthDate: true,
+        type: true
       },
     });
 

@@ -17,6 +17,7 @@ export default async function handler(req, res) {
           logo: true,
           name: true,
           bio: true,
+          type: true,
           email: true,
           type: true,
           orgName: true,

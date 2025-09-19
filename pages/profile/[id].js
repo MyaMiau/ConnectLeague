@@ -371,6 +371,14 @@ export default function PublicProfilePage() {
     }
   };
 
+  // DEBUG: Veja no console qual tipo está vindo
+  useEffect(() => {
+    if (user) {
+      // Mostra o tipo e o objeto user
+      console.log("DEBUG - user.type:", user?.type, user);
+    }
+  }, [user]);
+
   if (loading) return <p className="text-center text-zinc-400 mt-16">Carregando perfil...</p>;
   if (!user) return <p className="text-center text-zinc-400 mt-16">Usuário não encontrado.</p>;
 
