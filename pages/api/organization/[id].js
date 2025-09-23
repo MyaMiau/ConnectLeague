@@ -14,7 +14,6 @@ export default async function handler(req, res) {
         where: { id: Number(id) },
         select: {
           id: true,
-          logo: true,
           name: true,
           bio: true,
           type: true,

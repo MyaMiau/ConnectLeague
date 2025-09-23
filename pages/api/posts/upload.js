@@ -21,12 +21,15 @@ export default async function handler(req, res) {
   const form = new IncomingForm({
     uploadDir,
     keepExtensions: true,
-    maxFileSize: 5 * 1024 * 1024, // 5MB
+    maxFileSize: 10 * 1024 * 1024, // 10MB
   });
 
   form.parse(req, (err, fields, files) => {
-
     if (err) {
+      // Se exceder limite, retorna erro 413
+      if (err.message && err.message.includes('maxFileSize')) {
+        return res.status(413).json({ error: 'A imagem é muito grande! O limite é 10MB.' });
+      }
       console.error('[UPLOAD] Erro ao fazer upload:', err);
       return res.status(500).json({ error: 'Erro ao fazer upload', details: err.message });
     }

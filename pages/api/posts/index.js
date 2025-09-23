@@ -46,11 +46,16 @@ export default async function handler(req, res) {
   if (req.method === "POST") {
     try {
       const { content, image, authorId } = req.body;
+
+      if (!content || !authorId) {
+        return res.status(400).json({ error: "Conteúdo e autor são obrigatórios." });
+      }
+
       const post = await prisma.post.create({
         data: {
           content,
           image,
-          authorId,
+          authorId: Number(authorId), 
         },
       });
       res.status(201).json(post);

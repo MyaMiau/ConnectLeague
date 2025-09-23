@@ -19,7 +19,7 @@ export default function Login() {
   useEffect(() => {
     if (status === "authenticated" && session?.user?.type) {
       if (session.user.type === "organization") {
-        router.push("/organization/profile");
+        router.push(`/organization/${session.user.id}`);
       } else if (session.user.type === "player") {
         router.push(`/profile/${session.user.id}`);
       }

@@ -5,21 +5,49 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
+import imageCompression from "browser-image-compression";
 
 export default function CreatePost({ onPost, user }) {
   const [text, setText] = useState("");
   const [imageFile, setImageFile] = useState(null);
-  const [imageUrl, setImageUrl] = useState(""); // Caminho retornado pelo backend
+  const [imageUrl, setImageUrl] = useState(""); 
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(""); 
 
   const handleImageUpload = async (e) => {
+    setError(""); 
     const file = e.target.files[0];
     if (!file) return;
-    setImageFile(file);
 
-    // Faz upload imediatamente ao selecionar
+
+    let imageToUpload = file;
+    if (file.size > 2 * 1024 * 1024) {
+      try {
+        imageToUpload = await imageCompression(file, {
+          maxSizeMB: 2, 
+          maxWidthOrHeight: 1920,
+          initialQuality: 0.8, 
+          useWebWorker: true,
+        });
+      } catch (err) {
+        setError("Erro ao comprimir a imagem. Tente usar uma imagem menor.");
+        setImageFile(null);
+        setImageUrl("");
+        return;
+      }
+    }
+
+    if (imageToUpload.size > 10 * 1024 * 1024) {
+      setError("A imagem é muito grande, mesmo após compressão! O limite é 10MB.");
+      setImageFile(null);
+      setImageUrl("");
+      return;
+    }
+
+    setImageFile(imageToUpload);
+
     const formData = new FormData();
-    formData.append("image", file);
+    formData.append("image", imageToUpload);
 
     try {
       const resp = await fetch("/api/posts/upload", {
@@ -28,14 +56,19 @@ export default function CreatePost({ onPost, user }) {
       });
       if (resp.ok) {
         const data = await resp.json();
-        setImageUrl(data.imageUrl); // ex: "/uploads/posts/abc123.jpg"
+        setImageUrl(data.imageUrl); 
       } else {
+        if (resp.status === 413) {
+          const data = await resp.json();
+          setError(data.error || "A imagem é muito grande! O limite é 10MB.");
+        } else {
+          setError("Erro ao enviar imagem. Tente novamente.");
+        }
         setImageUrl("");
-        // Você pode mostrar erro aqui se quiser
       }
     } catch (err) {
+      setError("Erro ao enviar imagem. Tente novamente.");
       setImageUrl("");
-      // Você pode mostrar erro aqui se quiser
     }
   };
 
@@ -45,7 +78,7 @@ export default function CreatePost({ onPost, user }) {
 
     const payload = {
       content: text,
-      image: imageUrl, // só o caminho!
+      image: imageUrl,
       authorId: user?.id,
     };
 
@@ -59,6 +92,7 @@ export default function CreatePost({ onPost, user }) {
       setText("");
       setImageFile(null);
       setImageUrl("");
+      setError("");
       onPost && onPost();
     }
     setLoading(false);
@@ -73,6 +107,9 @@ export default function CreatePost({ onPost, user }) {
           onChange={(e) => setText(e.target.value)}
         />
         <Input type="file" accept="image/*" onChange={handleImageUpload} />
+        {error && (
+          <div className="text-red-500 text-sm mt-2">{error}</div>
+        )}
         {imageUrl && (
           <img
             src={imageUrl}
