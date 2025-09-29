@@ -1,11 +1,17 @@
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/router";
 import Image from "next/image";
+import Link from "next/link";
 import Header from "../../components/Header";
+import { Card, CardContent } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Textarea } from "../../components/ui/textarea";
-import { FiMoreHorizontal } from "react-icons/fi";
+import { FiMoreHorizontal, FiHeart, FiMessageCircle, FiShare2 } from "react-icons/fi";
+import CommentsList from "../../components/CommentsList";
+import CommentForm from "../../components/CommentForm";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 export default function OrganizationProfile() {
   const router = useRouter();
@@ -16,14 +22,16 @@ export default function OrganizationProfile() {
   const [loading, setLoading] = useState(true);
   const [editMode, setEditMode] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [showPostMenu, setShowPostMenu] = useState(null);
   const [localOrg, setLocalOrg] = useState(null);
 
   // States for modal/forms
   const [showVagaModal, setShowVagaModal] = useState(false);
   const [vagaData, setVagaData] = useState({ titulo: "", descricao: "" });
   const [showPostModal, setShowPostModal] = useState(false);
-  const [postData, setPostData] = useState({ content: "", image: "" });
+  const [postData, setPostData] = useState({ content: "", image: null });
   const [postImagePreview, setPostImagePreview] = useState("");
+  const [postError, setPostError] = useState("");
   const postImageInputRef = useRef(null);
 
   useEffect(() => {
@@ -44,9 +52,10 @@ export default function OrganizationProfile() {
         );
         setVagas(filtered);
       });
-    fetch(`/api/posts?organizationId=${id}`)
+    // Buscar posts usando userId
+    fetch(`/api/posts?userId=${id}`)
       .then(res => res.json())
-      .then(data => setPosts(data.posts || []));
+      .then(data => setPosts(data || []));
   }, [id]);
 
   function handleChange(e) {
@@ -109,8 +118,9 @@ export default function OrganizationProfile() {
 
   // Fazer post
   function handleOpenPostModal() {
-    setPostData({ content: "", image: "" });
+    setPostData({ content: "", image: null });
     setPostImagePreview("");
+    setPostError("");
     setShowPostModal(true);
   }
   function handlePostImageChange(e) {
@@ -119,27 +129,105 @@ export default function OrganizationProfile() {
     setPostImagePreview(URL.createObjectURL(file));
     setPostData(pd => ({ ...pd, image: file }));
   }
+
+  // Upload da imagem (igual CreatePost.jsx)
+  async function uploadImageIfNeeded(imageFile) {
+    if (!imageFile) return "";
+    const formData = new FormData();
+    formData.append("image", imageFile);
+    try {
+      const resp = await fetch("/api/posts/upload", {
+        method: "POST",
+        body: formData,
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        return data.imageUrl || "";
+      } else {
+        setPostError("Erro ao enviar imagem. Tente novamente.");
+        return "";
+      }
+    } catch (err) {
+      setPostError("Erro ao enviar imagem. Tente novamente.");
+      return "";
+    }
+  }
+
   async function handleSubmitPost(e) {
     e.preventDefault();
-    const formData = new FormData();
-    formData.append("content", postData.content);
-    formData.append("organizationId", id);
+    setPostError("");
+
+    // 1. Upload da imagem (se houver)
+    let imageUrl = "";
     if (postData.image) {
-      formData.append("image", postData.image);
+      imageUrl = await uploadImageIfNeeded(postData.image);
+      if (!imageUrl) {
+        return; // erro já tratado
+      }
     }
+
+    // 2. Monta o payload no formato correto
+    const payload = {
+      content: postData.content,
+      image: imageUrl,
+      authorId: id // id da organização, igual ao da rota!
+    };
+
     const res = await fetch("/api/posts", {
       method: "POST",
-      body: formData,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
     });
     if (res.ok) {
       setShowPostModal(false);
-      fetch(`/api/posts?organizationId=${id}`)
+      setPostData({ content: "", image: null });
+      setPostImagePreview("");
+      fetch(`/api/posts?userId=${id}`)
         .then(res => res.json())
-        .then(data => setPosts(data.posts || []));
+        .then(data => setPosts(data || []));
     } else {
-      alert("Erro ao criar post.");
+      setPostError("Erro ao criar post.");
     }
   }
+
+  // ----------- POST ACTIONS (CURTIR, COMPARTILHAR, 3 PONTINHOS, ETC) -----------
+
+  // Menu de 3 pontinhos por post
+  const handleShowPostMenu = (postId) => setShowPostMenu(showPostMenu === postId ? null : postId);
+
+  // Editar post
+  const handleEditPost = (post) => {
+    setShowPostModal(true);
+    setPostData({ content: post.content, image: null });
+    setPostImagePreview(post.image || "");
+  };
+
+  // Deletar post
+  const handleDeletePost = async (postId) => {
+    if (!window.confirm("Tem certeza que deseja excluir este post?")) return;
+    await fetch(`/api/posts/${postId}`, { method: "DELETE" });
+    fetch(`/api/posts?userId=${id}`)
+      .then(res => res.json())
+      .then(data => setPosts(data || []));
+  };
+
+  // Curtir/descurtir post
+  const handleLikePost = async (postId) => {
+    await fetch(`/api/posts/${postId}/like`, { method: "POST" });
+    fetch(`/api/posts?userId=${id}`)
+      .then(res => res.json())
+      .then(data => setPosts(data || []));
+  };
+
+  // Compartilhar post
+  const handleSharePost = (post) => {
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(`${window.location.origin}/post/${post.id}`);
+      alert("Link do post copiado!");
+    }
+  };
+
+  // ----------- FIM DAS FUNÇÕES DE POST -----------
 
   if (loading)
     return (
@@ -180,7 +268,6 @@ export default function OrganizationProfile() {
               {displayEmail && <p className="text-zinc-400 mb-2">{displayEmail}</p>}
               <p className="text-zinc-300 mb-2">{displayBio}</p>
             </div>
-            {/* Botão de 3 pontinhos */}
             {org.isCurrentUser && !editMode && (
               <div className="absolute top-6 right-6 z-10">
                 <button
@@ -205,7 +292,6 @@ export default function OrganizationProfile() {
                 )}
               </div>
             )}
-            {/* Botões edição */}
             {org.isCurrentUser && editMode && (
               <div className="absolute top-6 right-6 z-10 flex gap-2">
                 <Button size="sm" onClick={handleSave}>Salvar</Button>
@@ -215,7 +301,6 @@ export default function OrganizationProfile() {
               </div>
             )}
           </div>
-          {/* Formulário de edição */}
           {org.isCurrentUser && editMode && (
             <div className="px-8 pb-8">
               <Input
@@ -243,7 +328,6 @@ export default function OrganizationProfile() {
           )}
         </div>
 
-        {/* Ações para dono do perfil */}
         {org.isCurrentUser && (
           <div className="w-full max-w-2xl flex gap-4 mb-8">
             <Button className="flex-1" onClick={handleOpenVagaModal}>
@@ -255,7 +339,6 @@ export default function OrganizationProfile() {
           </div>
         )}
 
-        {/* Modal vaga */}
         {showVagaModal && (
           <div className="fixed inset-0 z-30 flex items-center justify-center bg-black/60">
             <form
@@ -291,7 +374,7 @@ export default function OrganizationProfile() {
           </div>
         )}
 
-        {/* Modal post - agora com upload de imagem */}
+        {/* MODAL DE POST */}
         {showPostModal && (
           <div className="fixed inset-0 z-30 flex items-center justify-center bg-black/60">
             <form
@@ -325,6 +408,7 @@ export default function OrganizationProfile() {
                   />
                 </div>
               )}
+              {postError && <div className="text-red-500 text-sm">{postError}</div>}
               <div className="flex gap-2 mt-2">
                 <Button type="submit">Publicar</Button>
                 <Button
@@ -364,42 +448,103 @@ export default function OrganizationProfile() {
           )}
         </div>
 
-        {/* Posts da organização */}
-        <div className="w-full max-w-2xl mt-8">
+        {/* POSTS DA ORGANIZAÇÃO - IGUAL AO PROFILE DO PLAYER */}
+        <div className="w-full max-w-2xl space-y-6 mt-8">
           <h2 className="text-xl font-bold mb-4">Posts</h2>
-          {posts.length === 0 ? (
-            <p className="text-zinc-500 text-center">Nenhum post ainda.</p>
-          ) : (
-            <div className="space-y-6">
-              {posts.map(post => (
-                <div key={post.id} className="bg-zinc-900 rounded-xl p-6 shadow">
-                  <div className="flex items-center gap-3 mb-2">
-                    <Image
-                      src={displayImage}
-                      width={40}
-                      height={40}
-                      className="rounded-full border border-zinc-700"
-                      alt="Logo da organização"
-                    />
-                    <span className="font-semibold">{displayName}</span>
-                    <span className="text-xs text-zinc-400">
-                      {post.created_at ? new Date(post.created_at).toLocaleString() : ""}
-                    </span>
-                  </div>
-                  <p className="mb-2">{post.content}</p>
-                  {post.image && (
-                    <Image
-                      src={post.image}
-                      width={400}
-                      height={200}
-                      className="rounded-lg"
-                      alt="Imagem do post"
-                    />
-                  )}
-                </div>
-              ))}
-            </div>
+          {posts.length === 0 && (
+            <p className="text-center text-zinc-400">Nenhum post encontrado para esta organização.</p>
           )}
+          {posts.map((post) => {
+            const isAuthor = org?.id === post.authorId;
+            const hasLiked = post.postLikes?.some(like => like.userId === org?.id);
+            return (
+              <Card key={post.id} className="bg-zinc-900 rounded-2xl">
+                <CardContent className="p-6 space-y-4 relative">
+                  <div className="flex justify-between items-start">
+                    <div className="flex items-center gap-4">
+                      <Link href={`/profile/${post.author?.id || ""}`} className="flex items-center gap-4 cursor-pointer group">
+                        <div className="relative w-[40px] h-[40px] rounded-full overflow-hidden border border-zinc-700 bg-zinc-800 shrink-0">
+                          <Image
+                            src={post.author?.image || "/default-avatar.png"}
+                            alt="Avatar"
+                            fill
+                            sizes="40px"
+                            className="object-cover"
+                            priority
+                          />
+                        </div>
+                        <div>
+                          <p className="font-semibold group-hover:underline">
+                            {post.author?.name || "Autor desconhecido"}
+                          </p>
+                          <p className="text-xs text-zinc-400">
+                            {post.createdAt ?
+                              format(new Date(post.createdAt), "d 'de' MMMM 'às' HH:mm", { locale: ptBR }) :
+                              ""}
+                          </p>
+                        </div>
+                      </Link>
+                    </div>
+                    <div className="relative">
+                      {isAuthor && (
+                        <>
+                          <button type="button" onClick={() => setShowPostMenu(post.id === showPostMenu ? null : post.id)}>
+                            <FiMoreHorizontal className="text-zinc-400 hover:text-white cursor-pointer" />
+                          </button>
+                          {showPostMenu === post.id && (
+                            <div className="absolute right-0 mt-2 w-32 bg-zinc-800 border border-zinc-700 rounded shadow-md z-10 cursor-pointer">
+                              <button type="button" onClick={() => handleEditPost(post)} className="block w-full text-left px-4 py-2 hover:bg-zinc-700 cursor-pointer">
+                                Editar
+                              </button>
+                              <button type="button" onClick={() => handleDeletePost(post.id)} className="block w-full text-left px-4 py-2 hover:bg-zinc-700 text-red-500 cursor-pointer">
+                                Excluir
+                              </button>
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-white mb-2" style={{ fontSize: 18 }}>{post.content}</p>
+                    {post.image && (
+                      <div className="mb-2">
+                        <Image
+                          src={post.image}
+                          width={600}
+                          height={320}
+                          className="rounded-xl"
+                          alt="Imagem do post"
+                          style={{ objectFit: "cover", maxHeight: 350 }}
+                        />
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-5 text-zinc-400 mt-2 mb-2">
+                    <button onClick={() => handleLikePost(post.id)} className="flex items-center gap-1 group">
+                      <FiHeart className={hasLiked ? "text-pink-500" : ""} /> {post.postLikes?.length || 0}
+                    </button>
+                    <button className="flex items-center gap-1 group">
+                      <FiMessageCircle /> {post.comments?.length || 0}
+                    </button>
+                    <button onClick={() => handleSharePost(post)} className="flex items-center gap-1 group">
+                      <FiShare2 />
+                    </button>
+                  </div>
+                  <CommentsList postId={post.id} currentUserId={org.id} />
+                  <CommentForm
+                    postId={post.id}
+                    authorId={org.id}
+                    onCommented={() => {
+                      fetch(`/api/posts?userId=${id}`)
+                        .then(res => res.json())
+                        .then(data => setPosts(data || []));
+                    }}
+                  />
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       </main>
     </div>
