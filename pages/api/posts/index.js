@@ -47,8 +47,17 @@ export default async function handler(req, res) {
     try {
       const { content, image, authorId } = req.body;
 
+      // Log para depuração
+      console.log("Recebido para criar post:", { content, image, authorId });
+
+      // Validação dos obrigatórios
       if (!content || !authorId) {
         return res.status(400).json({ error: "Conteúdo e autor são obrigatórios." });
+      }
+
+      // Validação se authorId é número
+      if (isNaN(Number(authorId))) {
+        return res.status(400).json({ error: "O campo authorId deve ser um número válido." });
       }
 
       const post = await prisma.post.create({
@@ -61,7 +70,8 @@ export default async function handler(req, res) {
       res.status(201).json(post);
     } catch (err) {
       console.error("Erro ao criar post:", err);
-      res.status(500).json({ error: "Erro ao criar post" });
+      // Erro Prisma detalhado
+      res.status(500).json({ error: "Erro ao criar post", details: err.message });
     }
     return;
   }

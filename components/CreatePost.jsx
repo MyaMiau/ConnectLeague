@@ -14,11 +14,25 @@ export default function CreatePost({ onPost, user }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(""); 
 
+  // Helper para pegar o ID correto do usuário (player ou organização)
+  function getAuthorId(user) {
+    // Adicione um log para depuração
+    console.log("user recebido em CreatePost:", user);
+    // Verifica os campos mais comuns de id para diferentes tipos de usuário
+    return (
+      user?.id ||
+      user?.orgId ||
+      user?.organization_id ||
+      user?.organizationId ||
+      user?.user_id ||
+      null
+    );
+  }
+
   const handleImageUpload = async (e) => {
     setError(""); 
     const file = e.target.files[0];
     if (!file) return;
-
 
     let imageToUpload = file;
     if (file.size > 2 * 1024 * 1024) {
@@ -73,14 +87,28 @@ export default function CreatePost({ onPost, user }) {
   };
 
   const handlePost = async () => {
-    if (!text.trim() || !user?.id) return;
+    // Log do usuário para depuração
+    console.log("User para criar post:", user);
+
+    const authorId = getAuthorId(user);
+    // Log do ID extraído
+    console.log("AuthorId extraído:", authorId);
+
+    if (!text.trim() || !authorId) {
+      setError("Preencha o texto e esteja logado corretamente.");
+      return;
+    }
+
     setLoading(true);
 
     const payload = {
       content: text,
       image: imageUrl,
-      authorId: user?.id,
+      authorId,
     };
+
+    // Log do payload para depuração
+    console.log("Payload enviado para /api/posts:", payload);
 
     const res = await fetch("/api/posts", {
       method: "POST",
@@ -94,6 +122,9 @@ export default function CreatePost({ onPost, user }) {
       setImageUrl("");
       setError("");
       onPost && onPost();
+    } else {
+      const data = await res.json();
+      setError(data.error || "Erro ao criar post.");
     }
     setLoading(false);
   };
