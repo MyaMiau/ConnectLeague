@@ -34,7 +34,7 @@ export default function OrganizationProfile() {
   const [replyInputs, setReplyInputs] = useState({});
   const [editingComment, setEditingComment] = useState(null);
   const [editingReply, setEditingReply] = useState(null);
-  const [editingPost, setEditingPost] = useState(null); // <- ADICIONE ISSO!
+  const [editingPost, setEditingPost] = useState(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState({ type: "", postId: null, commentId: null, replyId: null });
 
@@ -109,6 +109,14 @@ export default function OrganizationProfile() {
       setEditMode(false);
       setShowMenu(false);
       alert("Perfil salvo com sucesso!");
+
+      // Dispara evento para atualizar header
+      window.dispatchEvent(new Event("profile-updated"));
+
+      // Recarrega posts para garantir nome novo da org nos posts
+      fetch(`/api/posts?userId=${id}`)
+        .then(res => res.json())
+        .then(data => setPosts(data || []));
     } else {
       alert("Erro ao salvar perfil.");
     }

@@ -5,7 +5,6 @@ import { useEffect, useRef, useState } from "react";
 import { Home, Briefcase, LogOut, Bell, Bookmark } from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
 
-
 function getNotificationLink(n) {
   if (n.type === "like" && n.postId) {
     return `/post/${n.postId}`;
@@ -172,6 +171,8 @@ export default function Header() {
   // Busca o perfil real do usuário logado
   const [profile, setProfile] = useState(null);
 
+  // Atualiza o nome do perfil após edição do nome da organização
+  // Adiciona um "reload trigger" (por exemplo, localStorage ou evento customizado)
   useEffect(() => {
     async function fetchProfile() {
       if (session?.user?.id) {
@@ -184,7 +185,18 @@ export default function Header() {
         }
       }
     }
+
+    // Adiciona escuta para evento de atualização do perfil
+    function handleProfileUpdated() {
+      fetchProfile();
+    }
+    window.addEventListener("profile-updated", handleProfileUpdated);
+
     fetchProfile();
+
+    return () => {
+      window.removeEventListener("profile-updated", handleProfileUpdated);
+    };
   }, [session]);
 
   const navItems = [

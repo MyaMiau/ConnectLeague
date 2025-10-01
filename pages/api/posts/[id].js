@@ -48,10 +48,35 @@ export default async function handler(req, res) {
   if (req.method === "PUT") {
     const { content, image } = req.body;
     try {
-      const post = await prisma.Post.update({
+      // Atualiza o post
+      await prisma.Post.update({
         where: { id: postId },
         data: { content, image },
       });
+
+      // Busca o post atualizado com o autor atualizado!
+      const post = await prisma.Post.findUnique({
+        where: { id: postId },
+        include: {
+          author: true,
+          postLikes: true,
+          comments: {
+            include: {
+              author: true,
+              commentLikes: true,
+              replies: {
+                include: {
+                  author: true,
+                  subReplies: {
+                    include: { author: true }
+                  }
+                }
+              }
+            },
+          },
+        },
+      });
+
       return res.status(200).json({ post });
     } catch (err) {
       console.error("Erro ao editar post:", err);
