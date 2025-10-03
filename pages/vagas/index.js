@@ -1,14 +1,18 @@
 import { useState, useEffect } from "react";
 import VagaCard from "../../components/VagaCard";
 import VagaDetalhesModal from "../../components/VagaDetalhesModal";
+import VagaModalForm from "../../components/VagaModalForm";
 import { useSession } from "next-auth/react";
 import Header from "../../components/Header";
+import { Button } from "../../components/ui/button"; // Certifique-se de importar o Button
 
 export default function VagasPage() {
   const { data: session } = useSession();
   const [vagas, setVagas] = useState([]);
   const [confirmModal, setConfirmModal] = useState({ open: false, message: "" });
   const [vagaSelecionada, setVagaSelecionada] = useState(null);
+  const [showVagaModal, setShowVagaModal] = useState(false);
+  const [loadingVagaModal, setLoadingVagaModal] = useState(false);
   const [filtros, setFiltros] = useState({
     pagina: 1,
     ordenar: "recentes",
@@ -58,8 +62,13 @@ export default function VagasPage() {
   };
 
   const handleCandidatar = async vagaId => {
+    const tipoUsuario = session?.user?.type || session?.user?.tipo;
     if (!session?.user) {
       setConfirmModal({ open: true, message: "Faça login para se candidatar." });
+      return;
+    }
+    if (tipoUsuario !== "player") {
+      setConfirmModal({ open: true, message: "Somente jogadores podem se candidatar!" });
       return;
     }
     const res = await fetch(`/api/vagas/${vagaId}`, {
@@ -80,10 +89,14 @@ export default function VagasPage() {
     }
   };
 
-  // NOVO: descandidatar (cancelar candidatura)
   const handleDescandidatar = async vagaId => {
+    const tipoUsuario = session?.user?.type || session?.user?.tipo;
     if (!session?.user) {
       setConfirmModal({ open: true, message: "Faça login para cancelar a candidatura." });
+      return;
+    }
+    if (tipoUsuario !== "player") {
+      setConfirmModal({ open: true, message: "Somente jogadores podem cancelar candidatura!" });
       return;
     }
     const res = await fetch(`/api/vagas/${vagaId}`, {
@@ -172,6 +185,11 @@ export default function VagasPage() {
   };
 
   const handleFechar = async vagaId => {
+    const tipoUsuario = session?.user?.type || session?.user?.tipo;
+    if (!session?.user || tipoUsuario !== "organization") {
+      setConfirmModal({ open: true, message: "Somente organizações podem fechar vagas!" });
+      return;
+    }
     await fetch(`/api/vagas/fechar`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -182,6 +200,11 @@ export default function VagasPage() {
   };
 
   const handleDeletar = async vagaId => {
+    const tipoUsuario = session?.user?.type || session?.user?.tipo;
+    if (!session?.user || tipoUsuario !== "organization") {
+      setConfirmModal({ open: true, message: "Somente organizações podem deletar vagas!" });
+      return;
+    }
     await fetch(`/api/vagas/deletar`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -191,11 +214,35 @@ export default function VagasPage() {
     fetchVagas();
   };
 
+  const handleSubmitVaga = async (vagaData) => {
+    setLoadingVagaModal(true);
+    const res = await fetch("/api/vagas", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(vagaData),
+    });
+    setLoadingVagaModal(false);
+    if (res.ok) {
+      setShowVagaModal(false);
+      fetchVagas();
+      setConfirmModal({ open: true, message: "Vaga criada com sucesso!" });
+    } else {
+      setConfirmModal({ open: true, message: "Erro ao criar vaga!" });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-black text-white">
       <Header />
       <div className="max-w-4xl mx-auto py-8 px-4">
         <h1 className="text-3xl font-bold mb-6">Vagas disponíveis</h1>
+        {session?.user?.type === "organization" && (
+          <div className="mb-6">
+            <Button onClick={() => setShowVagaModal(true)}>
+              Abrir vaga
+            </Button>
+          </div>
+        )}
         <div className="mb-6">{/* ...filtros... */}</div>
         {vagas.length === 0 ? (
           <p className="text-center text-zinc-400 mt-16">Nenhuma vaga encontrada.</p>
@@ -263,6 +310,13 @@ export default function VagasPage() {
           onRemoverSalvo={handleRemoverSalvo}
         />
       )}
+      {/* Modal de criar vaga usando componente */}
+      <VagaModalForm
+        open={showVagaModal}
+        onClose={() => setShowVagaModal(false)}
+        onSubmit={handleSubmitVaga}
+        loading={loadingVagaModal}
+      />
     </div>
   );
 }

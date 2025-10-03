@@ -1,6 +1,6 @@
 import prisma from "@/lib/prisma";
 import { getServerSession } from "next-auth/next";
-import { authOptions } from "../auth/[...nextauth]"; 
+import { authOptions } from "../auth/[...nextauth]";
 
 export default async function handler(req, res) {
   const vagaId = Number(req.query.id);
@@ -10,7 +10,6 @@ export default async function handler(req, res) {
   }
 
   const session = await getServerSession(req, res, authOptions);
-  console.log("SESSION DEBUG:", session);
 
   if (req.method === "GET") {
     const vaga = await prisma.vacancies.findUnique({
@@ -25,32 +24,46 @@ export default async function handler(req, res) {
     return res.status(200).json({ vaga });
   }
 
+  // Somente organizações podem editar uma vaga
   if (req.method === "PUT") {
-    if (!session || session.user.type !== "organizacao") return res.status(401).json({ error: "Não autenticado." });
+    if (!session || !["organizacao", "organization"].includes(session.user.type))
+      return res.status(401).json({ error: "Não autenticado como organização." });
+
+    // Verifica se a vaga pertence à organização logada
+    const vaga = await prisma.vacancies.findUnique({ where: { id: vagaId } });
+    if (!vaga || vaga.organization_id !== Number(session.user.id))
+      return res.status(403).json({ error: "Acesso negado: só a organização dona pode editar esta vaga." });
 
     const { status, ...data } = req.body;
+    let updated;
     if (status) {
-      const vaga = await prisma.vacancies.update({ where: { id: vagaId }, data: { status } });
-      return res.status(200).json({ vaga });
+      updated = await prisma.vacancies.update({ where: { id: vagaId }, data: { status } });
+    } else {
+      updated = await prisma.vacancies.update({ where: { id: vagaId }, data });
     }
-    const vaga = await prisma.vacancies.update({ where: { id: vagaId }, data });
-    return res.status(200).json({ vaga });
+    return res.status(200).json({ vaga: updated });
   }
 
+  // Somente organizações podem deletar uma vaga
   if (req.method === "DELETE") {
-if (!session || !["organizacao", "organization"].includes(session.user.type))
-  return res.status(401).json({ error: "Não autenticado como organização." });
+    if (!session || !["organizacao", "organization"].includes(session.user.type))
+      return res.status(401).json({ error: "Não autenticado como organização." });
+
+    const vaga = await prisma.vacancies.findUnique({ where: { id: vagaId } });
+    if (!vaga || vaga.organization_id !== Number(session.user.id))
+      return res.status(403).json({ error: "Acesso negado: só a organização dona pode deletar esta vaga." });
+
     await prisma.vacancies.delete({ where: { id: vagaId } });
     return res.status(204).end();
   }
 
-  // Candidatar-se
+  // Candidatar-se (somente jogadores e afins)
   if (req.method === "POST") {
     if (
       !session ||
       !["player", "jogador", "coach", "manager", "psychologist", "psicologo", "designer"].includes(session.user.type)
     ) {
-      return res.status(401).json({ error: "Não autenticado." });
+      return res.status(401).json({ error: "Somente jogadores podem se candidatar." });
     }
     const jaCandidatado = await prisma.applications.findFirst({
       where: { vacancy_id: vagaId, user_id: Number(session.user.id) }
@@ -85,7 +98,11 @@ if (!session || !["organizacao", "organization"].includes(session.user.type))
     if (!session || !session.user) return res.status(401).json({ error: "Não autenticado." });
     const { action } = req.body;
 
+    // Somente jogadores podem descandidatar
     if (action === "descandidatar") {
+      if (!["player", "jogador", "coach", "manager", "psychologist", "psicologo", "designer"].includes(session.user.type)) {
+        return res.status(403).json({ error: "Somente jogadores podem cancelar candidatura!" });
+      }
       await prisma.applications.deleteMany({
         where: { vacancy_id: vagaId, user_id: Number(session.user.id) }
       });

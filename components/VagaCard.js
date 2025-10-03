@@ -13,9 +13,13 @@ export default function VagaCard({
   onDeletar,
   onShowDetails,
 }) {
-  const jaFavoritou = vaga.favorites?.some(f => Number(f.userId) === Number(usuario?.id));
-  const jaCandidatado = vaga.applications?.some(app => Number(app.user_id) === Number(usuario?.id));
-  const isOrg = usuario?.tipo === "organizacao" && usuario?.id === vaga.organization_id;
+  // Detecta tipo corretamente, aceitando tanto 'type' quanto 'tipo'
+  const tipoUsuario = usuario?.type || usuario?.tipo;
+  const idUsuario = usuario?.id;
+
+  const jaFavoritou = vaga.favorites?.some(f => Number(f.userId) === Number(idUsuario));
+  const jaCandidatado = vaga.applications?.some(app => Number(app.user_id) === Number(idUsuario));
+  const isOrg = tipoUsuario === "organization" && idUsuario === vaga.organization_id;
 
   const statusClasse = vaga.status === "Aberta"
     ? "bg-green-600 text-white"
@@ -54,7 +58,8 @@ export default function VagaCard({
         <Button variant="default" onClick={() => onShowDetails?.(vaga)}>
           Ver detalhes
         </Button>
-        {!isOrg && (
+        {/* Apenas jogadores podem se candidatar/descandidatar */}
+        {tipoUsuario === "player" && (
           <Button
             color={jaCandidatado ? "red" : "green"}
             disabled={false}
@@ -75,6 +80,7 @@ export default function VagaCard({
         >
           {jaFavoritou ? <BookmarkCheck size={20} /> : <Bookmark size={20} />}
         </Button>
+        {/* Apenas organização dona pode editar/fechar/deletar */}
         {isOrg && (
           <>
             <Button variant="secondary" onClick={() => onFechar?.(vaga.id)}>

@@ -50,10 +50,10 @@ export default async function handler(req, res) {
     res.status(200).json({ vagas });
   }
 
+  // Somente organizações podem criar vaga
   if (req.method === "POST") {
     const session = await getServerSession(req, res, authOptions);
-    console.log("SESSION DEBUG:", session);
-    if (!session || session.user.type !== "organizacao")
+    if (!session || !["organizacao", "organization"].includes(session.user.type))
       return res.status(401).json({ error: "Não autenticado como organização." });
 
     const { title, description, requirements, benefits, userTypes, positions, elos, city, state, tags } = req.body;
@@ -70,7 +70,7 @@ export default async function handler(req, res) {
         state,
         tags,
         status: "Aberta",
-        organization_id: session.user.id,
+        organization_id: Number(session.user.id), 
       }
     });
     res.status(201).json({ vaga });

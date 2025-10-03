@@ -12,6 +12,7 @@ import { format } from "date-fns";
 import ptBR from "date-fns/locale/pt-BR";
 import DeleteConfirmationModal from "@/components/DeleteConfirmationModal";
 import ReplyThread from "@/components/ReplyThread";
+import VagaModalForm from "../../components/VagaModalForm"; // Importa o componente novo
 
 export default function OrganizationProfile() {
   const router = useRouter();
@@ -43,7 +44,6 @@ export default function OrganizationProfile() {
 
   // Modal/forms para vaga/post
   const [showVagaModal, setShowVagaModal] = useState(false);
-  const [vagaData, setVagaData] = useState({ titulo: "", descricao: "" });
   const [showPostModal, setShowPostModal] = useState(false);
   const [postData, setPostData] = useState({ content: "", image: null });
   const [postImagePreview, setPostImagePreview] = useState("");
@@ -97,10 +97,12 @@ export default function OrganizationProfile() {
   }
 
   async function handleSave() {
+    // Garante que atualiza o nome da org no campo correto
+    const payload = { ...localOrg, name: localOrg.orgName || localOrg.name };
     const res = await fetch(`/api/organization/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(localOrg),
+      body: JSON.stringify(payload),
     });
     if (res.ok) {
       const updated = await res.json();
@@ -109,14 +111,18 @@ export default function OrganizationProfile() {
       setEditMode(false);
       setShowMenu(false);
       alert("Perfil salvo com sucesso!");
-
-      // Dispara evento para atualizar header
       window.dispatchEvent(new Event("profile-updated"));
-
-      // Recarrega posts para garantir nome novo da org nos posts
       fetch(`/api/posts?userId=${id}`)
         .then(res => res.json())
         .then(data => setPosts(data || []));
+      fetch(`/api/vagas?organizationId=${id}`)
+        .then(res => res.json())
+        .then(data => {
+          const filtered = (data.vagas || []).filter(vaga =>
+            vaga.organizationId == id || vaga.organization?.id == id
+          );
+          setVagas(filtered);
+        });
     } else {
       alert("Erro ao salvar perfil.");
     }
@@ -128,18 +134,15 @@ export default function OrganizationProfile() {
 
   // Abrir vaga
   function handleOpenVagaModal() {
-    setVagaData({ titulo: "", descricao: "" });
     setShowVagaModal(true);
   }
-  async function handleSubmitVaga(e) {
-    e.preventDefault();
+
+  async function handleSubmitVaga(vagaData) {
+    // Recebe os dados do VagaModalForm
     const res = await fetch("/api/vagas", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        ...vagaData,
-        organizationId: id,
-      }),
+      body: JSON.stringify(vagaData),
     });
     if (res.ok) {
       setShowVagaModal(false);
@@ -509,7 +512,8 @@ export default function OrganizationProfile() {
       </div>
     );
 
-  const displayName = localOrg?.orgName || localOrg?.name;
+  // **Padronize o nome para sempre vir de users.name**
+  const displayName = localOrg?.name || localOrg?.orgName;
   const displayBio = localOrg?.orgDesc || localOrg?.bio || "Nenhuma descrição ainda.";
   const displayImage = localOrg?.logo || localOrg?.image || "/default-avatar.png";
   const displayEmail = localOrg?.email || "";
@@ -572,7 +576,7 @@ export default function OrganizationProfile() {
             <div className="px-8 pb-8">
               <Input
                 name="orgName"
-                value={localOrg.orgName || ""}
+                value={localOrg.orgName || localOrg.name || ""}
                 onChange={handleChange}
                 className="text-lg font-bold mt-2 mb-2"
                 placeholder="Nome da Organização"
@@ -606,40 +610,12 @@ export default function OrganizationProfile() {
           </div>
         )}
 
-        {showVagaModal && (
-          <div className="fixed inset-0 z-30 flex items-center justify-center bg-black/60">
-            <form
-              className="bg-zinc-900 p-8 rounded-2xl shadow-lg max-w-md w-full flex flex-col gap-3"
-              onSubmit={handleSubmitVaga}
-            >
-              <h2 className="text-xl font-bold mb-2">Abrir vaga</h2>
-              <Input
-                name="titulo"
-                placeholder="Título da vaga"
-                value={vagaData.titulo}
-                onChange={e => setVagaData(v => ({ ...v, titulo: e.target.value }))}
-                required
-              />
-              <Textarea
-                name="descricao"
-                placeholder="Descrição da vaga"
-                value={vagaData.descricao}
-                onChange={e => setVagaData(v => ({ ...v, descricao: e.target.value }))}
-                required
-              />
-              <div className="flex gap-2 mt-2">
-                <Button type="submit">Criar</Button>
-                <Button
-                  variant="outline"
-                  type="button"
-                  onClick={() => setShowVagaModal(false)}
-                >
-                  Cancelar
-                </Button>
-              </div>
-            </form>
-          </div>
-        )}
+        {/* Modal de vaga usando componente */}
+        <VagaModalForm
+          open={showVagaModal}
+          onClose={() => setShowVagaModal(false)}
+          onSubmit={handleSubmitVaga}
+        />
 
         {showPostModal && (
           <div className="fixed inset-0 z-30 flex items-center justify-center bg-black/60">

@@ -1,0 +1,216 @@
+import { useState } from "react";
+import { Input } from "./ui/input";
+import { Textarea } from "./ui/textarea";
+import { Button } from "./ui/button";
+
+const USER_TYPES = [
+  "player",
+  "coach",
+  "manager",
+  "designer",
+  "psychologist",
+  "analyst",
+  "content creator"
+];
+const POSITIONS = [
+  "Top", "Jungle", "Mid", "ADC", "Support"
+];
+const ELOS = [
+  "Bronze+", "Prata+", "Ouro+", "Platina+", "Esmeralda+", "Diamante+", "Mestre+", "Grão-Mestre", "Desafiante"
+];
+const TAGS = [
+  "Remoto", "Presencial", "Competitivo", "Amador", "Nenhum"
+];
+
+export default function VagaModalForm({ open, onClose, onSubmit, loading }) {
+  const [form, setForm] = useState({
+    titulo: "",
+    descricao: "",
+    requisitos: "",
+    beneficios: "",
+    userTypes: [],
+    positions: [],
+    elos: [],
+    city: "",
+    state: "",
+    tags: [],
+  });
+
+  if (!open) return null;
+
+  function handleChange(e) {
+    const { name, value } = e.target;
+    setForm(f => ({ ...f, [name]: value }));
+  }
+
+  function handleArrayChange(name, value) {
+    setForm(f => ({
+      ...f,
+      [name]: f[name].includes(value)
+        ? f[name].filter(v => v !== value)
+        : [...f[name], value]
+    }));
+  }
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    onSubmit({
+      title: form.titulo,
+      description: form.descricao,
+      requirements: form.requisitos,
+      benefits: form.beneficios,
+      userTypes: form.userTypes,
+      positions: form.positions,
+      elos: form.elos,
+      city: form.city,
+      state: form.state,
+      tags: form.tags,
+    });
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+      <form
+        className="
+          bg-zinc-900 p-4 sm:p-8 rounded-2xl shadow-lg
+          w-full max-w-[440px] flex flex-col gap-3
+          overflow-y-auto
+          max-h-[80vh]
+        "
+        onSubmit={handleSubmit}
+      >
+        <h2 className="text-xl font-bold mb-2">Abrir vaga</h2>
+        <Input
+          name="titulo"
+          placeholder="Título da vaga"
+          value={form.titulo}
+          onChange={handleChange}
+          required
+          className="w-full"
+        />
+        <Textarea
+          name="descricao"
+          placeholder="Descrição da vaga"
+          value={form.descricao}
+          onChange={handleChange}
+          required
+          className="w-full min-h-[48px] resize-y"
+        />
+        <Textarea
+          name="requisitos"
+          placeholder="Requisitos"
+          value={form.requisitos}
+          onChange={handleChange}
+          className="w-full min-h-[48px] resize-y"
+        />
+        <Textarea
+          name="beneficios"
+          placeholder="Benefícios"
+          value={form.beneficios}
+          onChange={handleChange}
+          className="w-full min-h-[48px] resize-y"
+        />
+        <Input
+          name="city"
+          placeholder="Cidade"
+          value={form.city}
+          onChange={handleChange}
+          className="w-full"
+        />
+        <Input
+          name="state"
+          placeholder="Estado"
+          value={form.state}
+          onChange={handleChange}
+          className="w-full"
+        />
+
+        {/* Multi-selects para usuário, posição, elo, tags */}
+        <div>
+          <label className="font-semibold text-zinc-300 block mb-1">Tipos de usuário (você pode escolher mais de um)</label>
+          <div className="flex flex-wrap gap-2 justify-start">
+            {USER_TYPES.map(type => (
+              <Button
+                key={type}
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => handleArrayChange("userTypes", type)}
+                className={`transition-colors duration-150
+                  ${form.userTypes.includes(type) ? "bg-purple-700 text-white border-purple-500" : "bg-zinc-800 text-zinc-300 border-zinc-700"}
+                  border rounded px-3 py-1 font-medium
+                `}
+              >
+                {type}
+              </Button>
+            ))}
+          </div>
+        </div>
+        <div>
+          <label className="font-semibold text-zinc-300 block mb-1">Posições</label>
+          <div className="flex flex-wrap gap-2 justify-start">
+            {POSITIONS.map(pos => (
+              <Button
+                key={pos}
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => handleArrayChange("positions", pos)}
+                className={`transition-colors duration-150
+                  ${form.positions.includes(pos) ? "bg-purple-700 text-white border-purple-500" : "bg-zinc-800 text-zinc-300 border-zinc-700"}
+                  border rounded px-3 py-1 font-medium
+                `}
+              >
+                {pos}
+              </Button>
+            ))}
+          </div>
+        </div>
+        <div>
+          <label className="font-semibold text-zinc-300 block mb-1">Elos</label>
+          <div className="flex flex-wrap gap-2 justify-start">
+            {ELOS.map(elo => (
+              <Button
+                key={elo}
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => handleArrayChange("elos", elo)}
+                className={`transition-colors duration-150
+                  ${form.elos.includes(elo) ? "bg-purple-700 text-white border-purple-500" : "bg-zinc-800 text-zinc-300 border-zinc-700"}
+                  border rounded px-3 py-1 font-medium
+                `}
+              >
+                {elo}
+              </Button>
+            ))}
+          </div>
+        </div>
+        <div>
+          <label className="font-semibold text-zinc-300 block mb-1">Tags</label>
+          <div className="flex flex-wrap gap-2 justify-start">
+            {TAGS.map(tag => (
+              <Button
+                key={tag}
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => handleArrayChange("tags", tag)}
+                className={`transition-colors duration-150
+                  ${form.tags.includes(tag) ? "bg-purple-700 text-white border-purple-500" : "bg-zinc-800 text-zinc-300 border-zinc-700"}
+                  border rounded px-3 py-1 font-medium
+                `}
+              >
+                {tag}
+              </Button>
+            ))}
+          </div>
+        </div>
+        <div className="flex gap-2 mt-2">
+          <Button type="submit" disabled={loading}>Criar</Button>
+          <Button variant="outline" type="button" onClick={onClose}>Cancelar</Button>
+        </div>
+      </form>
+    </div>
+  );
+}
