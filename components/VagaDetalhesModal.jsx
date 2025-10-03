@@ -35,7 +35,15 @@ export default function VagaDetalhesModal({
           {orgName}
         </div>
         <div className="flex gap-6 items-center mb-4">
-          <img src={org.logo || org.logoUrl || "/default-org.png"} alt="Logo" className="w-16 h-16 rounded-full bg-zinc-800 border mb-2" />
+           <img
+              src={
+                org.logo ||
+                org.logoUrl ||
+                org.image ||
+                "/default-org.png"}
+              alt="Logo"
+              className="w-16 h-16 rounded-full bg-zinc-800 border mb-2"
+            />
           <div>
             <Link href={`/profile/${org.id}`}>
               <Button variant="outline">Perfil da organização</Button>

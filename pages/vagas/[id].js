@@ -90,11 +90,14 @@ export default function VagaDetalhes() {
       <div className="max-w-3xl mx-auto py-8 px-4">
         <h1 className="text-3xl font-bold mb-4">{vaga.titulo || vaga.title}</h1>
         <div className="flex gap-6 items-center mb-6">
-          <img
-            src={vaga.organization?.logo || "/default-org.png"}
-            alt="Logo Organização"
-            className="w-16 h-16 rounded-full bg-zinc-800 border"
-          />
+            <img
+              src={
+                vaga.organization?.logo ||
+                vaga.organization?.image ||
+                "/default-org.png"}
+              alt="Logo Organização"
+              className="w-16 h-16 rounded-full bg-zinc-800 border"
+            />
           <div>
             <p className="font-semibold text-lg">{vaga.organization?.name}</p>
             <Button variant="outline" asChild>

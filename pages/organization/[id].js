@@ -12,7 +12,8 @@ import { format } from "date-fns";
 import ptBR from "date-fns/locale/pt-BR";
 import DeleteConfirmationModal from "@/components/DeleteConfirmationModal";
 import ReplyThread from "@/components/ReplyThread";
-import VagaModalForm from "../../components/VagaModalForm"; // Importa o componente novo
+import VagaModalForm from "../../components/VagaModalForm";
+import VagaDetalhesModal from "../../components/VagaDetalhesModal"; // Adicionado
 
 export default function OrganizationProfile() {
   const router = useRouter();
@@ -49,6 +50,9 @@ export default function OrganizationProfile() {
   const [postImagePreview, setPostImagePreview] = useState("");
   const [postError, setPostError] = useState("");
   const postImageInputRef = useRef(null);
+
+  // NOVO: para modal de detalhes da vaga
+  const [vagaSelecionada, setVagaSelecionada] = useState(null);
 
   useEffect(() => {
     if (!id) return;
@@ -680,7 +684,7 @@ export default function OrganizationProfile() {
                     Publicada em {vaga.created_at ? new Date(vaga.created_at).toLocaleDateString() : "?"}
                   </span>
                   <div className="mt-2">
-                    <Button size="sm" onClick={() => router.push(`/vagas/${vaga.id}`)}>
+                    <Button size="sm" onClick={() => setVagaSelecionada(vaga)}>
                       Ver vaga
                     </Button>
                   </div>
@@ -689,6 +693,15 @@ export default function OrganizationProfile() {
             </div>
           )}
         </div>
+
+        {/* Modal de detalhes de vaga */}
+        {vagaSelecionada && (
+          <VagaDetalhesModal
+            vaga={vagaSelecionada}
+            usuario={loggedUser}
+            onClose={() => setVagaSelecionada(null)}
+          />
+        )}
 
         {/* POSTS DA ORGANIZAÇÃO - IGUAL AO PROFILE DO PLAYER */}
         <div className="w-full max-w-2xl space-y-6 mt-8">
