@@ -72,7 +72,6 @@ export default function VagasPage() {
       setConfirmModal({ open: true, message: "Faça login para se candidatar." });
       return;
     }
-    // Só impede organizações de se candidatar
     if (tipoUsuario === "organization") {
       setConfirmModal({ open: true, message: "Organizações não podem se candidatar!" });
       return;
@@ -190,41 +189,53 @@ export default function VagasPage() {
     }
   };
 
+  // Atualizado para usar PUT /api/vagas/:id (fecha ou reabre)
   const handleFechar = async vagaId => {
     const tipoUsuario = session?.user?.type || session?.user?.tipo;
     if (!session?.user || tipoUsuario !== "organization") {
-      setConfirmModal({ open: true, message: "Somente organizações podem fechar vagas!" });
+      setConfirmModal({ open: true, message: "Somente organizações podem fechar/reabrir vagas!" });
       return;
     }
-    await fetch(`/api/vagas/fechar`, {
-      method: "POST",
+    const vaga = vagas.find(v => v.id === vagaId);
+    const novoStatus = vaga.status === "Aberta" ? "Fechada" : "Aberta";
+    const res = await fetch(`/api/vagas/${vagaId}`, {
+      method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ vagaId }),
+      body: JSON.stringify({ status: novoStatus }),
       credentials: "include",
     });
-    fetchVagas();
-    if (vagaSelecionada && vagaSelecionada.id === vagaId) {
-      fetch(`/api/vagas/${vagaId}`, { credentials: "include" })
-        .then(res => res.json())
-        .then(data => setVagaSelecionada(data.vaga));
+    if (res.ok) {
+      setConfirmModal({ open: true, message: `Vaga ${novoStatus === "Fechada" ? "fechada" : "reaberta"}!` });
+      fetchVagas();
+      if (vagaSelecionada && vagaSelecionada.id === vagaId) {
+        fetch(`/api/vagas/${vagaId}`, { credentials: "include" })
+          .then(res => res.json())
+          .then(data => setVagaSelecionada(data.vaga));
+      }
+    } else {
+      setConfirmModal({ open: true, message: "Erro ao mudar status da vaga!" });
     }
   };
 
+  // Atualizado para usar DELETE /api/vagas/:id
   const handleDeletar = async vagaId => {
     const tipoUsuario = session?.user?.type || session?.user?.tipo;
     if (!session?.user || tipoUsuario !== "organization") {
       setConfirmModal({ open: true, message: "Somente organizações podem deletar vagas!" });
       return;
     }
-    await fetch(`/api/vagas/deletar`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ vagaId }),
+    const res = await fetch(`/api/vagas/${vagaId}`, {
+      method: "DELETE",
       credentials: "include",
     });
-    fetchVagas();
-    if (vagaSelecionada && vagaSelecionada.id === vagaId) {
-      setVagaSelecionada(null);
+    if (res.ok) {
+      setConfirmModal({ open: true, message: "Vaga deletada!" });
+      fetchVagas();
+      if (vagaSelecionada && vagaSelecionada.id === vagaId) {
+        setVagaSelecionada(null);
+      }
+    } else {
+      setConfirmModal({ open: true, message: "Erro ao deletar vaga!" });
     }
   };
 

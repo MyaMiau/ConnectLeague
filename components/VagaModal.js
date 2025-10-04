@@ -9,6 +9,7 @@ export default function VagaModal({
   onDescandidatar,
   onFechar,
   onDeletar,
+  onEditar,
   onClose
 }) {
   if (!vaga) return null;
@@ -86,7 +87,9 @@ export default function VagaModal({
                 {vaga.status === "Aberta" ? "Fechar vaga" : "Reabrir vaga"}
               </Button>
               <Button color="red" onClick={() => onDeletar?.(vaga.id)}>Deletar</Button>
-              <Link href={`/vagas/editar/${vaga.id}`}><Button>Editar vaga</Button></Link>
+              <Button variant="outline" onClick={() => onEditar?.(vaga)}>
+                Editar
+              </Button>
               <div style={{ marginTop: "16px" }}>
                 <h3 className="font-semibold mb-1">Candidatos:</h3>
                 {candidatos.length > 0 ? (

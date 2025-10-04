@@ -23,7 +23,9 @@ export default function VagaCard({
 
   const statusClasse = vaga.status === "Aberta"
     ? "bg-green-600 text-white"
-    : "bg-gray-400 text-gray-800";
+    : "bg-red-600 text-white";
+
+  const podeCandidatar = vaga.status === "Aberta" && tipoUsuario === "player";
 
   return (
     <div className="bg-zinc-900 rounded-xl shadow-lg p-6 flex flex-col gap-3 border border-zinc-800">
@@ -43,7 +45,7 @@ export default function VagaCard({
               className={`inline-block px-2 py-1 rounded text-xs font-semibold ${statusClasse}`}
               style={{ marginLeft: 8 }}
             >
-              {vaga.status || "Aberta"}
+              {vaga.status === "Aberta" ? "Aberta" : "Fechada"}
             </span>
           </h2>
           <span className="block text-zinc-400 font-semibold text-lg mb-1">
@@ -61,11 +63,11 @@ export default function VagaCard({
         <Button variant="default" onClick={() => onShowDetails?.(vaga)}>
           Ver detalhes
         </Button>
-        {/* Apenas jogadores podem se candidatar/descandidatar */}
-        {tipoUsuario === "player" && (
+        {/* Apenas jogadores podem se candidatar/descandidatar, e apenas se vaga está aberta */}
+        {podeCandidatar && (
           <Button
             color={jaCandidatado ? "red" : "green"}
-            disabled={false}
+            disabled={!podeCandidatar}
             onClick={() =>
               jaCandidatado ? onDescandidatar?.(vaga.id) : onCandidatar?.(vaga.id)}>
             {jaCandidatado ? "Cancelar candidatura" : "Candidatar-se"}

@@ -26,10 +26,10 @@ export default function VagasSalvasPage() {
 
   // Remove vaga dos salvos e já remove da lista local e do modal se for a mesma
   const handleRemoverSalvo = async vagaId => {
-    const res = await fetch(`/api/vagas/remover-salvo`, {
-      method: "POST",
+    const res = await fetch(`/api/vagas/${vagaId}`, {
+      method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ vagaId }),
+      body: JSON.stringify({ action: "remover_salvo" }),
       credentials: "include",
     });
     if (res.ok) {
@@ -136,6 +136,39 @@ export default function VagasSalvasPage() {
     }
   };
 
+  // ---- HANDLERS DE GERENCIAMENTO (EDITAR/FECHAR/DELETAR) ----
+  const handleFechar = async vagaId => {
+    if (!session?.user) return;
+    const vaga = vagas.find(v => v.id === vagaId);
+    const novoStatus = vaga.status === "Aberta" ? "Fechada" : "Aberta";
+    await fetch(`/api/vagas/${vagaId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: novoStatus }),
+      credentials: "include",
+    });
+    fetchSalvos();
+    setDetalheVaga(det => det && det.id === vagaId ? { ...det, status: novoStatus } : det);
+  };
+
+  const handleDeletar = async vagaId => {
+    if (!session?.user) return;
+    await fetch(`/api/vagas/${vagaId}`, {
+      method: "DELETE",
+      credentials: "include",
+    });
+    setVagas(vagas => vagas.filter(v => v.id !== vagaId));
+    setDetalheVaga(det => det && det.id === vagaId ? null : det);
+    setConfirmModal({ open: true, message: "Vaga deletada!" });
+  };
+
+  // Para edição, você pode abrir um modal de edição igual ao index.js se quiser.
+  // Aqui, só um exemplo de placeholder:
+  const handleEditar = vagaId => {
+    setConfirmModal({ open: true, message: "Função de editar vaga ainda não implementada nesta página!" });
+    // Ou pode abrir um modal de edição como no index.js
+  };
+
   if (!session) {
     return (
       <div className="min-h-screen bg-black text-white">
@@ -169,6 +202,9 @@ export default function VagasSalvasPage() {
                   const vagaAtual = vagas.find(v => v.id === vaga.id);
                   setDetalheVaga(vagaAtual || vaga);
                 }}
+                onFechar={handleFechar}      
+                onDeletar={handleDeletar}    
+                onEditar={handleEditar}      
               />
             ))
           )}
@@ -198,6 +234,9 @@ export default function VagasSalvasPage() {
           onDescandidatar={handleDescandidatar}
           onSalvar={handleSalvarVaga}
           onRemoverSalvo={handleRemoverSalvo}
+          onFechar={handleFechar}      
+          onDeletar={handleDeletar}    
+          onEditar={handleEditar}      
         />
       )}
     </div>

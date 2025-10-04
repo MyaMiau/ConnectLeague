@@ -16,7 +16,6 @@ export default function VagaDetalhesModal({
 }) {
   if (!vaga) return null;
 
-  // Perfis que NÃO são organização podem se candidatar (player, coach, etc)
   const isOrg = usuario?.type === "organization";
   const isOrgDona = isOrg && usuario?.id === vaga.organization?.id;
 
@@ -28,7 +27,9 @@ export default function VagaDetalhesModal({
 
   const badgeClasse = vaga.status === "Aberta"
     ? "bg-green-600 text-white"
-    : "bg-purple-700 text-white";
+    : "bg-red-600 text-white";
+
+  const podeCandidatar = vaga.status === "Aberta" && !isOrg;
 
   return (
     <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center">
@@ -57,7 +58,7 @@ export default function VagaDetalhesModal({
             </Link>
           </div>
         </div>
-        <span className={`inline-block px-3 py-1 rounded-full font-semibold mb-2 ${badgeClasse}`}>{vaga.status}</span>
+        <span className={`inline-block px-3 py-1 rounded-full font-semibold mb-2 ${badgeClasse}`}>{vaga.status === "Aberta" ? "Aberta" : "Fechada"}</span>
         <span className="ml-3 text-zinc-400">Publicada em {vaga.dataPublicacao ? new Date(vaga.dataPublicacao).toLocaleDateString() : vaga.created_at ? new Date(vaga.created_at).toLocaleDateString() : "?"}</span>
         <div className="my-4">
           <h3 className="font-bold mb-2">Descrição completa</h3>
@@ -112,11 +113,11 @@ export default function VagaDetalhesModal({
           </span>
         </div>
         <div className="flex gap-2 items-center">
-          {/* Só mostra para quem NÃO é organização */}
-          {!isOrg && (
+          {/* Só mostra para quem NÃO é organização e vaga está aberta */}
+          {podeCandidatar && (
             <Button
               color={jaCandidatado ? "red" : "green"}
-              disabled={false}
+              disabled={!podeCandidatar}
               onClick={() =>
                 jaCandidatado ? onDescandidatar?.(vaga.id) : onCandidatar?.(vaga.id)}
               aria-label={
@@ -125,7 +126,7 @@ export default function VagaDetalhesModal({
             </Button>
           )}
 
-          {/* Botões de gerenciamento: Só para organização DONA da vaga */}
+          {/* Botões de gerenciamento: Só para organização DONA da vaga, e só no modal */}
           {isOrgDona && (
             <>
               <Button
@@ -136,7 +137,7 @@ export default function VagaDetalhesModal({
               </Button>
               <Button
                 variant="outline"
-                onClick={() => onEditar?.(vaga.id)}
+                onClick={() => onEditar?.(vaga)}
               >
                 Editar
               </Button>

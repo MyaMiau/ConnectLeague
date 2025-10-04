@@ -24,7 +24,7 @@ export default async function handler(req, res) {
     return res.status(200).json({ vaga });
   }
 
-  // Somente organizações podem editar uma vaga
+  // Somente organizações podem editar uma vaga (inclui fechar/reabrir/status e edição completa)
   if (req.method === "PUT") {
     if (!session || !["organizacao", "organization"].includes(session.user.type))
       return res.status(401).json({ error: "Não autenticado como organização." });
@@ -34,9 +34,10 @@ export default async function handler(req, res) {
     if (!vaga || vaga.organization_id !== Number(session.user.id))
       return res.status(403).json({ error: "Acesso negado: só a organização dona pode editar esta vaga." });
 
+    // Permite atualizar status OU todos os dados do formulário
     const { status, ...data } = req.body;
     let updated;
-    if (status) {
+    if (typeof status !== "undefined") {
       updated = await prisma.vacancies.update({ where: { id: vagaId }, data: { status } });
     } else {
       updated = await prisma.vacancies.update({ where: { id: vagaId }, data });
@@ -65,6 +66,13 @@ export default async function handler(req, res) {
     ) {
       return res.status(401).json({ error: "Somente jogadores podem se candidatar." });
     }
+
+    // Não permite candidatura em vaga fechada
+    const vaga = await prisma.vacancies.findUnique({ where: { id: vagaId } });
+    if (vaga?.status !== "Aberta") {
+      return res.status(403).json({ error: "Vaga fechada. Não é possível se candidatar." });
+    }
+
     const jaCandidatado = await prisma.applications.findFirst({
       where: { vacancy_id: vagaId, user_id: Number(session.user.id) }
     });
@@ -75,7 +83,6 @@ export default async function handler(req, res) {
     });
 
     // Cria notificação para a organização
-    const vaga = await prisma.vacancies.findUnique({ where: { id: vagaId } });
     if (vaga && vaga.organization_id) {
       await prisma.notification.create({
         data: {

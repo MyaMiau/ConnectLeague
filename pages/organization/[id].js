@@ -13,7 +13,7 @@ import ptBR from "date-fns/locale/pt-BR";
 import DeleteConfirmationModal from "@/components/DeleteConfirmationModal";
 import ReplyThread from "@/components/ReplyThread";
 import VagaModalForm from "../../components/VagaModalForm";
-import VagaDetalhesModal from "../../components/VagaDetalhesModal"; // Adicionado
+import VagaDetalhesModal from "../../components/VagaDetalhesModal";
 
 export default function OrganizationProfile() {
   const router = useRouter();
@@ -45,13 +45,15 @@ export default function OrganizationProfile() {
 
   // Modal/forms para vaga/post
   const [showVagaModal, setShowVagaModal] = useState(false);
+  const [showEditVagaModal, setShowEditVagaModal] = useState(false);
+  const [editVaga, setEditVaga] = useState(null);
   const [showPostModal, setShowPostModal] = useState(false);
   const [postData, setPostData] = useState({ content: "", image: null });
   const [postImagePreview, setPostImagePreview] = useState("");
   const [postError, setPostError] = useState("");
   const postImageInputRef = useRef(null);
 
-  // NOVO: para modal de detalhes da vaga
+  // Modal de detalhes da vaga
   const [vagaSelecionada, setVagaSelecionada] = useState(null);
 
   useEffect(() => {
@@ -101,7 +103,6 @@ export default function OrganizationProfile() {
   }
 
   async function handleSave() {
-    // Garante que atualiza o nome da org no campo correto
     const payload = { ...localOrg, name: localOrg.orgName || localOrg.name };
     const res = await fetch(`/api/organization/${id}`, {
       method: "PUT",
@@ -142,7 +143,6 @@ export default function OrganizationProfile() {
   }
 
   async function handleSubmitVaga(vagaData) {
-    // Recebe os dados do VagaModalForm
     const res = await fetch("/api/vagas", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -161,6 +161,70 @@ export default function OrganizationProfile() {
     } else {
       alert("Erro ao criar vaga.");
     }
+  }
+
+  function handleOpenEditVagaModal(vaga) {
+    setEditVaga(vaga);
+    setShowEditVagaModal(true);
+  }
+
+  async function handleUpdateVaga(vagaData) {
+    const res = await fetch(`/api/vagas/${vagaData.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(vagaData),
+    });
+    if (res.ok) {
+      setShowEditVagaModal(false);
+      setEditVaga(null);
+      fetch(`/api/vagas?organizationId=${id}`)
+        .then(res => res.json())
+        .then(data => {
+          const filtered = (data.vagas || []).filter(vaga =>
+            vaga.organizationId == id || vaga.organization?.id == id
+          );
+          setVagas(filtered);
+        });
+      setVagaSelecionada(null);
+      alert("Vaga atualizada com sucesso!");
+    } else {
+      alert("Erro ao atualizar vaga!");
+    }
+  }
+
+  async function handleFecharVaga(vagaId) {
+    const vaga = vagas.find(v => v.id === vagaId);
+    if (!vaga) return;
+    const novoStatus = vaga.status === "Aberta" ? "Fechada" : "Aberta";
+    await fetch(`/api/vagas/${vagaId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: novoStatus }),
+    });
+    fetch(`/api/vagas?organizationId=${id}`)
+      .then(res => res.json())
+      .then(data => {
+        const filtered = (data.vagas || []).filter(vaga =>
+          vaga.organizationId == id || vaga.organization?.id == id
+        );
+        setVagas(filtered);
+      });
+    setVagaSelecionada(vaga => vaga && vaga.id === vagaId ? { ...vaga, status: novoStatus } : vaga);
+  }
+
+  async function handleDeletarVaga(vagaId) {
+    await fetch(`/api/vagas/${vagaId}`, {
+      method: "DELETE",
+    });
+    fetch(`/api/vagas?organizationId=${id}`)
+      .then(res => res.json())
+      .then(data => {
+        const filtered = (data.vagas || []).filter(vaga =>
+          vaga.organizationId == id || vaga.organization?.id == id
+        );
+        setVagas(filtered);
+      });
+    setVagaSelecionada(null);
   }
 
   // Fazer post
@@ -209,6 +273,13 @@ export default function OrganizationProfile() {
         return;
       }
     }
+
+    function handleOpenEditVagaModal(vaga) {
+      setVagaSelecionada(null); 
+      setEditVaga(vaga);        
+      setShowEditVagaModal(true); 
+    }
+
     const payload = {
       content: postData.content,
       image: imageUrl,
@@ -232,7 +303,6 @@ export default function OrganizationProfile() {
   }
 
   // ----------- POSTS ----------- (restante igual ao profile id!)
-  // ... handlers: toggleLikePost, addComment, etc (já estão acima)
   const toggleLikePost = async (postId) => {
     await fetch(`/api/posts/${postId}/like`, { method: "POST" });
     setPosts(posts =>
@@ -516,7 +586,7 @@ export default function OrganizationProfile() {
       </div>
     );
 
-  // **Padronize o nome para sempre vir de users.name**
+  // Padronize o nome para sempre vir de users.name
   const displayName = localOrg?.name || localOrg?.orgName;
   const displayBio = localOrg?.orgDesc || localOrg?.bio || "Nenhuma descrição ainda.";
   const displayImage = localOrg?.logo || localOrg?.image || "/default-avatar.png";
@@ -614,11 +684,23 @@ export default function OrganizationProfile() {
           </div>
         )}
 
-        {/* Modal de vaga usando componente */}
+        {/* Modal de criar vaga usando componente */}
         <VagaModalForm
           open={showVagaModal}
           onClose={() => setShowVagaModal(false)}
           onSubmit={handleSubmitVaga}
+        />
+
+        {/* Modal de editar vaga usando componente */}
+        <VagaModalForm
+          open={showEditVagaModal}
+          onClose={() => {
+            setShowEditVagaModal(false);
+            setEditVaga(null);
+          }}
+          onSubmit={handleUpdateVaga}
+          initialValues={editVaga}
+          editing
         />
 
         {showPostModal && (
@@ -700,6 +782,9 @@ export default function OrganizationProfile() {
             vaga={vagaSelecionada}
             usuario={loggedUser}
             onClose={() => setVagaSelecionada(null)}
+            onFechar={handleFecharVaga}
+            onEditar={vaga => handleOpenEditVagaModal(vaga)}
+            onDeletar={vagaId => handleDeletarVaga(vagaId)}
           />
         )}
 
