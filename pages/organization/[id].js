@@ -27,7 +27,6 @@ export default function OrganizationProfile() {
   const [showPostMenu, setShowPostMenu] = useState(null);
   const [localOrg, setLocalOrg] = useState(null);
 
-  // Player-like posts logic
   const [loggedUser, setLoggedUser] = useState(null);
   const [activeOptions, setActiveOptions] = useState(null);
   const [activeCommentOptions, setActiveCommentOptions] = useState(null);
@@ -43,18 +42,21 @@ export default function OrganizationProfile() {
   const commentMenuRef = useRef({});
   const postMenuRef = useRef({});
 
-  // Modal/forms para vaga/post
+  // Modais de vaga
   const [showVagaModal, setShowVagaModal] = useState(false);
   const [showEditVagaModal, setShowEditVagaModal] = useState(false);
   const [editVaga, setEditVaga] = useState(null);
+  const [vagaSelecionada, setVagaSelecionada] = useState(null);
+  const [isDeleteVagaModalOpen, setIsDeleteVagaModalOpen] = useState(false);
+  const [vagaToDeleteId, setVagaToDeleteId] = useState(null);
+
+
+  // Modais de post
   const [showPostModal, setShowPostModal] = useState(false);
   const [postData, setPostData] = useState({ content: "", image: null });
   const [postImagePreview, setPostImagePreview] = useState("");
   const [postError, setPostError] = useState("");
   const postImageInputRef = useRef(null);
-
-  // Modal de detalhes da vaga
-  const [vagaSelecionada, setVagaSelecionada] = useState(null);
 
   useEffect(() => {
     if (!id) return;
@@ -93,7 +95,6 @@ export default function OrganizationProfile() {
     fetchMe();
   }, []);
 
-  // Funções para permissões dos menus
   const canEditOrDeletePost = (post) => loggedUser?.id === post.authorId;
   const canEditOrDeleteComment = (comment) => loggedUser?.id === comment.authorId;
 
@@ -163,7 +164,9 @@ export default function OrganizationProfile() {
     }
   }
 
+  // Editar vaga: FECHA o modal de detalhes antes de abrir o modal de edição
   function handleOpenEditVagaModal(vaga) {
+    setVagaSelecionada(null); // Fecha o modal de detalhes antes!
     setEditVaga(vaga);
     setShowEditVagaModal(true);
   }
@@ -273,13 +276,6 @@ export default function OrganizationProfile() {
         return;
       }
     }
-
-    function handleOpenEditVagaModal(vaga) {
-      setVagaSelecionada(null); 
-      setEditVaga(vaga);        
-      setShowEditVagaModal(true); 
-    }
-
     const payload = {
       content: postData.content,
       image: imageUrl,
@@ -301,6 +297,49 @@ export default function OrganizationProfile() {
       setPostError("Erro ao criar post.");
     }
   }
+
+      async function handleFecharVaga(vagaId) {
+      const vaga = vagas.find(v => v.id === vagaId);
+      if (!vaga) return;
+      const novoStatus = vaga.status === "Aberta" ? "Fechada" : "Aberta";
+      await fetch(`/api/vagas/${vagaId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: novoStatus }),
+      });
+      fetch(`/api/vagas?organizationId=${id}`)
+        .then(res => res.json())
+        .then(data => {
+          const filtered = (data.vagas || []).filter(vaga =>
+            vaga.organizationId == id || vaga.organization?.id == id
+          );
+          setVagas(filtered);
+        });
+      setVagaSelecionada(vaga => vaga && vaga.id === vagaId ? { ...vaga, status: novoStatus } : vaga);
+    }
+
+    // Deletar vaga com confirmação
+    function confirmDeleteVaga(vagaId) {
+      setVagaToDeleteId(vagaId);
+      setIsDeleteVagaModalOpen(true);
+    }
+
+async function handleDeletarVagaConfirmed() {
+  await fetch(`/api/vagas/${vagaToDeleteId}`, {
+    method: "DELETE",
+  });
+  fetch(`/api/vagas?organizationId=${id}`)
+    .then(res => res.json())
+    .then(data => {
+      const filtered = (data.vagas || []).filter(vaga =>
+        vaga.organizationId == id || vaga.organization?.id == id
+      );
+      setVagas(filtered);
+    });
+  setVagaSelecionada(null);
+  setIsDeleteVagaModalOpen(false);
+  setVagaToDeleteId(null);
+}
 
   // ----------- POSTS ----------- (restante igual ao profile id!)
   const toggleLikePost = async (postId) => {
@@ -586,7 +625,6 @@ export default function OrganizationProfile() {
       </div>
     );
 
-  // Padronize o nome para sempre vir de users.name
   const displayName = localOrg?.name || localOrg?.orgName;
   const displayBio = localOrg?.orgDesc || localOrg?.bio || "Nenhuma descrição ainda.";
   const displayImage = localOrg?.logo || localOrg?.image || "/default-avatar.png";
@@ -865,7 +903,6 @@ export default function OrganizationProfile() {
                   )}
                 </div>
 
-                {/* Campo de edição de post */}
                 {editingPost?.id === post.id ? (
                   <>
                     <Textarea
@@ -1086,6 +1123,12 @@ export default function OrganizationProfile() {
             onClose={() => setIsDeleteModalOpen(false)}
             onConfirm={handleConfirmDelete}
             itemType={deleteTarget.type}
+          />
+          <DeleteConfirmationModal
+            isOpen={isDeleteVagaModalOpen}
+            onClose={() => setIsDeleteVagaModalOpen(false)}
+            onConfirm={handleDeletarVagaConfirmed}
+            itemType="vaga"
           />
         </div>
       </main>
