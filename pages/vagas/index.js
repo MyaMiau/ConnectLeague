@@ -4,7 +4,7 @@ import VagaDetalhesModal from "../../components/VagaDetalhesModal";
 import VagaModalForm from "../../components/VagaModalForm";
 import { useSession } from "next-auth/react";
 import Header from "../../components/Header";
-import { Button } from "../../components/ui/button"; // Certifique-se de importar o Button
+import { Button } from "../../components/ui/button";
 
 export default function VagasPage() {
   const { data: session } = useSession();
@@ -13,6 +13,11 @@ export default function VagasPage() {
   const [vagaSelecionada, setVagaSelecionada] = useState(null);
   const [showVagaModal, setShowVagaModal] = useState(false);
   const [loadingVagaModal, setLoadingVagaModal] = useState(false);
+
+  // Estados para edição de vaga
+  const [editVaga, setEditVaga] = useState(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+
   const [filtros, setFiltros] = useState({
     pagina: 1,
     ordenar: "recentes",
@@ -67,8 +72,9 @@ export default function VagasPage() {
       setConfirmModal({ open: true, message: "Faça login para se candidatar." });
       return;
     }
-    if (tipoUsuario !== "player") {
-      setConfirmModal({ open: true, message: "Somente jogadores podem se candidatar!" });
+    // Só impede organizações de se candidatar
+    if (tipoUsuario === "organization") {
+      setConfirmModal({ open: true, message: "Organizações não podem se candidatar!" });
       return;
     }
     const res = await fetch(`/api/vagas/${vagaId}`, {
@@ -95,8 +101,8 @@ export default function VagasPage() {
       setConfirmModal({ open: true, message: "Faça login para cancelar a candidatura." });
       return;
     }
-    if (tipoUsuario !== "player") {
-      setConfirmModal({ open: true, message: "Somente jogadores podem cancelar candidatura!" });
+    if (tipoUsuario === "organization") {
+      setConfirmModal({ open: true, message: "Organizações não podem cancelar candidatura!" });
       return;
     }
     const res = await fetch(`/api/vagas/${vagaId}`, {
@@ -197,6 +203,11 @@ export default function VagasPage() {
       credentials: "include",
     });
     fetchVagas();
+    if (vagaSelecionada && vagaSelecionada.id === vagaId) {
+      fetch(`/api/vagas/${vagaId}`, { credentials: "include" })
+        .then(res => res.json())
+        .then(data => setVagaSelecionada(data.vaga));
+    }
   };
 
   const handleDeletar = async vagaId => {
@@ -212,6 +223,9 @@ export default function VagasPage() {
       credentials: "include",
     });
     fetchVagas();
+    if (vagaSelecionada && vagaSelecionada.id === vagaId) {
+      setVagaSelecionada(null);
+    }
   };
 
   const handleSubmitVaga = async (vagaData) => {
@@ -228,6 +242,33 @@ export default function VagasPage() {
       setConfirmModal({ open: true, message: "Vaga criada com sucesso!" });
     } else {
       setConfirmModal({ open: true, message: "Erro ao criar vaga!" });
+    }
+  };
+
+  // Novo handler para editar vaga
+  const handleEditar = vagaId => {
+    const vaga = vagas.find(v => v.id === vagaId);
+    setEditVaga(vaga);
+    setShowEditModal(true);
+  };
+
+  const handleUpdateVaga = async (vagaData) => {
+    setLoadingVagaModal(true);
+    const res = await fetch(`/api/vagas/${vagaData.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(vagaData),
+      credentials: "include",
+    });
+    setLoadingVagaModal(false);
+    if (res.ok) {
+      setShowEditModal(false);
+      setEditVaga(null);
+      fetchVagas();
+      setConfirmModal({ open: true, message: "Vaga atualizada com sucesso!" });
+      setVagaSelecionada(null);
+    } else {
+      setConfirmModal({ open: true, message: "Erro ao atualizar vaga!" });
     }
   };
 
@@ -308,6 +349,9 @@ export default function VagasPage() {
           onDescandidatar={handleDescandidatar} 
           onSalvar={handleSalvar}
           onRemoverSalvo={handleRemoverSalvo}
+          onFechar={handleFechar}
+          onDeletar={handleDeletar}
+          onEditar={vagaId => handleEditar(vagaId)}
         />
       )}
       {/* Modal de criar vaga usando componente */}
@@ -316,6 +360,17 @@ export default function VagasPage() {
         onClose={() => setShowVagaModal(false)}
         onSubmit={handleSubmitVaga}
         loading={loadingVagaModal}
+      />
+      {/* Modal de editar vaga usando o mesmo componente */}
+      <VagaModalForm
+        open={showEditModal}
+        onClose={() => {
+          setShowEditModal(false);
+          setEditVaga(null);}}
+        onSubmit={handleUpdateVaga}
+        loading={loadingVagaModal}
+        initialValues={editVaga}
+        editing
       />
     </div>
   );

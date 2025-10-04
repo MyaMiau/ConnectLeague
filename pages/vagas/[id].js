@@ -94,7 +94,7 @@ export default function VagaDetalhes() {
               src={
                 vaga.organization?.logo ||
                 vaga.organization?.image ||
-                "/default-org.png"}
+                "/default-avatar.png"}
               alt="Logo Organização"
               className="w-16 h-16 rounded-full bg-zinc-800 border"
             />

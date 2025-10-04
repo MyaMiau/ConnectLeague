@@ -36,7 +36,7 @@ export default function VagaModal({
             src={
               organizacao.logo ||
               organizacao.image ||
-              "/default-org.png"}
+              "/default-avatar.png"}
             alt="Logo"
             className="w-12 h-12 rounded-full bg-zinc-800 object-cover border"
           />

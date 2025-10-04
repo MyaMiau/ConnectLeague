@@ -9,9 +9,16 @@ export default function VagaDetalhesModal({
   onCandidatar,
   onDescandidatar,
   onSalvar,
-  onRemoverSalvo
+  onRemoverSalvo,
+  onFechar,
+  onEditar,
+  onDeletar
 }) {
   if (!vaga) return null;
+
+  // Perfis que NÃO são organização podem se candidatar (player, coach, etc)
+  const isOrg = usuario?.type === "organization";
+  const isOrgDona = isOrg && usuario?.id === vaga.organization?.id;
 
   const jaCandidatado = vaga.applications?.some(app => Number(app.user_id) === Number(usuario?.id));
   const jaFavoritou = vaga.favorites?.some(f => Number(f.userId) === Number(usuario?.id));
@@ -40,7 +47,7 @@ export default function VagaDetalhesModal({
                 org.logo ||
                 org.logoUrl ||
                 org.image ||
-                "/default-org.png"}
+                "/default-avatar.png"}
               alt="Logo"
               className="w-16 h-16 rounded-full bg-zinc-800 border mb-2"
             />
@@ -105,15 +112,44 @@ export default function VagaDetalhesModal({
           </span>
         </div>
         <div className="flex gap-2 items-center">
-          <Button
-            color={jaCandidatado ? "red" : "green"}
-            disabled={false}
-            onClick={() =>
-              jaCandidatado ? onDescandidatar?.(vaga.id) : onCandidatar?.(vaga.id)}
-            aria-label={
-              jaCandidatado ? "Cancelar candidatura" : "Candidatar-se"}>
-            {jaCandidatado ? "Cancelar candidatura" : "Candidatar-se"}
-          </Button>
+          {/* Só mostra para quem NÃO é organização */}
+          {!isOrg && (
+            <Button
+              color={jaCandidatado ? "red" : "green"}
+              disabled={false}
+              onClick={() =>
+                jaCandidatado ? onDescandidatar?.(vaga.id) : onCandidatar?.(vaga.id)}
+              aria-label={
+                jaCandidatado ? "Cancelar candidatura" : "Candidatar-se"}>
+              {jaCandidatado ? "Cancelar candidatura" : "Candidatar-se"}
+            </Button>
+          )}
+
+          {/* Botões de gerenciamento: Só para organização DONA da vaga */}
+          {isOrgDona && (
+            <>
+              <Button
+                variant={vaga.status === "Aberta" ? "destructive" : "default"}
+                onClick={() => onFechar?.(vaga.id)}
+              >
+                {vaga.status === "Aberta" ? "Fechar vaga" : "Reabrir vaga"}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => onEditar?.(vaga.id)}
+              >
+                Editar
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={() => onDeletar?.(vaga.id)}
+              >
+                Deletar
+              </Button>
+            </>
+          )}
+
+          {/* Favoritar/desfavoritar: qualquer perfil */}
           <span
             role="button"
             aria-label={jaFavoritou ? "Remover dos salvos" : "Salvar vaga"}

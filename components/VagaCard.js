@@ -32,8 +32,7 @@ export default function VagaCard({
           src={
             vaga.organization?.logo ||
             vaga.organization?.image ||
-            "/default-org.png"
-          }
+            "/default-avatar.png"}
           alt="Logo"
           className="w-20 h-20 rounded-full bg-zinc-800 object-cover border"
         />

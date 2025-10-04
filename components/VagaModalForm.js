@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Input } from "./ui/input";
 import { Textarea } from "./ui/textarea";
 import { Button } from "./ui/button";
@@ -22,7 +22,14 @@ const TAGS = [
   "Remoto", "Presencial", "Competitivo", "Amador", "Nenhum"
 ];
 
-export default function VagaModalForm({ open, onClose, onSubmit, loading }) {
+export default function VagaModalForm({
+  open,
+  onClose,
+  onSubmit,
+  loading,
+  initialValues = null,
+  editing = false
+}) {
   const [form, setForm] = useState({
     titulo: "",
     descricao: "",
@@ -34,7 +41,41 @@ export default function VagaModalForm({ open, onClose, onSubmit, loading }) {
     city: "",
     state: "",
     tags: [],
+    id: undefined,
   });
+
+  // Preenche dados para edição
+  useEffect(() => {
+    if (editing && initialValues) {
+      setForm({
+        titulo: initialValues.titulo || initialValues.title || "",
+        descricao: initialValues.descricao || initialValues.description || "",
+        requisitos: initialValues.requisitos || initialValues.requirements || "",
+        beneficios: initialValues.beneficios || initialValues.benefits || "",
+        userTypes: initialValues.userTypes || [],
+        positions: initialValues.positions || [],
+        elos: initialValues.elos || [],
+        city: initialValues.city || "",
+        state: initialValues.state || "",
+        tags: initialValues.tags || [],
+        id: initialValues.id
+      });
+    } else if (!editing) {
+      setForm({
+        titulo: "",
+        descricao: "",
+        requisitos: "",
+        beneficios: "",
+        userTypes: [],
+        positions: [],
+        elos: [],
+        city: "",
+        state: "",
+        tags: [],
+        id: undefined,
+      });
+    }
+  }, [editing, initialValues, open]);
 
   if (!open) return null;
 
@@ -54,7 +95,8 @@ export default function VagaModalForm({ open, onClose, onSubmit, loading }) {
 
   function handleSubmit(e) {
     e.preventDefault();
-    onSubmit({
+    const data = {
+      id: form.id, // só existe se for edição
       title: form.titulo,
       description: form.descricao,
       requirements: form.requisitos,
@@ -65,7 +107,8 @@ export default function VagaModalForm({ open, onClose, onSubmit, loading }) {
       city: form.city,
       state: form.state,
       tags: form.tags,
-    });
+    };
+    onSubmit(data);
   }
 
   return (
@@ -79,7 +122,7 @@ export default function VagaModalForm({ open, onClose, onSubmit, loading }) {
         "
         onSubmit={handleSubmit}
       >
-        <h2 className="text-xl font-bold mb-2">Abrir vaga</h2>
+        <h2 className="text-xl font-bold mb-2">{editing ? "Editar vaga" : "Abrir vaga"}</h2>
         <Input
           name="titulo"
           placeholder="Título da vaga"
@@ -207,7 +250,7 @@ export default function VagaModalForm({ open, onClose, onSubmit, loading }) {
           </div>
         </div>
         <div className="flex gap-2 mt-2">
-          <Button type="submit" disabled={loading}>Criar</Button>
+          <Button type="submit" disabled={loading}>{editing ? "Salvar alterações" : "Criar"}</Button>
           <Button variant="outline" type="button" onClick={onClose}>Cancelar</Button>
         </div>
       </form>
