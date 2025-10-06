@@ -196,24 +196,26 @@ export default function OrganizationProfile() {
   }
 
   async function handleFecharVaga(vagaId) {
-    const vaga = vagas.find(v => v.id === vagaId);
-    if (!vaga) return;
-    const novoStatus = vaga.status === "Aberta" ? "Fechada" : "Aberta";
-    await fetch(`/api/vagas/${vagaId}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status: novoStatus }),
-    });
-    fetch(`/api/vagas?organizationId=${id}`)
-      .then(res => res.json())
-      .then(data => {
-        const filtered = (data.vagas || []).filter(vaga =>
-          vaga.organizationId == id || vaga.organization?.id == id
-        );
-        setVagas(filtered);
+      const vaga = vagas.find(v => v.id === vagaId);
+      if (!vaga) return;
+      const novoStatus = vaga.status === "Aberta" ? "Fechada" : "Aberta";
+      await fetch(`/api/vagas/${vagaId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: novoStatus }),
       });
-    setVagaSelecionada(vaga => vaga && vaga.id === vagaId ? { ...vaga, status: novoStatus } : vaga);
-  }
+      fetch(`/api/vagas?organizationId=${id}`)
+        .then(res => res.json())
+        .then(data => {
+          const filtered = (data.vagas || []).filter(vaga =>
+            vaga.organizationId == id || vaga.organization?.id == id
+          );
+          setVagas(filtered);
+        });
+      setVagaSelecionada(prev =>
+        prev && prev.id === vagaId ? { ...prev, status: novoStatus } : prev
+      );
+    }
 
   async function handleDeletarVaga(vagaId) {
     await fetch(`/api/vagas/${vagaId}`, {
@@ -297,27 +299,6 @@ export default function OrganizationProfile() {
       setPostError("Erro ao criar post.");
     }
   }
-
-      async function handleFecharVaga(vagaId) {
-      const vaga = vagas.find(v => v.id === vagaId);
-      if (!vaga) return;
-      const novoStatus = vaga.status === "Aberta" ? "Fechada" : "Aberta";
-      await fetch(`/api/vagas/${vagaId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: novoStatus }),
-      });
-      fetch(`/api/vagas?organizationId=${id}`)
-        .then(res => res.json())
-        .then(data => {
-          const filtered = (data.vagas || []).filter(vaga =>
-            vaga.organizationId == id || vaga.organization?.id == id
-          );
-          setVagas(filtered);
-        });
-      setVagaSelecionada(vaga => vaga && vaga.id === vagaId ? { ...vaga, status: novoStatus } : vaga);
-    }
-
     // Deletar vaga com confirmação
     function confirmDeleteVaga(vagaId) {
       setVagaToDeleteId(vagaId);
@@ -822,7 +803,7 @@ async function handleDeletarVagaConfirmed() {
             onClose={() => setVagaSelecionada(null)}
             onFechar={handleFecharVaga}
             onEditar={vaga => handleOpenEditVagaModal(vaga)}
-            onDeletar={vagaId => handleDeletarVaga(vagaId)}
+            onDeletar={vagaId => confirmDeleteVaga(vagaId)} // CERTO!
           />
         )}
 
