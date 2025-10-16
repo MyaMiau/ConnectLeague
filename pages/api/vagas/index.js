@@ -32,7 +32,6 @@ export default async function handler(req, res) {
       ...(cidade && { city: cidade }),
       ...(estado && { state: estado }),
       ...(tags && { tags: { hasSome: Array.isArray(tags) ? tags : [tags] } }),
-      status: "Aberta",
     };
 
     const vagas = await prisma.vacancies.findMany({

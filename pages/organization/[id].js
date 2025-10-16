@@ -95,8 +95,15 @@ export default function OrganizationProfile() {
     fetchMe();
   }, []);
 
-  const canEditOrDeletePost = (post) => loggedUser?.id === post.authorId;
-  const canEditOrDeleteComment = (comment) => loggedUser?.id === comment.authorId;
+  const canEditOrDeletePost = (post) =>
+  String(loggedUser?.id) === String(post.authorId) ||
+  String(loggedUser?.id) === String(post.author?.id);
+
+const canEditOrDeleteComment = (comment) =>
+  String(loggedUser?.id) === String(comment.authorId) ||
+  String(loggedUser?.id) === String(comment.author?.id);
+
+
 
   function handleChange(e) {
     const { name, value } = e.target;
@@ -322,7 +329,6 @@ async function handleDeletarVagaConfirmed() {
   setVagaToDeleteId(null);
 }
 
-  // ----------- POSTS ----------- (restante igual ao profile id!)
   const toggleLikePost = async (postId) => {
     await fetch(`/api/posts/${postId}/like`, { method: "POST" });
     setPosts(posts =>
@@ -772,14 +778,22 @@ async function handleDeletarVagaConfirmed() {
 
         {/* Vagas abertas */}
         <div className="w-full max-w-2xl">
-          <h2 className="text-xl font-bold mb-4">Vagas abertas</h2>
+          <h2 className="text-xl font-bold mb-4">Vagas</h2>
           {vagas.length === 0 ? (
-            <p className="text-zinc-500 text-center">Nenhuma vaga aberta.</p>
+            <p className="text-zinc-500 text-center">Nenhuma vaga cadastrada.</p>
           ) : (
             <div className="space-y-4">
               {vagas.map(vaga => (
                 <div key={vaga.id} className="bg-zinc-900 rounded-xl p-5 shadow">
                   <h3 className="text-lg font-bold">{vaga.titulo || vaga.title}</h3>
+                  <span
+                    className={`inline-block px-3 py-1 rounded-full font-semibold mb-2 ${
+                      vaga.status === "Aberta"
+                        ? "bg-green-600 text-white"
+                        : "bg-red-600 text-white"
+                    }`}>
+                    {vaga.status === "Aberta" ? "Aberta" : "Fechada"}
+                  </span>
                   <p className="text-zinc-300 mb-2">{vaga.descricao || vaga.description}</p>
                   <span className="text-xs text-zinc-400">
                     Publicada em {vaga.created_at ? new Date(vaga.created_at).toLocaleDateString() : "?"}
