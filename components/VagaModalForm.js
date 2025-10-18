@@ -113,7 +113,7 @@ export default function VagaModalForm({
   const selectableBtn = (selected) =>
     selected
       ? "bg-purple-800 text-white border-2 border-purple-400 rounded px-3 py-1 font-medium transition-colors"
-      : "bg-purple-600 text-white border border-transparent rounded px-3 py-1 font-medium transition-colors";
+      : "bg-indigo-600 text-white border border-transparent rounded px-3 py-1 font-medium transition-colors";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">

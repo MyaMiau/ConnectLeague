@@ -14,6 +14,7 @@ import Header from "@/components/Header";
 import ProfileCard from "@/components/ProfileCard";
 import ProfileCardGeneric from "@/components/ProfileCardGeneric";
 import ReplyThread from "@/components/ReplyThread";
+import VagaCard from "@/components/VagaCard";
 
 export default function PublicProfilePage() {
   const router = useRouter();
@@ -383,6 +384,7 @@ export default function PublicProfilePage() {
   if (!user) return <p className="text-center text-zinc-400 mt-16">Usuário não encontrado.</p>;
 
   console.log("loggedUser", loggedUser);
+  
   return (
     <div className="min-h-screen bg-black text-white pt-24 flex flex-col items-center px-4">
       <Header />
@@ -411,20 +413,15 @@ export default function PublicProfilePage() {
           {vagas.length === 0 && (
             <p className="text-center text-zinc-400">Nenhuma vaga encontrada para esta organização.</p>
           )}
-          {vagas.map((vaga) => (
-            <Card key={vaga.id} className="bg-zinc-900 rounded-2xl">
-              <CardContent className="p-6">
-                <Link href={`/vagas/${vaga.id}`}>
-                  <h3 className="text-lg font-bold mb-2 hover:underline cursor-pointer">{vaga.titulo}</h3>
-                </Link>
-                <p className="text-zinc-300 mb-2">{vaga.descricao}</p>
-                <div className="flex gap-3 text-sm text-zinc-400">
-                  <span>Status: {vaga.status}</span>
-                  <span>Candidatos: {vaga.candidatos?.length || 0}</span>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+            {vagas
+              .filter(vaga => vaga.organization_id === user.id)
+              .map((vaga) => (
+                <VagaCard
+                  key={vaga.id}
+                  vaga={vaga}               
+                  onShowDetails={() => router.push(`/vagas/${vaga.id}`)}
+                />
+            ))}
         </div>
       )}
 

@@ -43,15 +43,15 @@ export default function VagaDetalhesModal({
           {orgName}
         </div>
         <div className="flex gap-6 items-center mb-4">
-           <img
-              src={
-                org.logo ||
-                org.logoUrl ||
-                org.image ||
-                "/default-avatar.png"}
-              alt="Logo"
-              className="w-16 h-16 rounded-full bg-zinc-800 border mb-2"
-            />
+          <img
+            src={
+              org.logo ||
+              org.logoUrl ||
+              org.image ||
+              "/default-avatar.png"}
+            alt="Logo"
+            className="w-16 h-16 rounded-full bg-zinc-800 border mb-2"
+          />
           <div>
             <Link href={`/profile/${org.id}`}>
               <Button variant="outline">Perfil da organização</Button>
@@ -136,19 +136,22 @@ export default function VagaDetalhesModal({
           {isOrgDona && (
             <>
               <Button
-                variant={vaga.status === "Aberta" ? "destructive" : "default"}
+                type="button"
+                className="bg-red-800 hover:bg-red-900 text-white font-bold px-4 py-2 rounded transition-colors"
                 onClick={() => onFechar?.(vaga.id)}
               >
                 {vaga.status === "Aberta" ? "Fechar vaga" : "Reabrir vaga"}
               </Button>
               <Button
-                variant="outline"
+                type="button"
+                className="bg-blue-700 hover:bg-blue-800 text-white font-bold px-4 py-2 rounded transition-colors"
                 onClick={() => onEditar?.(vaga)}
               >
                 Editar
               </Button>
               <Button
-                variant="destructive"
+                type="button"
+                className="bg-red-600 hover:bg-red-700 text-white font-bold px-4 py-2 rounded transition-colors"
                 onClick={() => onDeletar?.(vaga.id)}
               >
                 Deletar

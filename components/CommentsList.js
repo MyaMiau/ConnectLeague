@@ -3,7 +3,7 @@ import Link from "next/link";
 import ReplyThread from "./ReplyThread";
 import Image from "next/image";
 
-export default function CommentsList({ postId, currentUserId }) {
+export default function CommentsList({ postId, currentUserId, loggedUser }) {
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [newComment, setNewComment] = useState("");
@@ -146,7 +146,14 @@ export default function CommentsList({ postId, currentUserId }) {
             )}
             {/* Renderize replies usando ReplyThread, se existir */}
             {c.replies && c.replies.map(reply => (
-              <ReplyThread key={reply.id} reply={reply} postId={postId} commentId={c.id} />
+              <ReplyThread
+                key={reply.id}
+                reply={reply}
+                postId={postId}
+                commentId={c.id}
+                loggedUser={loggedUser || { id: currentUserId }}
+                // Adicione outras props se necessário
+              />
             ))}
           </li>
         ))}

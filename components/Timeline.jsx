@@ -29,6 +29,7 @@ export default function Timeline() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState({ type: "", postId: null, commentId: null, replyId: null });
   const [activeReplyMenu, setActiveReplyMenu] = useState(null);
+  const loggedUser = user;
 
   // Busca usuário logado
   useEffect(() => {
@@ -572,6 +573,7 @@ export default function Timeline() {
                               setReplyInputs={setReplyInputs}
                               onReply={handleReply}
                               onEditReply={handleEditReply}
+                              loggedUser={loggedUser}
                             />
                           ))}
                         </div>

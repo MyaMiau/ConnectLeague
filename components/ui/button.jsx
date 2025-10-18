@@ -1,11 +1,14 @@
 export function Button({ children, color = "purple", className = "", style = {}, ...props }) {
-  // Se className inclui uma classe bg- (Tailwind), não aplica bgColor inline!
-  let applyBgColor = !className.includes("bg-");
-  let bgColor = "#4F46E5"; // padrão purple
+  // Verifica se há alguma classe bg- no className (Tailwind)
+  const hasTailwindBg = /\bbg-[^\s]+\b/.test(className);
+  let bgColor;
 
-  if (color === "green") bgColor = "#22c55e";
-  if (color === "red") bgColor = "#ef4444";
-  if (style.backgroundColor) bgColor = style.backgroundColor;
+  if (!hasTailwindBg) {
+    bgColor = "#4F46E5"; // padrão purple
+    if (color === "green") bgColor = "#22c55e";
+    if (color === "red") bgColor = "#ef4444";
+    if (style.backgroundColor) bgColor = style.backgroundColor;
+  }
 
   return (
     <button
@@ -13,7 +16,7 @@ export function Button({ children, color = "purple", className = "", style = {},
       className={className}
       style={{
         ...style,
-        ...(applyBgColor ? { backgroundColor: bgColor, color: "#fff" } : {}),
+        ...(bgColor ? { backgroundColor: bgColor, color: "#fff" } : {}),
         padding: "8px 16px",
         borderRadius: "8px",
         cursor: "pointer",
