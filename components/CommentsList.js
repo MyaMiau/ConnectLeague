@@ -20,7 +20,6 @@ export default function CommentsList({ postId, currentUserId, loggedUser }) {
   useEffect(() => {
     if (!postId) return;
     fetchComments();
-    // eslint-disable-next-line
   }, [postId]);
 
   const handleAddComment = async () => {
@@ -67,7 +66,7 @@ export default function CommentsList({ postId, currentUserId, loggedUser }) {
             value={newComment}
             onChange={e => setNewComment(e.target.value)}
           />
-          <button onClick={handleAddComment}>Comentar</button>
+          <button type="button" onClick={handleAddComment}>Comentar</button>
         </div>
         <p style={{ fontStyle: "italic" }}>Nenhum comentário.</p>
       </div>
@@ -82,7 +81,7 @@ export default function CommentsList({ postId, currentUserId, loggedUser }) {
           value={newComment}
           onChange={e => setNewComment(e.target.value)}
         />
-        <button onClick={handleAddComment}>Comentar</button>
+        <button type="button" onClick={handleAddComment}>Comentar</button>
       </div>
       <ul>
         {comments.map(c => (
@@ -102,22 +101,23 @@ export default function CommentsList({ postId, currentUserId, loggedUser }) {
                   background: "#222"
                 }}
               >
-              <div className="relative w-[40px] h-[40px] rounded-full overflow-hidden shrink-0 border border-zinc-700 bg-zinc-800">
-                <Image
-                  src={c.author?.image || "/default-avatar.png"}
-                  alt={c.author?.name || "Desconhecido"}
-                  fill
-                  sizes="40px"
-                  className="object-cover"
-                  priority
-                />
-              </div>
+                <div className="relative w-[40px] h-[40px] rounded-full overflow-hidden shrink-0 border border-zinc-700 bg-zinc-800">
+                  <Image
+                    src={c.author?.image || "/default-avatar.png"}
+                    alt={c.author?.name || "Desconhecido"}
+                    fill
+                    sizes="40px"
+                    className="object-cover"
+                    priority
+                  />
+                </div>
               </div>
               <Link href={`/profile/${c.author?.id || ""}`}>
                 <strong>{c.author?.name || "Desconhecido"}</strong>
               </Link>
               : {c.content}
               <button
+                type="button"
                 style={{ marginLeft: 8, color: "#3498db" }}
                 onClick={() =>
                   setReplyInputs((ri) => ({ ...ri, [c.id]: ri[c.id] ? "" : "" }))
@@ -137,6 +137,7 @@ export default function CommentsList({ postId, currentUserId, loggedUser }) {
                   }
                 />
                 <button
+                  type="button"
                   style={{ marginLeft: 8, color: "#27ae60" }}
                   onClick={() => handleReply(c.id)}
                 >
@@ -144,7 +145,6 @@ export default function CommentsList({ postId, currentUserId, loggedUser }) {
                 </button>
               </div>
             )}
-            {/* Renderize replies usando ReplyThread, se existir */}
             {c.replies && c.replies.map(reply => (
               <ReplyThread
                 key={reply.id}
@@ -152,7 +152,6 @@ export default function CommentsList({ postId, currentUserId, loggedUser }) {
                 postId={postId}
                 commentId={c.id}
                 loggedUser={loggedUser || { id: currentUserId }}
-                // Adicione outras props se necessário
               />
             ))}
           </li>

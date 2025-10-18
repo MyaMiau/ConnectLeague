@@ -39,13 +39,6 @@ export default function ReplyThread({
 
   if (!reply) return null;
 
-  
-console.log({
-  loggedUserId: loggedUser?.id,
-  replyAuthorId: getAuthorId(reply),
-  canEditOrDeleteReply
-});
-
   return (
     <div
       className="w-full mb-2"
