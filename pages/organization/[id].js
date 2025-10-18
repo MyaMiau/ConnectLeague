@@ -617,6 +617,8 @@ async function handleDeletarVagaConfirmed() {
   const displayImage = localOrg?.logo || localOrg?.image || "/default-avatar.png";
   const displayEmail = localOrg?.email || "";
 
+  console.log("loggedUser", loggedUser);
+
   return (
     <div className="min-h-screen bg-black text-white flex">
       <Header user={org} />
@@ -827,8 +829,17 @@ async function handleDeletarVagaConfirmed() {
           {posts.length === 0 && (
             <p className="text-center text-zinc-400">Nenhum post encontrado para esta organização.</p>
           )}
-          {posts.map((post) => (
-            <Card key={post.id} className="bg-zinc-900 rounded-2xl">
+            {posts.map((post) => {
+              console.log(
+                "POST DEBUG",
+                {
+                  loggedUserId: loggedUser?.id,
+                  postAuthorId: post.authorId,
+                  postAuthorObjId: post.author?.id
+                }
+              );
+              return (
+                <Card key={post.id} className="bg-zinc-900 rounded-2xl">
               <CardContent className="p-6 space-y-4 relative">
                 <div className="flex justify-between items-start">
                   <div className="flex items-center gap-4">
@@ -1112,7 +1123,8 @@ async function handleDeletarVagaConfirmed() {
                 </div>
               </CardContent>
             </Card>
-          ))}
+              );
+            })}
           <DeleteConfirmationModal
             isOpen={isDeleteModalOpen}
             onClose={() => setIsDeleteModalOpen(false)}

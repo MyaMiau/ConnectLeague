@@ -382,7 +382,7 @@ export default function PublicProfilePage() {
   if (loading) return <p className="text-center text-zinc-400 mt-16">Carregando perfil...</p>;
   if (!user) return <p className="text-center text-zinc-400 mt-16">Usuário não encontrado.</p>;
 
-  // Renderiza card correto: player ou genérico
+  console.log("loggedUser", loggedUser);
   return (
     <div className="min-h-screen bg-black text-white pt-24 flex flex-col items-center px-4">
       <Header />

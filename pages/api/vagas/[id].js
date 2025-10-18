@@ -16,7 +16,7 @@ export default async function handler(req, res) {
       where: { id: vagaId },
       include: {
         organization: true,
-        applications: { include: { user: true } },
+        applications: { include: { user: true } }, // lista de candidatos com user (player)
         favorites: true,
       }
     });
@@ -87,12 +87,14 @@ export default async function handler(req, res) {
       await prisma.notification.create({
         data: {
           type: "candidatura",
-          userId: vaga.organization_id,
-          senderId: Number(session.user.id),
+          userId: vaga.organization_id, // org recebe notificação
+          senderId: Number(session.user.id), // quem se candidatou
           postId: null,
           commentId: null,
           read: false,
           createdAt: new Date(),
+          message: `${session.user.name} se candidatou à vaga ${vaga.title}`,
+          link: `/vagas/${vagaId}`,
         },
       });
     }

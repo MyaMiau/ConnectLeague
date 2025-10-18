@@ -111,6 +111,12 @@ export default function VagaDetalhesModal({
           <span className="text-zinc-400">
             <strong>Candidatos:</strong> {vaga.applications?.length || 0}
           </span>
+          {/* Botão "Ver candidatos" só para org dona da vaga */}
+          {isOrgDona && (
+            <Link href={`/vagas/candidatos?id=${vaga.id}`}>
+              <Button variant="outline" className="ml-4 mt-2">Ver candidatos</Button>
+            </Link>
+          )}
         </div>
         <div className="flex gap-2 items-center">
           {/* Só mostra para quem NÃO é organização e vaga está aberta */}

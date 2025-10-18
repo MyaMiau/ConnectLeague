@@ -10,7 +10,6 @@ const USER_TYPES = [
   "designer",
   "psychologist",
   "analyst",
-  "content creator"
 ];
 const POSITIONS = [
   "Top", "Jungle", "Mid", "ADC", "Support"
@@ -44,7 +43,6 @@ export default function VagaModalForm({
     id: undefined,
   });
 
-  // Preenche dados para edição
   useEffect(() => {
     if (editing && initialValues) {
       setForm({
@@ -96,7 +94,7 @@ export default function VagaModalForm({
   function handleSubmit(e) {
     e.preventDefault();
     const data = {
-      id: form.id, // só existe se for edição
+      id: form.id,
       title: form.titulo,
       description: form.descricao,
       requirements: form.requisitos,
@@ -110,6 +108,12 @@ export default function VagaModalForm({
     };
     onSubmit(data);
   }
+
+  // Classes dos botões de seleção: cor original, muda quando selecionado
+  const selectableBtn = (selected) =>
+    selected
+      ? "bg-purple-800 text-white border-2 border-purple-400 rounded px-3 py-1 font-medium transition-colors"
+      : "bg-purple-600 text-white border border-transparent rounded px-3 py-1 font-medium transition-colors";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
@@ -176,13 +180,8 @@ export default function VagaModalForm({
               <Button
                 key={type}
                 type="button"
-                variant="outline"
-                size="sm"
                 onClick={() => handleArrayChange("userTypes", type)}
-                className={`transition-colors duration-150
-                  ${form.userTypes.includes(type) ? "bg-purple-700 text-white border-purple-500" : "bg-zinc-800 text-zinc-300 border-zinc-700"}
-                  border rounded px-3 py-1 font-medium
-                `}
+                className={selectableBtn(form.userTypes.includes(type))}
               >
                 {type}
               </Button>
@@ -196,13 +195,8 @@ export default function VagaModalForm({
               <Button
                 key={pos}
                 type="button"
-                variant="outline"
-                size="sm"
                 onClick={() => handleArrayChange("positions", pos)}
-                className={`transition-colors duration-150
-                  ${form.positions.includes(pos) ? "bg-purple-700 text-white border-purple-500" : "bg-zinc-800 text-zinc-300 border-zinc-700"}
-                  border rounded px-3 py-1 font-medium
-                `}
+                className={selectableBtn(form.positions.includes(pos))}
               >
                 {pos}
               </Button>
@@ -216,13 +210,8 @@ export default function VagaModalForm({
               <Button
                 key={elo}
                 type="button"
-                variant="outline"
-                size="sm"
                 onClick={() => handleArrayChange("elos", elo)}
-                className={`transition-colors duration-150
-                  ${form.elos.includes(elo) ? "bg-purple-700 text-white border-purple-500" : "bg-zinc-800 text-zinc-300 border-zinc-700"}
-                  border rounded px-3 py-1 font-medium
-                `}
+                className={selectableBtn(form.elos.includes(elo))}
               >
                 {elo}
               </Button>
@@ -236,13 +225,8 @@ export default function VagaModalForm({
               <Button
                 key={tag}
                 type="button"
-                variant="outline"
-                size="sm"
                 onClick={() => handleArrayChange("tags", tag)}
-                className={`transition-colors duration-150
-                  ${form.tags.includes(tag) ? "bg-purple-700 text-white border-purple-500" : "bg-zinc-800 text-zinc-300 border-zinc-700"}
-                  border rounded px-3 py-1 font-medium
-                `}
+                className={selectableBtn(form.tags.includes(tag))}
               >
                 {tag}
               </Button>
@@ -250,8 +234,8 @@ export default function VagaModalForm({
           </div>
         </div>
         <div className="flex gap-2 mt-2">
-          <Button type="submit" disabled={loading}>{editing ? "Salvar alterações" : "Criar"}</Button>
-          <Button variant="outline" type="button" onClick={onClose}>Cancelar</Button>
+          <Button type="submit" disabled={loading} color="green">Criar</Button>
+          <Button type="button" color="red" onClick={onClose}>Cancelar</Button>
         </div>
       </form>
     </div>
