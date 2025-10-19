@@ -1,20 +1,38 @@
 import { useState } from "react";
+import { Button } from "./ui/button";
 
 export default function CommentForm({ postId, authorId, onCommented }) {
   const [content, setContent] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   async function handleSubmit(e) {
     e.preventDefault();
+    if (!content?.trim()) return;
     setLoading(true);
-    await fetch("/api/comments", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ content, authorId, postId })
-    });
-    setContent("");
-    setLoading(false);
-    onCommented && onCommented();
+    setError(null);
+
+    try {
+      const res = await fetch("/api/comments", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content, authorId, postId })
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err?.error || `HTTP ${res.status}`);
+      }
+
+      setContent("");
+      onCommented && onCommented();
+    } catch (err) {
+      console.error("Erro ao enviar comentário:", err);
+      setError("Erro ao enviar comentário. Tente novamente.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -25,10 +43,16 @@ export default function CommentForm({ postId, authorId, onCommented }) {
         placeholder="Comente aqui"
         required
         style={{ width: "80%", marginRight: 8 }}
+        aria-label="Escreva um comentário"
       />
-      <button type="submit" disabled={loading || !content}>
+      <Button
+        type="submit"
+        disabled={loading || !content.trim()}
+        aria-busy={loading}
+      >
         {loading ? "Comentando..." : "Comentar"}
-      </button>
+      </Button>
+      {error && <div style={{ color: "#f87171", marginTop: 6 }}>{error}</div>}
     </form>
   );
 }

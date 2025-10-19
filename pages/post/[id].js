@@ -324,7 +324,7 @@ export default function PostPage() {
     if (deleteTarget.type === "comment") {
       await handleDeleteComment(deleteTarget.commentId);
     } else if (deleteTarget.type === "reply") {
-      await handleDeleteReply(deleteTarget.commentId, deleteTarget.replyId);
+      await handleDeleteReply(deleteTarget.postId, deleteTarget.replyId);
     }
     setIsDeleteModalOpen(false);
   };
@@ -341,7 +341,6 @@ export default function PostPage() {
   };
 
   useEffect(() => {
-    // Scroll para âncora se existir
     if (!loading && post && typeof window !== "undefined") {
       const hash = window.location.hash;
       if (hash) {
@@ -464,7 +463,7 @@ export default function PostPage() {
                   className="bg-zinc-800 p-4 rounded-lg"
                 >
                   <div className="flex justify-between">
-                    <div className="flex gap-3 items-center">
+                    <div className="flex gap-3 items-start">
                       <Link href={`/profile/${comment.author?.id || ""}`} className="flex items-center gap-2 cursor-pointer group">
                         <div className="relative w-[30px] h-[30px] rounded-full overflow-hidden border border-zinc-700 bg-zinc-800 shrink-0">
                           <Image
@@ -478,26 +477,30 @@ export default function PostPage() {
                         </div>
                         <div>
                           <p className="text-sm font-semibold text-zinc-100 group-hover:underline">{comment.author?.name || "Desconhecido"}</p>
-                          {editingComment?.id === comment.id ? (
-                            <>
-                              <Textarea
-                                className="text-sm"
-                                value={editingComment.content}
-                                onChange={(e) => setEditingComment({ ...editingComment, content: e.target.value })}
-                              />
-                              <Button
-                                type="button"
-                                size="sm"
-                                className="mt-1"
-                                onClick={() => saveEditedComment(comment.id, editingComment.content)}>
-                                Salvar
-                              </Button>
-                            </>
-                          ) : (
-                            <p className="text-sm text-zinc-300">{comment.content}</p>
-                          )}
                         </div>
                       </Link>
+
+                      {/* Comment text / edit area moved outside the Link to avoid accidental navigation when clicking interactive controls */}
+                      <div className="ml-3 flex-1">
+                        {editingComment?.id === comment.id ? (
+                          <>
+                            <Textarea
+                              className="text-sm"
+                              value={editingComment.content}
+                              onChange={(e) => setEditingComment({ ...editingComment, content: e.target.value })}
+                            />
+                            <Button
+                              type="button"
+                              size="sm"
+                              className="mt-1"
+                              onClick={() => saveEditedComment(comment.id, editingComment.content)}>
+                              Salvar
+                            </Button>
+                          </>
+                        ) : (
+                          <p className="text-sm text-zinc-300">{comment.content}</p>
+                        )}
+                      </div>
                     </div>
                     {canEditOrDeleteComment(comment) && (
                       <div className="relative" ref={el => commentMenuRef.current[comment.id] = el}>
@@ -546,14 +549,14 @@ export default function PostPage() {
                   <div className="flex gap-4 mt-2 text-xs text-zinc-400">
                     <button
                       type="button"
-                      onClick={() => toggleLikeComment(comment.id)}
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleLikeComment(comment.id); }}
                       className="flex items-center gap-1 text-sm hover:opacity-80 cursor-pointer">
                       <Heart className={comment.commentLikes?.some(l => l.userId === loggedUser?.id) ? "text-pink-500" : ""} size={14} />
                       <span>{comment.commentLikes?.length || 0}</span>
                     </button>
                     <button
                       type="button"
-                      onClick={() => toggleReplyInput(comment.id)}
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleReplyInput(comment.id); }}
                       className="flex items-center gap-1 text-sm hover:underline cursor-pointer">
                       <MessageCircle size={14} />
                       <span>Responder</span>
@@ -567,6 +570,12 @@ export default function PostPage() {
                         onChange={(e) =>
                           setReplyInputs({ ...replyInputs, [comment.id]: e.target.value })
                         }
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && !e.shiftKey) {
+                            e.preventDefault();
+                            handleReply(comment.id, replyInputs[comment.id]);
+                          }
+                        }}
                         placeholder="Responder..."
                       />
                       <Button
@@ -610,6 +619,12 @@ export default function PostPage() {
                   value={commentInputs[post.id] || ""}
                   onChange={(e) =>
                     setCommentInputs({ ...commentInputs, [post.id]: e.target.value })}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      addComment();
+                    }
+                  }}
                   placeholder="Escreva um comentário..."
                 />
                 <Button

@@ -65,6 +65,12 @@ export default function CommentsList({ postId, currentUserId, loggedUser }) {
             placeholder="Escreva um comentário..."
             value={newComment}
             onChange={e => setNewComment(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                handleAddComment();
+              }
+            }}
           />
           <button type="button" onClick={handleAddComment}>Comentar</button>
         </div>
@@ -80,6 +86,12 @@ export default function CommentsList({ postId, currentUserId, loggedUser }) {
           placeholder="Escreva um comentário..."
           value={newComment}
           onChange={e => setNewComment(e.target.value)}
+          onKeyDown={e => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              handleAddComment();
+            }
+          }}
         />
         <button type="button" onClick={handleAddComment}>Comentar</button>
       </div>
@@ -87,45 +99,53 @@ export default function CommentsList({ postId, currentUserId, loggedUser }) {
         {comments.map(c => (
           <li key={c.id} style={{ marginBottom: 16 }}>
             <div className="flex items-center gap-2 mb-1">
-              <div
-                className="relative shrink-0"
-                style={{
-                  width: "36px",
-                  height: "36px",
-                  minWidth: "36px",
-                  minHeight: "36px",
-                  borderRadius: "9999px",
-                  overflow: "hidden",
-                  border: "1px solid #3f3f46",
-                  boxShadow: "0 1px 4px 0 rgba(0,0,0,0.09)",
-                  background: "#222"
-                }}
-              >
-                <div className="relative w-[40px] h-[40px] rounded-full overflow-hidden shrink-0 border border-zinc-700 bg-zinc-800">
-                  <Image
-                    src={c.author?.image || "/default-avatar.png"}
-                    alt={c.author?.name || "Desconhecido"}
-                    fill
-                    sizes="40px"
-                    className="object-cover"
-                    priority
-                  />
+              <Link href={`/profile/${c.author?.id || ""}`} className="flex items-center gap-2 cursor-pointer">
+                <div
+                  className="relative shrink-0"
+                  style={{
+                    width: "36px",
+                    height: "36px",
+                    minWidth: "36px",
+                    minHeight: "36px",
+                    borderRadius: "9999px",
+                    overflow: "hidden",
+                    border: "1px solid #3f3f46",
+                    boxShadow: "0 1px 4px 0 rgba(0,0,0,0.09)",
+                    background: "#222"
+                  }}
+                >
+                  <div className="relative w-[40px] h-[40px] rounded-full overflow-hidden shrink-0 border border-zinc-700 bg-zinc-800">
+                    <Image
+                      src={c.author?.image || "/default-avatar.png"}
+                      alt={c.author?.name || "Desconhecido"}
+                      fill
+                      sizes="40px"
+                      className="object-cover"
+                      priority
+                    />
+                  </div>
                 </div>
-              </div>
-              <Link href={`/profile/${c.author?.id || ""}`}>
                 <strong>{c.author?.name || "Desconhecido"}</strong>
               </Link>
-              : {c.content}
+
+              <div style={{ marginLeft: 8, flex: 1 }}>
+                <span style={{ color: "#e5e7eb" }}>{c.content}</span>
+              </div>
+
               <button
                 type="button"
+                aria-label="Responder"
                 style={{ marginLeft: 8, color: "#3498db" }}
-                onClick={() =>
-                  setReplyInputs((ri) => ({ ...ri, [c.id]: ri[c.id] ? "" : "" }))
-                }
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setReplyInputs((ri) => ({ ...ri, [c.id]: ri[c.id] ? "" : "" }));
+                }}
               >
                 Responder
               </button>
             </div>
+
             {replyInputs[c.id] !== undefined && (
               <div style={{ marginTop: 4 }}>
                 <input
@@ -135,16 +155,28 @@ export default function CommentsList({ postId, currentUserId, loggedUser }) {
                   onChange={e =>
                     setReplyInputs(ri => ({ ...ri, [c.id]: e.target.value }))
                   }
+                  onKeyDown={e => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      handleReply(c.id);
+                    }
+                  }}
                 />
                 <button
                   type="button"
+                  aria-label="Enviar resposta"
                   style={{ marginLeft: 8, color: "#27ae60" }}
-                  onClick={() => handleReply(c.id)}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleReply(c.id);
+                  }}
                 >
                   Enviar
                 </button>
               </div>
             )}
+
             {c.replies && c.replies.map(reply => (
               <ReplyThread
                 key={reply.id}
