@@ -40,7 +40,6 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-[#1a4377] text-white">
       <main className="relative overflow-hidden" style={{ minHeight: "100vh" }}>
-        {/* BACKGROUND: Image.fill in a relative wrapper so fill works */}
         <div className="absolute inset-0 z-0">
           <div className="relative w-full h-full">
             <Image
@@ -56,9 +55,6 @@ export default function HomePage() {
               priority
             />
           </div>
-          {/* subtle color tint over the image (keeps BG visible but tinted) */}
-          <div className="absolute inset-0" style={{ backgroundColor: "rgba(10,20,35,0.45)" }} />
-          {/* soft vignette to focus center-left */}
           <div
             className="absolute inset-0 pointer-events-none"
             style={{
@@ -68,7 +64,6 @@ export default function HomePage() {
           />
         </div>
 
-        {/* CONTENT */}
         <div className="relative z-20 w-full max-w-7xl mx-auto px-8 py-20">
           {/* logo */}
           <div className="absolute top-6 left-6 z-30 flex items-center gap-3">
@@ -87,9 +82,7 @@ export default function HomePage() {
             </span>
           </div>
 
-          {/* layout: left column with headline, right column with carousel */}
           <div className="flex flex-col lg:flex-row items-start lg:items-center gap-12">
-            {/* left */}
             <div className="flex-1 max-w-2xl" style={{ paddingTop: "4vh" }}>
               <h1
                 className="font-extrabold text-white leading-tight"
@@ -137,7 +130,6 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* right: carousel card */}
             <div
               className="relative select-none"
               style={{
@@ -147,7 +139,6 @@ export default function HomePage() {
               onMouseEnter={() => setPaused(true)}
               onMouseLeave={() => setPaused(false)}
             >
-              {/* glow behind the card */}
               <div
                 aria-hidden
                 className="absolute -left-6 -top-6 w-[460px] h-[360px] rounded-3xl filter blur-3xl opacity-80"
@@ -158,7 +149,6 @@ export default function HomePage() {
                 }}
               />
 
-              {/* card */}
               <div
                 className="relative rounded-3xl overflow-hidden shadow-2xl"
                 style={{
@@ -189,7 +179,6 @@ export default function HomePage() {
                   </div>
                 ))}
 
-                {/* arrows - semi-transparent circles */}
                 <button
                   aria-label="Previous"
                   onClick={goPrev}
@@ -207,7 +196,6 @@ export default function HomePage() {
                   ›
                 </button>
 
-                {/* pager dots (bigger, with outline) */}
                 <div className="absolute left-1/2 -translate-x-1/2 bottom-5 z-40 flex gap-3">
                   {carouselImages.map((_, i) => (
                     <button
@@ -220,8 +208,6 @@ export default function HomePage() {
                   ))}
                 </div>
               </div>
-
-              {/* subtle bottom glow */}
               <div
                 aria-hidden
                 className="absolute left-6 -bottom-10 w-[360px] h-8 rounded-full filter blur-2xl opacity-70"
