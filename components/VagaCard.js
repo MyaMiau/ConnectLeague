@@ -30,7 +30,7 @@ export default function VagaCard({
   return (
     <div className="bg-zinc-900 rounded-xl shadow-lg p-6 flex flex-col gap-3 border border-zinc-800">
       <div className="flex items-center gap-4 mb-3">
-        <img
+        <Image
           src={
             vaga.organization?.logo ||
             vaga.organization?.image ||

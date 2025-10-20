@@ -49,9 +49,6 @@ export default function VagasPage() {
       });
   };
 
-  useEffect(() => {
-    fetchVagas();
-  }, [filtros]);
 
   const handleInput = e => setFiltros(f => ({ ...f, [e.target.name]: e.target.value, pagina: 1 }));
 

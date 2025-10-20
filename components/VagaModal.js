@@ -33,7 +33,7 @@ export default function VagaModal({
       <div>
         <h2 className="text-2xl font-bold mb-2">{vaga.title}</h2>
         <div className="flex items-center gap-3 mb-2">
-          <img
+          <Image
             src={
               organizacao.logo ||
               organizacao.image ||
