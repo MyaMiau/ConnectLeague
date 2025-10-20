@@ -13,7 +13,6 @@ export default async function handler(req, res) {
       where: { userId_postId: { userId, postId } }
     });
 
-    // Busca o post para pegar o authorId
     const post = await prisma.post.findUnique({
       where: { id: postId },
       select: { authorId: true },
@@ -31,7 +30,6 @@ export default async function handler(req, res) {
         data: { userId, postId }
       });
 
-      // Cria notificação para o dono do post, exceto se o próprio dono curtir
       if (post.authorId !== userId) {
         await prisma.notification.create({
           data: {

@@ -11,7 +11,6 @@ export default function ProfileImageUploader({ onUploaded }) {
     const reader = new FileReader();
     reader.onloadend = async () => {
       const base64 = reader.result;
-      // Use o nome original ou gere um nome único
       const filename = `${Date.now()}-${file.name}`;
 
       // Envia para a API
@@ -23,7 +22,7 @@ export default function ProfileImageUploader({ onUploaded }) {
 
       if (res.ok) {
         const { url } = await res.json();
-        onUploaded(url); // Passe a URL para o componente pai
+        onUploaded(url); 
       } else {
         alert("Falha ao fazer upload da imagem!");
       }

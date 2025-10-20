@@ -16,11 +16,9 @@ import ReplyThread from "@/components/ReplyThread";
 export default function PostPage() {
   const router = useRouter();
   const { id } = router.query;
-
   const [post, setPost] = useState(null);
   const [loading, setLoading] = useState(true);
   const [loggedUser, setLoggedUser] = useState(null);
-
   const [activeOptions, setActiveOptions] = useState(null);
   const [activeCommentOptions, setActiveCommentOptions] = useState(null);
   const [activeReplyMenu, setActiveReplyMenu] = useState(null);
@@ -54,8 +52,8 @@ export default function PostPage() {
     try {
       const res = await fetch(`/api/posts/${id}`);
       if (!res.ok) return;
-      const data = await res.json(); // agora vem { post }
-      setPost(data.post); // pega o post da chave "post"
+      const data = await res.json(); 
+      setPost(data.post); 
     } catch {
       setPost(null);
     }
@@ -64,7 +62,7 @@ export default function PostPage() {
 
   useEffect(() => {
     if (id) reloadPost();
-    // eslint-disable-next-line
+
   }, [id]);
 
   useEffect(() => {
@@ -480,7 +478,6 @@ export default function PostPage() {
                         </div>
                       </Link>
 
-                      {/* Comment text / edit area moved outside the Link to avoid accidental navigation when clicking interactive controls */}
                       <div className="ml-3 flex-1">
                         {editingComment?.id === comment.id ? (
                           <>

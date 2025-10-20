@@ -5,7 +5,6 @@ const prisma = new PrismaClient();
 export default async function handler(req, res) {
   if (req.method === 'GET') {
     try {
-      // Nunca retorne o password!
       const users = await prisma.users.findMany({
         select: {
           id: true,
@@ -38,7 +37,7 @@ export default async function handler(req, res) {
         },
       });
 
-      // Não envie o password de volta!
+
       const { password: _, ...userWithoutPassword } = newUser;
       res.status(201).json(userWithoutPassword);
     } catch (error) {
@@ -50,7 +49,7 @@ export default async function handler(req, res) {
       const { id, name, role, status, bio, elo, image } = req.body;
 
       const updatedUser = await prisma.users.update({
-        where: { id: Number(id) }, // <-- correção aqui!
+        where: { id: Number(id) }, 
         data: { name, role, status, bio, elo, image },
       });
 

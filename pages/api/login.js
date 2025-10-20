@@ -22,7 +22,6 @@ export default async function handler(req, res) {
       return res.status(401).json({ message: 'Senha incorreta' });
     }
 
-    // Inclui type (e role, opcional) no token e resposta
     const token = jwt.sign(
       { id: user.id, email: user.email, type: user.type, role: user.role || null },
       process.env.JWT_SECRET,

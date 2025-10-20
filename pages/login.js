@@ -44,12 +44,10 @@ export default function Login() {
     if (res.error) {
       setError("Erro ao fazer login. Verifique seu email e senha.");
     }
-    // Se sucesso, o useEffect faz o redirect
   };
 
   return (
     <div className="relative h-screen w-screen">
-      {/* Imagem de fundo */}
       <Image
         src="/login-bg.jpg"
         alt="Login background"
@@ -59,9 +57,7 @@ export default function Login() {
         priority
       />
 
-      {/* Camada escura + conteúdo */}
       <div className="absolute inset-0 bg-black/60 flex items-center justify-center px-4 md:px-16">
-        {/* Texto da esquerda */}
         <div className="hidden md:flex flex-col justify-center items-start text-white w-1/2 pr-8">
           <h1 className="text-4xl font-bold mb-4">Bem-vindo(a) de volta!</h1>
           <p className="text-lg text-white/80">

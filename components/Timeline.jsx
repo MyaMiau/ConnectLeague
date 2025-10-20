@@ -17,8 +17,6 @@ export default function Timeline() {
   const [user, setUser] = useState(null);
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  // Estados para controle da UI
   const [activeOptions, setActiveOptions] = useState(null);
   const [activeCommentOptions, setActiveCommentOptions] = useState(null);
   const [commentInputs, setCommentInputs] = useState({});
@@ -84,7 +82,6 @@ export default function Timeline() {
     loadPosts();
   };
 
-  // Comentários: adicionar inline (sem reload global)
   const addComment = async (postId) => {
     const text = commentInputs[postId];
     if (!text?.trim() || !user?.id) return;
@@ -134,12 +131,10 @@ export default function Timeline() {
     );
   };
 
-  // Respostas a comentários E replies aninhadas (inline)
   const toggleReplyInput = (commentOrReplyId) => {
     setReplyInputs((prev) => ({ ...prev, [commentOrReplyId]: prev[commentOrReplyId] ? "" : "" }));
   };
 
-  // parentReplyId pode ser null (reply para comment) ou um id (reply para reply)
   const handleReply = async (postId, commentId, text, parentReplyId = null) => {
     if (!text.trim() || !user?.id) return;
     const res = await fetch("/api/comments/reply", {
@@ -229,7 +224,7 @@ export default function Timeline() {
     await fetch(`/api/posts/${postId}/like`, { method: "POST" });
   };
 
-    // CURTIR/DESCURTIR COMENTÁRIO (inline)
+    // CURTIR/DESCURTIR COMENTÁRIO 
   const toggleLikeComment = async (commentId, postId) => {
     setPosts(posts =>
       posts.map(p => {

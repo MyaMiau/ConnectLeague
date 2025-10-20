@@ -2,7 +2,6 @@ import { Dialog } from "@headlessui/react";
 import { Button } from "@/components/ui/button";
 
 export default function DeleteConfirmationModal({ isOpen, onClose, onConfirm, itemType }) {
-  // Mensagem dinâmica para cada tipo
   let typeLabel = "item";
   if (itemType === "post") typeLabel = "post";
   else if (itemType === "comentário" || itemType === "comentario" || itemType === "comment") typeLabel = "comentário";
@@ -10,7 +9,6 @@ export default function DeleteConfirmationModal({ isOpen, onClose, onConfirm, it
 
   return (
     <Dialog open={isOpen} onClose={onClose} className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Fundo com blur real */}
       <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" aria-hidden="true" />
 
       <Dialog.Panel className="relative z-50 bg-zinc-900 rounded-2xl p-6 shadow-lg max-w-sm w-full border border-zinc-700">

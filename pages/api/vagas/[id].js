@@ -16,7 +16,7 @@ export default async function handler(req, res) {
       where: { id: vagaId },
       include: {
         organization: true,
-        applications: { include: { user: true } }, // lista de candidatos com user (player)
+        applications: { include: { user: true } }, 
         favorites: true,
       }
     });
@@ -24,7 +24,7 @@ export default async function handler(req, res) {
     return res.status(200).json({ vaga });
   }
 
-  // Somente organizações podem editar uma vaga (inclui fechar/reabrir/status e edição completa)
+  // Somente organizações podem editar uma vaga 
   if (req.method === "PUT") {
     if (!session || !["organizacao", "organization"].includes(session.user.type))
       return res.status(401).json({ error: "Não autenticado como organização." });
@@ -102,7 +102,6 @@ export default async function handler(req, res) {
     return res.status(201).json({ candidatura });
   }
 
-  // PATCH: Salvar/remover favoritos OU descandidatar
   if (req.method === "PATCH") {
     if (!session || !session.user) return res.status(401).json({ error: "Não autenticado." });
     const { action } = req.body;

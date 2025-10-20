@@ -167,8 +167,6 @@ function NotificationsPopover({ open, onClose, notifications = [], unreadCount, 
 export default function Header() {
   const router = useRouter();
   const { data: session } = useSession();
-
-  // Busca o perfil real do usuário logado
   const [profile, setProfile] = useState(null);
 
   useEffect(() => {
@@ -184,7 +182,6 @@ export default function Header() {
       }
     }
 
-    // Escuta evento customizado de alteração de perfil (disparado ao salvar a organização)
     function handleProfileUpdated() {
       fetchProfile();
     }
@@ -256,7 +253,6 @@ export default function Header() {
 
   return (
     <aside className="fixed left-0 top-0 h-screen w-56 bg-zinc-900 flex flex-col items-center py-8 shadow-lg z-50">
-      {/* Logo sempre em cima */}
       <Link href="/timeline" className="flex items-center mb-6">
         <Image
           src="/cl-logo-render.png"
@@ -269,7 +265,6 @@ export default function Header() {
         />
       </Link>
 
-      {/* Mini perfil do usuário logado (foto real e nome, hover roxo) */}
       {profile && (
         <Link
           href={getProfileUrl(profile)}

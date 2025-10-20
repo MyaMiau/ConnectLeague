@@ -14,11 +14,8 @@ export default function CreatePost({ onPost, user }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(""); 
 
-  // Helper para pegar o ID correto do usuário (player ou organização)
   function getAuthorId(user) {
-    // Adicione um log para depuração
     console.log("user recebido em CreatePost:", user);
-    // Verifica os campos mais comuns de id para diferentes tipos de usuário
     return (
       user?.id ||
       user?.orgId ||

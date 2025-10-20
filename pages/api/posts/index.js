@@ -46,8 +46,6 @@ export default async function handler(req, res) {
   if (req.method === "POST") {
     try {
       const { content, image, authorId } = req.body;
-
-      // Log para depuração
       console.log("Recebido para criar post:", { content, image, authorId });
 
       // Validação dos obrigatórios
@@ -70,7 +68,6 @@ export default async function handler(req, res) {
       res.status(201).json(post);
     } catch (err) {
       console.error("Erro ao criar post:", err);
-      // Erro Prisma detalhado
       res.status(500).json({ error: "Erro ao criar post", details: err.message });
     }
     return;

@@ -35,12 +35,9 @@ export default function ReplyThread({
   depth = 0,
 }) {
   const [showReplyInput, setShowReplyInput] = useState(false);
-
   const canEditOrDeleteReply = !!loggedUser?.id && loggedUser.id === getAuthorId(reply);
 
   if (!reply) return null;
-
-  // keep a small indent for nested replies (matches previous layout)
   const indentStyle = depth > 0 ? { marginLeft: depth * 12 } : {};
 
   return (
@@ -66,8 +63,6 @@ export default function ReplyThread({
               />
             </Link>
           </div>
-
-          {/* Main column: name on top, content below, footer below content */}
           <div style={{ minWidth: 0, flex: 1 }}>
             <div className="flex items-start justify-between">
               <div className="min-w-0">
@@ -77,8 +72,6 @@ export default function ReplyThread({
                   </span>
                 </Link>
               </div>
-
-              {/* Menu (3-pontos) */}
               <div className="ml-2">
                 {canEditOrDeleteReply && (
                   <button
@@ -96,8 +89,6 @@ export default function ReplyThread({
                 )}
               </div>
             </div>
-
-            {/* Content below the name (compact spacing to match original) */}
             <div className="mt-1">
               {editingReply && editingReply.id === reply.id ? (
                 <>
@@ -151,8 +142,6 @@ export default function ReplyThread({
                 </p>
               )}
             </div>
-
-            {/* Footer: timestamp + responder (compact) */}
             <div className="flex items-center gap-4 mt-2 text-xs text-zinc-400">
               <span className="min-w-[38px] text-[12px]">{reply?.createdAt ? formatTime(reply.createdAt) : "Agora"}</span>
               <button
@@ -169,8 +158,6 @@ export default function ReplyThread({
             </div>
           </div>
         </div>
-
-        {/* Dropdown actions (menu) - absolute so it doesn't affect layout */}
         {activeReplyMenu === reply.id && (
           <div
             className="absolute right-4 top-3 w-36 bg-zinc-800 border border-zinc-700 rounded shadow-md z-20"
@@ -208,7 +195,6 @@ export default function ReplyThread({
           </div>
         )}
 
-        {/* Reply input (inline, compact spacing) */}
         {showReplyInput && (
           <div className="flex gap-2 mt-2">
             <Input

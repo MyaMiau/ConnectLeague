@@ -1,5 +1,5 @@
 import { getServerSession } from "next-auth";
-import { authOptions } from "../auth/[...nextauth]"; // ajuste o caminho se necessário
+import { authOptions } from "../auth/[...nextauth]"; 
 import prisma from "../../../lib/prisma";
 
 export default async function handler(req, res) {

@@ -12,7 +12,6 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Busca o usuário (player ou organização)
     const user = await prisma.users.findUnique({
       where: { id: Number(id) },
       select: { 
@@ -33,7 +32,6 @@ export default async function handler(req, res) {
       return res.status(404).json({ error: "Usuário não encontrado" });
     }
 
-    // Busca os posts do usuário/organização, incluindo autor sempre atualizado
     const posts = await prisma.post.findMany({
       where: { authorId: Number(id) },
       orderBy: { createdAt: "desc" },
@@ -59,7 +57,6 @@ export default async function handler(req, res) {
       }
     });
 
-    // Sempre retorne um JSON válido (mesmo se não houver posts)
     return res.status(200).json({ user, posts: posts || [] });
   } catch (err) {
     console.error("Erro ao buscar perfil e posts:", err);

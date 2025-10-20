@@ -1,9 +1,8 @@
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import Header from "@/components/Header"; // ajuste o path se necessário
-import ProfileCard from "@/components/ProfileCard"; // ajuste o path se quiser usar o card completo
-import Image from "next/image";
+import Header from "@/components/Header"; 
+import ProfileCard from "@/components/ProfileCard"; 
 
 export default function VagaCandidatos() {
   const router = useRouter();

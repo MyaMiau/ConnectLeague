@@ -109,7 +109,6 @@ export default function VagaModalForm({
     onSubmit(data);
   }
 
-  // Classes dos botões de seleção: cor original, muda quando selecionado
   const selectableBtn = (selected) =>
     selected
       ? "bg-purple-800 text-white border-2 border-purple-400 rounded px-3 py-1 font-medium transition-colors"
@@ -171,8 +170,6 @@ export default function VagaModalForm({
           onChange={handleChange}
           className="w-full"
         />
-
-        {/* Multi-selects para usuário, posição, elo, tags */}
         <div>
           <label className="font-semibold text-zinc-300 block mb-1">Tipos de usuário (você pode escolher mais de um)</label>
           <div className="flex flex-wrap gap-2 justify-start">

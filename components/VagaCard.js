@@ -13,7 +13,7 @@ export default function VagaCard({
   onDeletar,
   onShowDetails,
 }) {
-  // Detecta tipo corretamente, aceitando tanto 'type' quanto 'tipo'
+
   const tipoUsuario = usuario?.type || usuario?.tipo;
   const idUsuario = usuario?.id;
 

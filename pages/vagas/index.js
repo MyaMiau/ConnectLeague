@@ -13,8 +13,6 @@ export default function VagasPage() {
   const [vagaSelecionada, setVagaSelecionada] = useState(null);
   const [showVagaModal, setShowVagaModal] = useState(false);
   const [loadingVagaModal, setLoadingVagaModal] = useState(false);
-
-  // Estados para edição de vaga
   const [editVaga, setEditVaga] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
 
@@ -53,7 +51,6 @@ export default function VagasPage() {
 
   useEffect(() => {
     fetchVagas();
-    // eslint-disable-next-line
   }, [filtros]);
 
   const handleInput = e => setFiltros(f => ({ ...f, [e.target.name]: e.target.value, pagina: 1 }));
@@ -189,7 +186,6 @@ export default function VagasPage() {
     }
   };
 
-  // Atualizado para usar PUT /api/vagas/:id (fecha ou reabre)
   const handleFechar = async vagaId => {
     const tipoUsuario = session?.user?.type || session?.user?.tipo;
     if (!session?.user || tipoUsuario !== "organization") {
@@ -217,7 +213,6 @@ export default function VagasPage() {
     }
   };
 
-  // Atualizado para usar DELETE /api/vagas/:id
   const handleDeletar = async vagaId => {
     const tipoUsuario = session?.user?.type || session?.user?.tipo;
     if (!session?.user || tipoUsuario !== "organization") {
@@ -256,7 +251,6 @@ export default function VagasPage() {
     }
   };
 
-  // Novo handler para editar vaga
   const handleEditar = vagaId => {
     const vaga = vagas.find(v => v.id === vagaId);
     setEditVaga(vaga);
@@ -295,7 +289,7 @@ export default function VagasPage() {
             </Button>
           </div>
         )}
-        <div className="mb-6">{/* ...filtros... */}</div>
+        <div className="mb-6"></div>
         {vagas.length === 0 ? (
           <p className="text-center text-zinc-400 mt-16">Nenhuma vaga encontrada.</p>
         ) : (
@@ -319,7 +313,7 @@ export default function VagasPage() {
             ))}
           </div>
         )}
-        {/* Paginação */}
+
         <div className="flex items-center justify-center mt-8 gap-6">
           <button
             onClick={() => setFiltros(f => ({ ...f, pagina: Math.max(1, f.pagina - 1) }))}
@@ -365,14 +359,14 @@ export default function VagasPage() {
           onEditar={vagaId => handleEditar(vagaId)}
         />
       )}
-      {/* Modal de criar vaga usando componente */}
+
       <VagaModalForm
         open={showVagaModal}
         onClose={() => setShowVagaModal(false)}
         onSubmit={handleSubmitVaga}
         loading={loadingVagaModal}
       />
-      {/* Modal de editar vaga usando o mesmo componente */}
+
       <VagaModalForm
         open={showEditModal}
         onClose={() => {

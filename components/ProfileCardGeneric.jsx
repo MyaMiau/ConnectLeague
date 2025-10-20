@@ -86,12 +86,11 @@ export default function ProfileCardGeneric({ user, showEdit = false, onUserUpdat
   };
   const profileTitle = typeMap[user.type] || "Perfil";
 
-  // VISUALIZAÇÃO
   if (!editMode) {
     return (
       <div className="w-full max-w-2xl bg-zinc-900 rounded-2xl shadow-xl mb-8 border border-zinc-800">
         <div className="flex gap-6 items-center px-8 py-8">
-          {/* Avatar/logo grande */}
+          {/* Avatar */}
           <div className="shrink-0">
             <Image
               src={displayImage}

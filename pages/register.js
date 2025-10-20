@@ -35,13 +35,12 @@ export default function Register() {
   };
 
   useEffect(() => {
-    // O registro não depende mais de localStorage, pode remover este bloco se quiser
-    // Mantém só se quiser impedir usuário já logado de acessar a página de registro
+
   }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError(""); // Limpa o erro anterior
+    setError(""); 
 
     if (formData.password !== formData.confirmPassword) {
       setError("As senhas não coincidem.");

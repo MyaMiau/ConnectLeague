@@ -4,7 +4,7 @@ import path from "path";
 export const config = {
   api: {
     bodyParser: {
-      sizeLimit: "2mb", // Ajuste conforme necessário
+      sizeLimit: "2mb", 
     },
   },
 };
@@ -24,7 +24,7 @@ export default async function handler(req, res) {
   const base64Data = base64.replace(/^data:image\/\w+;base64,/, "");
   const dataBuffer = Buffer.from(base64Data, "base64");
 
-  // Caminho para salvar localmente (exemplo: /public/uploads/)
+  // Caminho para salvar localmente 
   const uploadsDir = path.join(process.cwd(), "public", "uploads");
   if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
 

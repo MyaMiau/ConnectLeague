@@ -24,7 +24,7 @@ export default function VagasSalvasPage() {
     fetchSalvos();
   }, [session]);
 
-  // Remove vaga dos salvos e já remove da lista local e do modal se for a mesma
+  // Remove vaga dos salvos e já remove da lista local e do modal 
   const handleRemoverSalvo = async vagaId => {
     const res = await fetch(`/api/vagas/${vagaId}`, {
       method: "PATCH",
@@ -136,7 +136,6 @@ export default function VagasSalvasPage() {
     }
   };
 
-  // ---- HANDLERS DE GERENCIAMENTO (EDITAR/FECHAR/DELETAR) ----
   const handleFechar = async vagaId => {
     if (!session?.user) return;
     const vaga = vagas.find(v => v.id === vagaId);
@@ -162,11 +161,8 @@ export default function VagasSalvasPage() {
     setConfirmModal({ open: true, message: "Vaga deletada!" });
   };
 
-  // Para edição, você pode abrir um modal de edição igual ao index.js se quiser.
-  // Aqui, só um exemplo de placeholder:
   const handleEditar = vagaId => {
     setConfirmModal({ open: true, message: "Função de editar vaga ainda não implementada nesta página!" });
-    // Ou pode abrir um modal de edição como no index.js
   };
 
   if (!session) {
@@ -224,7 +220,6 @@ export default function VagasSalvasPage() {
           </div>
         </div>
       )}
-      {/* Modal de detalhes usando VagaDetalhesModal */}
       {detalheVaga && (
         <VagaDetalhesModal
           vaga={detalheVaga}

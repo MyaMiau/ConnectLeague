@@ -26,7 +26,6 @@ export default function OrganizationProfile() {
   const [showMenu, setShowMenu] = useState(false);
   const [showPostMenu, setShowPostMenu] = useState(null);
   const [localOrg, setLocalOrg] = useState(null);
-
   const [loggedUser, setLoggedUser] = useState(null);
   const [activeOptions, setActiveOptions] = useState(null);
   const [activeCommentOptions, setActiveCommentOptions] = useState(null);
@@ -38,7 +37,6 @@ export default function OrganizationProfile() {
   const [editingPost, setEditingPost] = useState(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState({ type: "", postId: null, commentId: null, replyId: null });
-
   const commentMenuRef = useRef({});
   const postMenuRef = useRef({});
 
@@ -171,9 +169,8 @@ const canEditOrDeleteComment = (comment) =>
     }
   }
 
-  // Editar vaga: FECHA o modal de detalhes antes de abrir o modal de edição
   function handleOpenEditVagaModal(vaga) {
-    setVagaSelecionada(null); // Fecha o modal de detalhes antes!
+    setVagaSelecionada(null); 
     setEditVaga(vaga);
     setShowEditVagaModal(true);
   }
@@ -711,14 +708,12 @@ async function handleDeletarVagaConfirmed() {
           </div>
         )}
 
-        {/* Modal de criar vaga usando componente */}
         <VagaModalForm
           open={showVagaModal}
           onClose={() => setShowVagaModal(false)}
           onSubmit={handleSubmitVaga}
         />
 
-        {/* Modal de editar vaga usando componente */}
         <VagaModalForm
           open={showEditVagaModal}
           onClose={() => {
@@ -819,11 +814,10 @@ async function handleDeletarVagaConfirmed() {
             onClose={() => setVagaSelecionada(null)}
             onFechar={handleFecharVaga}
             onEditar={vaga => handleOpenEditVagaModal(vaga)}
-            onDeletar={vagaId => confirmDeleteVaga(vagaId)} // CERTO!
+            onDeletar={vagaId => confirmDeleteVaga(vagaId)} 
           />
         )}
 
-        {/* POSTS DA ORGANIZAÇÃO - IGUAL AO PROFILE DO PLAYER */}
         <div className="w-full max-w-2xl space-y-6 mt-8">
           <h2 className="text-xl font-bold mb-4">Posts</h2>
           {posts.length === 0 && (

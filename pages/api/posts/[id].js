@@ -54,7 +54,6 @@ export default async function handler(req, res) {
         data: { content, image },
       });
 
-      // Busca o post atualizado com o autor atualizado!
       const post = await prisma.Post.findUnique({
         where: { id: postId },
         include: {

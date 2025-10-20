@@ -35,7 +35,7 @@ export default async function handler(req, res) {
     } catch (err) {
       console.error("Erro ao editar comentário:", err);
       if (
-        err.code === "P2025" || // Prisma: record not found
+        err.code === "P2025" || 
         err.message?.includes("Record to update not found")
       ) {
         return res.status(404).json({ error: "Comentário não encontrado." });
@@ -51,7 +51,7 @@ export default async function handler(req, res) {
     } catch (err) {
       console.error("Erro ao deletar comentário:", err);
       if (
-        err.code === "P2025" || // Prisma: record not found
+        err.code === "P2025" || 
         err.message?.includes("Record to delete does not exist")
       ) {
         return res.status(404).json({ error: "Comentário não encontrado para deletar." });

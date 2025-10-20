@@ -80,7 +80,6 @@ export default function PublicProfilePage() {
 
   useEffect(() => {
     if (id) reloadPosts();
-    // eslint-disable-next-line
   }, [id]);
 
   useEffect(() => {
@@ -372,7 +371,7 @@ export default function PublicProfilePage() {
     }
   };
 
-  // DEBUG: Veja no console qual tipo está vindo
+
   useEffect(() => {
     if (user) {
       // Mostra o tipo e o objeto user

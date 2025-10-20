@@ -31,8 +31,7 @@ export default async function handler(req, res) {
           }
         }
       });
-
-      // Notificação: ao comentar num post, notifica o autor do post (exceto se for o próprio autor)
+s
       const post = await prisma.post.findUnique({ where: { id: Number(postId) } });
       if (post && post.authorId !== Number(authorId)) {
         await prisma.notification.create({

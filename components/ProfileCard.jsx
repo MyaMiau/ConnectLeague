@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
-// Todas as imagens estão em /public
 const ROLES = [
   { name: "Top", icon: "/Top.png" },
   { name: "Jungle", icon: "/Jg.png" },
@@ -30,17 +29,17 @@ export default function ProfileCard({ user, onUserUpdate, showEdit = true }) {
   const [editMode, setEditMode] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
 
-  // Evita erro de user nulo/undefined
+
   const [localUser, setLocalUser] = useState(() => ({
     ...(user || {}),
-    id: user?.id, // Garante que o ID esteja presente logo no início
+    id: user?.id, 
     status: user?.status || "Free Agent",
   }));
 
   useEffect(() => {
     setLocalUser(prev => ({
       ...(user || {}),
-      id: user?.id, // Garante que o campo id esteja presente!
+      id: user?.id, 
       status: user?.status || "Free Agent",
     }));
   }, [user]);
@@ -83,7 +82,6 @@ export default function ProfileCard({ user, onUserUpdate, showEdit = true }) {
 
   async function handleSave() {
     try {
-      // DEBUG: Mostra o objeto enviado ao backend
       console.log('Enviando para o backend:', localUser);
       const response = await fetch('/api/users', {
         method: 'PUT',
@@ -222,7 +220,7 @@ export default function ProfileCard({ user, onUserUpdate, showEdit = true }) {
             )}
           </div>
 
-          {/* Elo (imagem em destaque, abaixo do status) */}
+          {/* Elo */}
           <div className="flex flex-col items-start mt-2">
             {!editMode && selectedElo && (
               <div className="flex items-center gap-2 mt-1">
