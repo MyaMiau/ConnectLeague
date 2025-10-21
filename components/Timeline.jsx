@@ -11,7 +11,7 @@ import { MoreHorizontal, Heart, MessageCircle, Share2 } from "lucide-react";
 import DeleteConfirmationModal from "@/components/DeleteConfirmationModal";
 import EditPostModal from "@/components/EditPostModal";
 import CreatePost from "@/components/CreatePost";
-import ReplyThread from "@/components/ReplyThread"; 
+import ReplyThread from "@/components/ReplyThread";
 
 export default function Timeline() {
   const [user, setUser] = useState(null);
@@ -29,28 +29,50 @@ export default function Timeline() {
   const [activeReplyMenu, setActiveReplyMenu] = useState(null);
   const loggedUser = user;
 
-  // Busca usuário logado
+  // Busca usuário logado (normaliza resposta)
   useEffect(() => {
     async function fetchUser() {
       try {
         const res = await fetch("/api/users/me");
-        if (!res.ok) return;
+        if (!res.ok) {
+          setUser(null);
+          return;
+        }
         const data = await res.json();
-        setUser(data);
+        const userObj = data?.user || data;
+        setUser(userObj);
       } catch (err) {
+        console.error("fetchUser error:", err);
         setUser(null);
       }
     }
     fetchUser();
   }, []);
 
-  // Carrega os posts da API
+  // Carrega os posts da API 
   const loadPosts = async () => {
     setLoading(true);
-    const res = await fetch("/api/posts");
-    const data = await res.json();
-    setPosts(data);
-    setLoading(false);
+    try {
+      const res = await fetch("/api/posts");
+      if (!res.ok) {
+        console.error("/api/posts responded with", res.status);
+        setPosts([]);
+        return;
+      }
+      const data = await res.json();
+      let postsArray = [];
+      if (Array.isArray(data)) postsArray = data;
+      else if (Array.isArray(data.posts)) postsArray = data.posts;
+      else if (Array.isArray(data.data)) postsArray = data.data;
+      else postsArray = [];
+      console.log("loadPosts data:", data);
+      setPosts(postsArray);
+    } catch (err) {
+      console.error("Erro ao carregar posts:", err);
+      setPosts([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -86,24 +108,34 @@ export default function Timeline() {
     const text = commentInputs[postId];
     if (!text?.trim() || !user?.id) return;
 
-    const res = await fetch("/api/comments", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        content: text,
-        authorId: user.id,
-        postId,
-      }),
-    });
-    const comment = await res.json();
-    setPosts(posts =>
-      posts.map(post =>
-        post.id === postId
-          ? { ...post, comments: [...(post.comments || []), { ...comment, replies: [], commentLikes: [] }] }
-          : post
-      )
-    );
-    setCommentInputs({ ...commentInputs, [postId]: "" });
+    try {
+      const res = await fetch("/api/comments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          content: text,
+          authorId: user.id,
+          postId,
+        }),
+      });
+      if (!res.ok) {
+        console.error("/api/comments POST failed", res.status);
+        return;
+      }
+      const comment = await res.json();
+      setPosts((prev) =>
+        Array.isArray(prev)
+          ? prev.map((post) =>
+              post.id === postId
+                ? { ...post, comments: [...(post.comments || []), { ...comment, replies: [], commentLikes: [] }] }
+                : post
+            )
+          : prev
+      );
+      setCommentInputs({ ...commentInputs, [postId]: "" });
+    } catch (err) {
+      console.error("addComment error:", err);
+    }
   };
 
   // Edição de comentário
@@ -122,12 +154,12 @@ export default function Timeline() {
   // Deletar comentário
   const handleDeleteComment = async (postId, commentId) => {
     await fetch(`/api/comments/${commentId}`, { method: "DELETE" });
-    setPosts(posts =>
-      posts.map(post =>
-        post.id === postId
-          ? { ...post, comments: post.comments.filter(c => c.id !== commentId) }
-          : post
-      )
+    setPosts((prev) =>
+      Array.isArray(prev)
+        ? prev.map((post) =>
+            post.id === postId ? { ...post, comments: (post.comments || []).filter((c) => c.id !== commentId) } : post
+          )
+        : prev
     );
   };
 
@@ -136,40 +168,42 @@ export default function Timeline() {
   };
 
   const handleReply = async (postId, commentId, text, parentReplyId = null) => {
-    if (!text.trim() || !user?.id) return;
-    const res = await fetch("/api/comments/reply", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        content: text,
-        authorId: user.id,
-        postId,
-        commentId,
-        parentReplyId,
-      }),
-    });
-    const reply = await res.json();
-    setPosts(posts =>
-      posts.map(post =>
-        post.id === postId
-          ? {
-              ...post,
-              comments: post.comments.map(comment =>
-                comment.id === commentId
-                  ? {
-                      ...comment,
-                      replies: [
-                        ...(comment.replies || []),
-                        reply
-                      ]
-                    }
-                  : comment
-              )
-            }
-          : post
-      )
-    );
-    setReplyInputs({ ...replyInputs, [parentReplyId || commentId]: "" });
+    if (!text?.trim() || !user?.id) return;
+    try {
+      const res = await fetch("/api/comments/reply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          content: text,
+          authorId: user.id,
+          postId,
+          commentId,
+          parentReplyId,
+        }),
+      });
+      if (!res.ok) {
+        console.error("/api/comments/reply POST failed", res.status);
+        return;
+      }
+      const reply = await res.json();
+      setPosts((prev) =>
+        Array.isArray(prev)
+          ? prev.map((post) =>
+              post.id === postId
+                ? {
+                    ...post,
+                    comments: (post.comments || []).map((comment) =>
+                      comment.id === commentId ? { ...comment, replies: [...(comment.replies || []), reply] } : comment
+                    ),
+                  }
+                : post
+            )
+          : prev
+      );
+      setReplyInputs((prev) => ({ ...prev, [parentReplyId || commentId]: "" }));
+    } catch (err) {
+      console.error("handleReply error:", err);
+    }
   };
 
   // Edição de resposta
@@ -188,64 +222,70 @@ export default function Timeline() {
   // Deletar resposta
   const handleDeleteReply = async (postId, commentId, replyId) => {
     await fetch(`/api/comments/reply/${replyId}`, { method: "DELETE" });
-    setPosts(posts =>
-      posts.map(post =>
-        post.id === postId
-          ? {
-              ...post,
-              comments: post.comments.map(comment =>
-                comment.id === commentId
-                  ? {
-                      ...comment,
-                      replies: comment.replies.filter(r => r.id !== replyId)
-                    }
-                  : comment
-              )
-            }
-          : post
-      )
+    setPosts((prev) =>
+      Array.isArray(prev)
+        ? prev.map((post) =>
+            post.id === postId
+              ? {
+                  ...post,
+                  comments: (post.comments || []).map((comment) =>
+                    comment.id === commentId ? { ...comment, replies: (comment.replies || []).filter((r) => r.id !== replyId) } : comment
+                  ),
+                }
+              : post
+          )
+        : prev
     );
   };
 
   // CURTIR/DESCURTIR POST
   const toggleLikePost = async (postId) => {
-    const post = posts.find(p => p.id === postId);
-    const likedByUser = (post.postLikes || []).some(like => like.userId === user.id);
-    setPosts(posts =>
-      posts.map(p => {
-        if (p.id !== postId) return p;
-        if (likedByUser) {
-          return { ...p, postLikes: (p.postLikes || []).filter(l => l.userId !== user.id) }
-        } else {
-          return { ...p, postLikes: [ ...(p.postLikes || []), { userId: user.id, postId }] }
-        }
-      })
+    setPosts((prev) =>
+      Array.isArray(prev)
+        ? prev.map((p) => {
+            if (p.id !== postId) return p;
+            const likedByUser = (p.postLikes || []).some((like) => like.userId === user?.id);
+            if (likedByUser) {
+              return { ...p, postLikes: (p.postLikes || []).filter((l) => l.userId !== user?.id) };
+            } else {
+              return { ...p, postLikes: [...(p.postLikes || []), { userId: user?.id, postId }] };
+            }
+          })
+        : prev
     );
     await fetch(`/api/posts/${postId}/like`, { method: "POST" });
   };
 
-    // CURTIR/DESCURTIR COMENTÁRIO 
+  // CURTIR/DESCURTIR COMENTÁRIO 
   const toggleLikeComment = async (commentId, postId) => {
-    setPosts(posts =>
-      posts.map(p => {
-        if (p.id !== postId) return p;
-        return {
-          ...p,
-          comments: p.comments.map(c => {
-            if (c.id !== commentId) return c;
-            const likedByUser = (c.commentLikes || []).some(like => like.userId === user.id);
-            if (likedByUser) {
-              return { ...c, commentLikes: (c.commentLikes || []).filter(l => l.userId !== user.id) }
-            } else {
-              return { ...c, commentLikes: [ ...(c.commentLikes || []), { userId: user.id, commentId }] }
-            }
+    setPosts((prev) =>
+      Array.isArray(prev)
+        ? prev.map((p) => {
+            if (p.id !== postId) return p;
+            return {
+              ...p,
+              comments: (p.comments || []).map((c) => {
+                if (c.id !== commentId) return c;
+                const likedByUser = (c.commentLikes || []).some((like) => like.userId === user?.id);
+                if (likedByUser) {
+                  return { ...c, commentLikes: (c.commentLikes || []).filter((l) => l.userId !== user?.id) };
+                } else {
+                  return { ...c, commentLikes: [...(c.commentLikes || []), { userId: user?.id, commentId }] };
+                }
+              }),
+            };
           })
-        }
-      })
+        : prev
     );
     await fetch(`/api/comments/${commentId}/like`, { method: "POST" });
-    const res = await fetch(`/api/comments/${commentId}`);
-    const updatedComment = await res.json();
+    try {
+      const res = await fetch(`/api/comments/${commentId}`);
+      if (res.ok) {
+        const updatedComment = await res.json();
+      }
+    } catch (err) {
+      console.error("toggleLikeComment fetch updated comment error:", err);
+    }
   };
 
   // Modal de exclusão
@@ -265,22 +305,22 @@ export default function Timeline() {
     setIsDeleteModalOpen(false);
   };
 
-    const canEditOrDeleteComment = (comment) =>
+  const canEditOrDeleteComment = (comment) =>
     String(user?.id) === String(comment.authorId) ||
     String(user?.id) === String(comment.author?.id);
 
-    const canEditOrDeletePost = (post) =>
+  const canEditOrDeletePost = (post) =>
     String(user?.id) === String(post.authorId) ||
     String(user?.id) === String(post.author?.id);
 
   // Renderização
- return (
+  return (
     <div className="w-full flex flex-col items-center">
       <CreatePost onPost={handleNewPost} user={user} />
       <div className="w-full max-w-2xl space-y-6">
         {loading ? (
           <p className="text-center text-zinc-400">Carregando posts...</p>
-        ) : (
+        ) : Array.isArray(posts) && posts.length > 0 ? (
           posts.map((post) => (
             <Card key={post.id} className="bg-zinc-900 rounded-2xl">
               <CardContent className="p-6 space-y-4 relative">
@@ -306,11 +346,7 @@ export default function Timeline() {
                         </p>
                         <p className="text-xs text-zinc-400">
                           {post.createdAt
-                            ? format(
-                                new Date(post.createdAt),
-                                "d 'de' MMMM 'às' HH:mm",
-                                { locale: ptBR }
-                              )
+                            ? format(new Date(post.createdAt), "d 'de' MMMM 'às' HH:mm", { locale: ptBR })
                             : ""}
                         </p>
                       </div>
@@ -320,9 +356,7 @@ export default function Timeline() {
                     <div className="relative">
                       <button
                         type="button"
-                        onClick={() =>
-                          setActiveOptions(post.id === activeOptions ? null : post.id)
-                        }
+                        onClick={() => setActiveOptions(post.id === activeOptions ? null : post.id)}
                       >
                         <MoreHorizontal className="text-zinc-400 hover:text-white cursor-pointer" />
                       </button>
@@ -353,17 +387,9 @@ export default function Timeline() {
                   onSave={saveEditedPost}
                   post={editingPost}
                 />
-                {(!editingPost || editingPost.id !== post.id) && (
-                  <p className="whitespace-pre-line">{post.content}</p>
-                )}
+                {(!editingPost || editingPost.id !== post.id) && <p className="whitespace-pre-line">{post.content}</p>}
                 {post.image && (
-                  <Image
-                    src={post.image}
-                    alt="Imagem do post"
-                    width={800}
-                    height={400}
-                    className="rounded-xl object-cover"
-                  />
+                  <Image src={post.image} alt="Imagem do post" width={800} height={400} className="rounded-xl object-cover" />
                 )}
                 <div className="flex gap-6 pt-2 border-t border-zinc-800 mt-2 text-sm text-zinc-400 ">
                   <button
@@ -371,14 +397,7 @@ export default function Timeline() {
                     onClick={() => toggleLikePost(post.id)}
                     className="flex items-center gap-1 text-sm hover:opacity-80 cursor-pointer"
                   >
-                    <Heart
-                      className={
-                        post.postLikes?.some((l) => l.userId === user?.id)
-                          ? "text-pink-500"
-                          : ""
-                      }
-                      size={18}
-                    />
+                    <Heart className={post.postLikes?.some((l) => l.userId === user?.id) ? "text-pink-500" : ""} size={18} />
                     <span>{post.postLikes?.length || 0}</span>
                   </button>
                   <button
@@ -401,8 +420,9 @@ export default function Timeline() {
                     <Share2 size={18} />
                   </button>
                 </div>
+
                 <div className="mt-4 space-y-4">
-                  {post.comments?.map((comment) => (
+                  {(post.comments || []).map((comment) => (
                     <div key={comment.id} className="bg-zinc-800 p-4 rounded-lg">
                       <div className="flex justify-between">
                         <div className="flex gap-3 items-center">
@@ -440,13 +460,7 @@ export default function Timeline() {
                                     type="button"
                                     size="sm"
                                     className="mt-1"
-                                    onClick={() =>
-                                      saveEditedComment(
-                                        post.id,
-                                        comment.id,
-                                        editingComment.content
-                                      )
-                                    }
+                                    onClick={() => saveEditedComment(post.id, comment.id, editingComment.content)}
                                   >
                                     Salvar
                                   </Button>
@@ -462,11 +476,7 @@ export default function Timeline() {
                             <button
                               type="button"
                               onClick={() =>
-                                setActiveCommentOptions(
-                                  activeCommentOptions === comment.id
-                                    ? null
-                                    : comment.id
-                                )
+                                setActiveCommentOptions(activeCommentOptions === comment.id ? null : comment.id)
                               }
                               className="flex items-center gap-1 text-sm hover:opacity-80 cursor-pointer"
                             >
@@ -499,6 +509,7 @@ export default function Timeline() {
                           </div>
                         )}
                       </div>
+
                       <div className="flex gap-4 mt-2 text-xs text-zinc-400">
                         <button
                           type="button"
@@ -506,13 +517,7 @@ export default function Timeline() {
                           className="flex items-center gap-1 text-sm hover:opacity-80 cursor-pointer"
                         >
                           <Heart
-                            className={
-                              comment.commentLikes?.some(
-                                (l) => l.userId === user?.id
-                              )
-                                ? "text-pink-500"
-                                : ""
-                            }
+                            className={comment.commentLikes?.some((l) => l.userId === user?.id) ? "text-pink-500" : ""}
                             size={14}
                           />
                           <span>{comment.commentLikes?.length || 0}</span>
@@ -526,31 +531,27 @@ export default function Timeline() {
                           <span>Responder</span>
                         </button>
                       </div>
+
                       {replyInputs[comment.id] !== undefined && (
                         <div className="mt-2 flex gap-2">
                           <Input
                             className="h-10"
                             value={replyInputs[comment.id]}
                             onChange={(e) =>
-                              setReplyInputs({
-                                ...replyInputs,
+                              setReplyInputs((prev) => ({
+                                ...prev,
                                 [comment.id]: e.target.value,
-                              })
+                              }))
                             }
                             placeholder="Responder..."
                           />
-                          <Button
-                            type="button"
-                            className="h-10 py-0 px-4"
-                            onClick={() =>
-                              handleReply(post.id, comment.id, replyInputs[comment.id])
-                            }
-                          >
+                          <Button type="button" className="h-10 py-0 px-4" onClick={() => handleReply(post.id, comment.id, replyInputs[comment.id])}>
                             Enviar
                           </Button>
                         </div>
                       )}
-                      {comment.replies?.length > 0 && (
+
+                      {(comment.replies || []).length > 0 && (
                         <div className="ml-10 mt-2 space-y-2">
                           {comment.replies.map((reply) => (
                             <ReplyThread
@@ -581,18 +582,14 @@ export default function Timeline() {
                         className="h-10"
                         value={commentInputs[post.id] || ""}
                         onChange={(e) =>
-                          setCommentInputs({
-                            ...commentInputs,
+                          setCommentInputs((prev) => ({
+                            ...prev,
                             [post.id]: e.target.value,
-                          })
+                          }))
                         }
                         placeholder="Escreva um comentário..."
                       />
-                      <Button
-                        type="button"
-                        className="h-10 py-0 px-4"
-                        onClick={() => addComment(post.id)}
-                      >
+                      <Button type="button" className="h-10 py-0 px-4" onClick={() => addComment(post.id)}>
                         Enviar
                       </Button>
                     </div>
@@ -601,6 +598,8 @@ export default function Timeline() {
               </CardContent>
             </Card>
           ))
+        ) : (
+          <p className="text-center text-zinc-400">Nenhum post encontrado.</p>
         )}
       </div>
       <DeleteConfirmationModal

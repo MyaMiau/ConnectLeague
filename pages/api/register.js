@@ -12,8 +12,8 @@ export default async function handler(req, res) {
     name,
     email,
     password,
-    type,        // novo campo obrigatório (player, organization, coach, etc)
-    role,        // função específica do jogador (opcional)
+    type,        
+    role,        
     birthDate,
     bio,
     image,
