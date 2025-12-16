@@ -67,39 +67,57 @@ export default async function handler(req, res) {
       return res.status(401).json({ error: "Somente jogadores podem se candidatar." });
     }
 
-    // Não permite candidatura em vaga fechada
-    const vaga = await prisma.vacancies.findUnique({ where: { id: vagaId } });
-    if (vaga?.status !== "Aberta") {
-      return res.status(403).json({ error: "Vaga fechada. Não é possível se candidatar." });
-    }
+    try {
+      // Transação para garantir que o status não mude entre a checagem e a criação
+      const result = await prisma.$transaction(async (tx) => {
+        const vagaAtual = await tx.vacancies.findUnique({ where: { id: vagaId } });
 
-    const jaCandidatado = await prisma.applications.findFirst({
-      where: { vacancy_id: vagaId, user_id: Number(session.user.id) }
-    });
-    if (jaCandidatado) return res.status(400).json({ error: "Você já se candidatou." });
+        if (!vagaAtual) {
+          return { error: "Vaga não encontrada", status: 404 };
+        }
 
-    const candidatura = await prisma.applications.create({
-      data: { vacancy_id: vagaId, user_id: Number(session.user.id) }
-    });
+        if (vagaAtual.status !== "Aberta") {
+          return { error: "Vaga fechada. Não é possível se candidatar.", status: 403 };
+        }
 
-    // Cria notificação para a organização
-    if (vaga && vaga.organization_id) {
-      await prisma.notification.create({
-        data: {
-          type: "candidatura",
-          userId: vaga.organization_id, // org recebe notificação
-          senderId: Number(session.user.id), // quem se candidatou
-          postId: null,
-          commentId: null,
-          read: false,
-          createdAt: new Date(),
-          message: `${session.user.name} se candidatou à vaga ${vaga.title}`,
-          link: `/vagas/${vagaId}`,
-        },
+        // evita duplicata (também adicionar @@unique no schema é recomendado)
+        const jaCandidatado = await tx.applications.findFirst({
+          where: { vacancy_id: vagaId, user_id: Number(session.user.id) },
+        });
+        if (jaCandidatado) {
+          return { error: "Você já se candidatou.", status: 400 };
+        }
+
+        const candidatura = await tx.applications.create({
+          data: { vacancy_id: vagaId, user_id: Number(session.user.id) },
+        });
+
+        // cria notificação para a organização
+        if (vagaAtual && vagaAtual.organization_id) {
+          await tx.notification.create({
+            data: {
+              type: "candidatura",
+              userId: vagaAtual.organization_id,
+              senderId: Number(session.user.id),
+              postId: null,
+              commentId: null,
+              read: false,
+              createdAt: new Date(),
+              message: `${session.user.name} se candidatou à vaga ${vagaAtual.title}`,
+              link: `/vagas/${vagaId}`,
+            },
+          });
+        }
+
+        return { candidatura, status: 201 };
       });
-    }
 
-    return res.status(201).json({ candidatura });
+      if (result.error) return res.status(result.status).json({ error: result.error });
+      return res.status(201).json({ candidatura: result.candidatura });
+    } catch (err) {
+      console.error("Erro ao candidatar:", err);
+      return res.status(500).json({ error: "Erro interno ao candidatar." });
+    }
   }
 
   if (req.method === "PATCH") {

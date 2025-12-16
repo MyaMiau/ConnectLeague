@@ -12,6 +12,7 @@ export default function VagaDetalhes() {
   const [loading, setLoading] = useState(true);
   const [confirmModal, setConfirmModal] = useState({ open: false, message: "" });
   const [jaCandidatado, setJaCandidatado] = useState(false);
+  const [applying, setApplying] = useState(false); // novo estado para evitar double submit
 
   useEffect(() => {
     if (!id) return;
@@ -33,27 +34,53 @@ export default function VagaDetalhes() {
       setConfirmModal({ open: true, message: "Faça login para se candidatar." });
       return;
     }
-    const res = await fetch(`/api/vagas/${id}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-    });
-    if (res.ok) {
-      setConfirmModal({ open: true, message: "Candidatura enviada com sucesso!" });
-      setJaCandidatado(true);
-      setVaga(prev =>
-        prev
-          ? {
-              ...prev,
-              applications: [
-                ...(prev.applications || []),
-                { user_id: session.user.id, user: session.user }
-              ]
-            }
-          : prev
-      );
-    } else {
-      setConfirmModal({ open: true, message: "Erro ao candidatar-se!" });
+
+    if (!vaga) {
+      setConfirmModal({ open: true, message: "Vaga não carregada." });
+      return;
+    }
+
+    // frontend check: não tentar candidatar se vaga fechada
+    if (vaga.status !== "Aberta") {
+      setConfirmModal({ open: true, message: "Esta vaga está fechada. Não é possível se candidatar." });
+      return;
+    }
+
+    if (applying) return; // evita double submit
+    setApplying(true);
+
+    try {
+      const res = await fetch(`/api/vagas/${id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+      });
+
+      const data = await res.json().catch(() => ({}));
+
+      if (res.ok) {
+        setConfirmModal({ open: true, message: "Candidatura enviada com sucesso!" });
+        setJaCandidatado(true);
+        setVaga(prev =>
+          prev
+            ? {
+                ...prev,
+                applications: [
+                  ...(prev.applications || []),
+                  { user_id: session.user.id, user: session.user }
+                ]
+              }
+            : prev
+        );
+      } else {
+        // mostra mensagem específica retornada pelo servidor, se houver
+        setConfirmModal({ open: true, message: data.error || "Erro ao candidatar-se!" });
+      }
+    } catch (err) {
+      console.error("Erro ao candidatar:", err);
+      setConfirmModal({ open: true, message: "Erro de rede ao candidatar-se." });
+    } finally {
+      setApplying(false);
     }
   };
 
@@ -128,18 +155,18 @@ export default function VagaDetalhes() {
         <div className="mb-6">
           <span className="text-zinc-400"><strong>Posições:</strong> {vaga.posicoes?.join(", ") || vaga.positions?.join(", ") || "—"}</span> <br />
           <span className="text-zinc-400"><strong>Elo mínimo:</strong> {vaga.elos?.join(", ") || "—"}</span> <br />
-          <span className="text-zinc-400"><strong>Localização:</strong> {vaga.cidade || vaga.city || ""}{(vaga.cidade || vaga.city) && (vaga.estado || vaga.state) ? "/" : ""}{vaga.estado || vaga.state || ""}</span> <br />
-          {vaga.tags?.length > 0 && <span className="text-zinc-400"><strong>Tags:</strong> {vaga.tags.join(", ")}</span>}
+          <span className="text-zinc-400"><strong>Localização:</strong> {vaga.cidade || vaga.city || ""}{(vaga.cidade || vaga.city) && (vaga.estado || vaga.state) ? "/" : ""}{vaga.estado || vaga.state || ""}</span>
+          {vaga.tags?.length > 0 && <div className="text-zinc-400"><strong>Tags:</strong> {vaga.tags.join(", ")}</div>}
         </div>
         <div className="mb-6">
           <span className="text-zinc-400"><strong>Candidatos:</strong> {vaga.applications?.length || 0}</span>
         </div>
         <Button
           color={jaCandidatado ? "red" : "green"}
-          disabled={false}
+          disabled={jaCandidatado || vaga.status !== "Aberta" || applying}
           onClick={jaCandidatado ? handleDescandidatar : handleCandidatar}
           aria-label={jaCandidatado ? "Cancelar candidatura" : "Candidatar-se"}>
-          {jaCandidatado ? "Cancelar candidatura" : "Candidatar-se"}
+          {jaCandidatado ? "Cancelar candidatura" : vaga.status !== "Aberta" ? "Vaga Fechada" : (applying ? "Enviando..." : "Candidatar-se")}
         </Button>
       </div>
       {/* Modal de confirmação */}

@@ -90,7 +90,6 @@ export default function ProfileCardGeneric({ user, showEdit = false, onUserUpdat
     manager: "Manager",
     psychologist: "Psicólogo"
   };
-  const profileTitle = typeMap[user.type] || "Perfil";
 
   const isOwnProfile = session?.user?.id && Number(session.user.id) === Number(user.id);
 
@@ -133,7 +132,6 @@ export default function ProfileCardGeneric({ user, showEdit = false, onUserUpdat
           </div>
 
           <div className="flex-1 flex flex-col items-start">
-            <h1 className="text-3xl font-bold mb-2">{profileTitle}</h1>
             <h2 className="text-2xl font-semibold mb-2">{displayName}</h2>
             {displayEmail && <p className="text-zinc-400 mb-2">{displayEmail}</p>}
             <p className="text-zinc-300 mb-2">{displayBio}</p>

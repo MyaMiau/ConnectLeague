@@ -8,7 +8,6 @@ export default async function handler(req, res) {
   const userId = Number(session.user.id);
 
   if (req.method === "POST") {
-    // enviar mensagem: body { conversationId, content }
     const { conversationId, content } = req.body;
     if (!conversationId || !content) return res.status(400).json({ error: "conversationId and content required" });
 
@@ -22,7 +21,6 @@ export default async function handler(req, res) {
         include: { sender: { select: { id: true, name: true, image: true } } },
       });
 
-      // incrementa unreadCount dos outros participantes e cria notificação
       const others = await prisma.conversationParticipant.findMany({
         where: { conversationId: Number(conversationId), NOT: { userId } },
       });
@@ -32,22 +30,8 @@ export default async function handler(req, res) {
           where: { id: p.id },
           data: { unreadCount: { increment: 1 } },
         });
-
-        // cria notificação (adaptar campos se seu schema for diferente)
-        await prisma.notification.create({
-          data: {
-            type: "message",
-            userId: p.userId, // quem recebe a notificação
-            senderId: userId,
-            // se quiser adicionar referência, crie campos correspondentes no notifications
-            // e descomente abaixo (caso existam):
-            // conversationId: Number(conversationId),
-            // messageId: message.id,
-          },
-        });
       }
 
-      // atualiza updatedAt da conversa
       await prisma.conversation.update({
         where: { id: Number(conversationId) },
         data: { updatedAt: new Date() },
@@ -61,17 +45,32 @@ export default async function handler(req, res) {
   }
 
   if (req.method === "GET") {
-    // pegar mensagens de uma conversa: ?conversationId=ID
+
     const { conversationId } = req.query;
     if (!conversationId) return res.status(400).json({ error: "conversationId required" });
 
     try {
-      // zera unreadCount para este usuário na conversa
+
       const part = await prisma.conversationParticipant.findFirst({
         where: { conversationId: Number(conversationId), userId },
       });
       if (part) {
         await prisma.conversationParticipant.update({ where: { id: part.id }, data: { unreadCount: 0 } });
+      }
+
+      const otherParticipants = await prisma.conversationParticipant.findMany({
+        where: { conversationId: Number(conversationId), NOT: { userId } },
+      });
+
+      if (otherParticipants.length > 0) {
+        const senderIds = otherParticipants.map(p => p.userId);
+        await prisma.notification.deleteMany({
+          where: {
+            type: "message",
+            userId: userId,           
+            senderId: { in: senderIds } 
+          }
+        });
       }
 
       const messages = await prisma.message.findMany({

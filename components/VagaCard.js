@@ -44,6 +44,7 @@ export default function VagaCard({
             priority
           />
         </div>
+        
         <div>
           <h2 className="text-2xl font-bold flex items-center gap-2">
             {vaga.titulo || vaga.title || "Vaga sem título"}
@@ -69,15 +70,22 @@ export default function VagaCard({
         <Button variant="default" onClick={() => onShowDetails?.(vaga)}>
           Ver detalhes
         </Button>
+
         {/* Apenas jogadores podem se candidatar/descandidatar, e apenas se vaga está aberta */}
         {podeCandidatar && (
           <Button
-            color={jaCandidatado ? "red" : "green"}
-            disabled={!podeCandidatar}
-            onClick={() =>
-              jaCandidatado ? onDescandidatar?.(vaga.id) : onCandidatar?.(vaga.id)}>
-            {jaCandidatado ? "Cancelar candidatura" : "Candidatar-se"}
-          </Button>
+          color={jaCandidatado ? "red" : "green"}
+          onClick={() => {
+            if (jaCandidatado) {
+              onDescandidatar?.(vaga.id);
+            } else {
+              onCandidatar?.(vaga.id);
+            }
+          }}
+          disabled={vaga.status !== "Aberta"}
+        >
+          {vaga.status !== "Aberta" ? "Vaga Fechada" : (jaCandidatado ? "Descandidatar" : "Candidatar-se")}
+        </Button>
         )}
         <Button
           variant={jaFavoritou ? "secondary" : "default"}

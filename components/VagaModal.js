@@ -73,16 +73,19 @@ export default function VagaModal({
             <Button variant="outline" className="mb-2">Ver perfil da organização</Button>
           </Link>
           {!isOrg && (
-            <Button
-              color={jaCandidatado ? "red" : "green"}
-              disabled={false}
-              onClick={() =>
-                jaCandidatado ? onDescandidatar?.(vaga.id) : onCandidatar?.(vaga.id)
-              }
-              aria-label={jaCandidatado ? "Cancelar candidatura" : "Candidatar-se"}
-            >
-              {jaCandidatado ? "Cancelar candidatura" : "Candidatar-se"}
-            </Button>
+        <Button
+          color={jaCandidatado ? "red" : "green"}
+          onClick={() => {
+            if (jaCandidatado) {
+              onDescandidatar?.(vaga.id);
+            } else {
+              onCandidatar?.(vaga.id);
+            }
+          }}
+          disabled={vaga.status !== "Aberta"}
+        >
+          {vaga.status !== "Aberta" ? "Vaga Fechada" : (jaCandidatado ? "Descandidatar" : "Candidatar-se")}
+        </Button>
           )}
           {isOrg && (
             <>
