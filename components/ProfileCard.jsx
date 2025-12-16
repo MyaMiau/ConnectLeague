@@ -4,6 +4,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { useRouter } from "next/router";
+import { useSession } from "next-auth/react";
 
 const ROLES = [
   { name: "Top", icon: "/Top.png" },
@@ -28,18 +30,19 @@ const ELOS = [
 export default function ProfileCard({ user, onUserUpdate, showEdit = true }) {
   const [editMode, setEditMode] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
-
-
+  const router = useRouter();
+  const { data: session } = useSession();
   const [localUser, setLocalUser] = useState(() => ({
     ...(user || {}),
-    id: user?.id, 
+    id: user?.id,
     status: user?.status || "Free Agent",
   }));
+  const [startingChat, setStartingChat] = useState(false);
 
   useEffect(() => {
     setLocalUser(prev => ({
       ...(user || {}),
-      id: user?.id, 
+      id: user?.id,
       status: user?.status || "Free Agent",
     }));
   }, [user]);
@@ -104,6 +107,33 @@ export default function ProfileCard({ user, onUserUpdate, showEdit = true }) {
 
   const selectedRole = ROLES.find(r => r.name === localUser.role);
   const selectedElo = ELOS.find(e => e.name === localUser.elo);
+
+  const isOwnProfile = session?.user?.id && Number(session.user.id) === Number(user.id);
+
+  async function startChat(otherUserId) {
+    if (isOwnProfile) return;
+    setStartingChat(true);
+    try {
+      const res = await fetch("/api/conversations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ otherUserId }),
+      });
+      if (res.status === 401) {
+        router.push("/login");
+        return;
+      }
+      if (!res.ok) {
+        throw new Error("Erro ao iniciar conversa");
+      }
+      const conv = await res.json();
+      router.push(`/messages?conversationId=${conv.id}`);
+    } catch (err) {
+      alert(err.message || "Erro ao iniciar conversa");
+    } finally {
+      setStartingChat(false);
+    }
+  }
 
   return (
     <Card className="w-full max-w-2xl bg-zinc-900 shadow-xl rounded-2xl mb-6 relative">
@@ -278,6 +308,15 @@ export default function ProfileCard({ user, onUserUpdate, showEdit = true }) {
               <p className="text-zinc-300">{localUser.bio || <span className="italic text-zinc-500">Nenhuma descrição ainda.</span>}</p>
             )}
           </div>
+
+          {/* Botão de Mensagem (apenas quando não for o próprio perfil) */}
+          {!isOwnProfile && (
+            <div className="mt-3">
+              <Button onClick={() => startChat(user.id)} className="bg-purple-600 hover:bg-purple-700" disabled={startingChat}>
+                {startingChat ? "Abrindo..." : "Mensagem"}
+              </Button>
+            </div>
+          )}
 
           {/* Botão salvar apenas no modo edição */}
           {editMode && (

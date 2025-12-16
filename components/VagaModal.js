@@ -40,8 +40,10 @@ export default function VagaModal({
               organizacao.image ||
               "/default-avatar.png"}
             alt="Logo"
-            className="w-12 h-12 rounded-full bg-zinc-800 object-cover border"
-          />
+            width={48}
+            height={48}
+            className="rounded-full bg-zinc-800 object-cover border"
+            priority />
           <span className="block text-zinc-400">{organizacao.orgName || organizacao.name}</span>
         </div>
 

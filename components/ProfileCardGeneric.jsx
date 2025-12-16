@@ -3,6 +3,8 @@ import Image from "next/image";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Textarea } from "./ui/textarea";
+import { useRouter } from "next/router";
+import { useSession } from "next-auth/react";
 
 
 export default function ProfileCardGeneric({ user, showEdit = false, onUserUpdate }) {
@@ -14,6 +16,10 @@ export default function ProfileCardGeneric({ user, showEdit = false, onUserUpdat
     logo: user?.logo || user?.image || "/default-avatar.png",
     email: user?.email || "",
   }));
+
+  const router = useRouter();
+  const { data: session } = useSession();
+  const [startingChat, setStartingChat] = useState(false);
 
   useEffect(() => {
     setLocalUser(prev => ({
@@ -86,6 +92,31 @@ export default function ProfileCardGeneric({ user, showEdit = false, onUserUpdat
   };
   const profileTitle = typeMap[user.type] || "Perfil";
 
+  const isOwnProfile = session?.user?.id && Number(session.user.id) === Number(user.id);
+
+  async function startChat(otherUserId) {
+      if (isOwnProfile) return;
+      setStartingChat(true);
+      try {
+        const res = await fetch("/api/conversations", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ otherUserId }),
+        });
+        if (res.status === 401) {
+          router.push("/login");
+          return;
+        }
+        if (!res.ok) throw new Error("Erro ao iniciar conversa");
+        const conv = await res.json();
+        router.push(`/messages?conversationId=${conv.id}`);
+      } catch (err) {
+        alert(err.message || "Erro ao iniciar conversa");
+      } finally {
+        setStartingChat(false);
+      }
+    }
+
   if (!editMode) {
     return (
       <div className="w-full max-w-2xl bg-zinc-900 rounded-2xl shadow-xl mb-8 border border-zinc-800">
@@ -100,6 +131,7 @@ export default function ProfileCardGeneric({ user, showEdit = false, onUserUpdat
               alt={`Avatar de ${displayName}`}
             />
           </div>
+
           <div className="flex-1 flex flex-col items-start">
             <h1 className="text-3xl font-bold mb-2">{profileTitle}</h1>
             <h2 className="text-2xl font-semibold mb-2">{displayName}</h2>
@@ -110,7 +142,15 @@ export default function ProfileCardGeneric({ user, showEdit = false, onUserUpdat
                 Editar Perfil
               </Button>
             )}
-          </div>
+             {!isOwnProfile && (
+                <Button
+                  onClick={() => startChat(user.id)}
+                  className="bg-purple-600 hover:bg-purple-700"
+                  disabled={startingChat}>
+                  {startingChat ? "Abrindo..." : "Mensagem"}
+                </Button>
+              )}
+            </div>
         </div>
       </div>
     );

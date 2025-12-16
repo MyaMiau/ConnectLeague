@@ -59,7 +59,7 @@ export default function Login() {
 
       <div className="absolute inset-0 bg-black/60 flex items-center justify-center px-4 md:px-16">
         <div className="hidden md:flex flex-col justify-center items-start text-white w-1/2 pr-8">
-          <h1 className="text-4xl font-bold mb-4">Bem-vindo(a) de volta!</h1>
+          <h1 className="text-4xl font-bold mb-4">Bem-vindo(a)!</h1>
           <p className="text-lg text-white/80">
             Conecte-se e encontre sua próxima equipe ou o jogador ideal para o seu time.
           </p>

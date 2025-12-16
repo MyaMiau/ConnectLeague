@@ -71,6 +71,9 @@ model users {
   notificationsReceived Notification[] @relation("Receiver")
   notificationsSent     Notification[] @relation("Sender")
   favorites             VacancyFavorite[]
+  conversationParticipants ConversationParticipant[]
+  messages                 Message[]
+
 }
 
 model vacancies {
@@ -200,4 +203,32 @@ model Notification {
   user      users     @relation("Receiver", fields: [userId], references: [id])
   sender    users     @relation("Sender", fields: [senderId], references: [id])
   post      Post?     @relation(fields: [postId], references: [id])
+}
+
+model Conversation {
+  id         Int                       @id @default(autoincrement())
+  createdAt  DateTime                  @default(now())
+  updatedAt  DateTime                  @updatedAt
+  participants ConversationParticipant[]
+  messages   Message[]
+}
+
+model ConversationParticipant {
+  id             Int          @id @default(autoincrement())
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+  conversationId Int
+  userId         Int
+  user           users        @relation(fields: [userId], references: [id])
+  unreadCount    Int          @default(0)
+}
+
+model Message {
+  id             Int      @id @default(autoincrement())
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+  conversationId Int
+  senderId       Int
+  sender         users   @relation(fields: [senderId], references: [id])
+  content        String
+  createdAt      DateTime @default(now())
+  read           Boolean  @default(false)
 }

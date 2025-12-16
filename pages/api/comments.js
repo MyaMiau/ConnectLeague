@@ -31,7 +31,7 @@ export default async function handler(req, res) {
           }
         }
       });
-s
+      
       const post = await prisma.post.findUnique({ where: { id: Number(postId) } });
       if (post && post.authorId !== Number(authorId)) {
         await prisma.notification.create({

@@ -31,14 +31,19 @@ export default function VagaCard({
   return (
     <div className="bg-zinc-900 rounded-xl shadow-lg p-6 flex flex-col gap-3 border border-zinc-800">
       <div className="flex items-center gap-4 mb-3">
-        <Image
-          src={
-            vaga.organization?.logo ||
-            vaga.organization?.image ||
-            "/default-avatar.png"}
-          alt="Logo"
-          className="w-20 h-20 rounded-full bg-zinc-800 object-cover border"
-        />
+        <div className="relative w-20 h-20 rounded-full overflow-hidden bg-zinc-800 border">
+          <Image
+            src={
+              vaga.organization?.logo ||
+              vaga.organization?.image ||
+              "/default-avatar.png"}
+            alt="Logo"
+            fill
+            sizes="80px"
+            className="object-cover"
+            priority
+          />
+        </div>
         <div>
           <h2 className="text-2xl font-bold flex items-center gap-2">
             {vaga.titulo || vaga.title || "Vaga sem título"}

@@ -38,7 +38,7 @@ export default function HomePage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#1a4377] text-white">
+    <div className="min-h-screen bg-[#000000] text-white">
       <main className="relative overflow-hidden" style={{ minHeight: "100vh" }}>
         <div className="absolute inset-0 z-0">
           <div className="relative w-full h-full">
@@ -50,7 +50,7 @@ export default function HomePage() {
                 objectFit: "cover",
                 objectPosition: "center",
                 transform: "scaleX(-1)",
-                opacity: 0.9,
+                opacity: 0.5,
               }}
               priority
             />
@@ -67,7 +67,7 @@ export default function HomePage() {
         <div className="relative z-20 w-full max-w-7xl mx-auto px-8 py-20">
           {/* logo */}
           <div className="absolute top-6 left-6 z-30 flex items-center gap-3">
-            <div className="relative w-15 h-15">
+            <div className="relative w-20 h-20">
               <Image
                 src="/cl-logo-render.png"
                 alt="Connect League"
@@ -101,7 +101,7 @@ export default function HomePage() {
                 jogador.
               </h1>
 
-              <p className="mt-6 text-zinc-300 max-w-xl text-sm md:text-base">
+              <p className="mt-6 text-zinc-300 max-w-xl text-sm md:text-base font-medium">
                 Conecte jogadores, equipes e oportunidades. Compartilhe partidas, encontre vagas e leve sua
                 carreira gamer para o próximo nível.
               </p>
@@ -182,7 +182,7 @@ export default function HomePage() {
                 <button
                   aria-label="Previous"
                   onClick={goPrev}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 z-40 bg-black/40 hover:bg-black/50 rounded-full w-10 h-10 flex items-center justify-center text-white"
+                  className="absolute left-3 top-1/2 -translate-y-1/2 z-40 bg-black/40 hover:bg-black/50 rounded-full w-10 h-10 flex items-center justify-center text-white cursor-pointer" 
                   style={{ backdropFilter: "blur(6px)" }}
                 >
                   ‹
@@ -190,7 +190,7 @@ export default function HomePage() {
                 <button
                   aria-label="Next"
                   onClick={goNext}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 z-40 bg-black/40 hover:bg-black/50 rounded-full w-10 h-10 flex items-center justify-center text-white"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 z-40 bg-black/40 hover:bg-black/50 rounded-full w-10 h-10 flex items-center justify-center text-white cursor-pointer"
                   style={{ backdropFilter: "blur(6px)" }}
                 >
                   ›

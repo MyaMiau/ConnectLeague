@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useEffect, useRef, useState } from "react";
-import { Home, Briefcase, LogOut, Bell, Bookmark } from "lucide-react";
+import { Home, Briefcase, LogOut, Bell, Bookmark, MessageSquare } from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
 
 function getNotificationLink(n) {
@@ -194,12 +194,67 @@ export default function Header() {
     };
   }, [session]);
 
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  const [unreadMessages, setUnreadMessages] = useState(0);
+
+  useEffect(() => {
+    async function fetchNotifications() {
+      try {
+        const res = await fetch("/api/notifications");
+        const data = await res.json();
+        setNotifications(data);
+        setUnreadCount(data.filter(n => !n.read).length);
+      } catch (err) {
+        setNotifications([]);
+        setUnreadCount(0);
+      }
+    }
+    fetchNotifications();
+  }, [showNotifications]);
+
+  useEffect(() => {
+    async function fetchConversations() {
+      if (!session?.user?.id) return;
+      try {
+        const res = await fetch("/api/conversations");
+        if (!res.ok) return;
+        const data = await res.json();
+        const totalUnread = data.reduce((acc, c) => {
+          const part = c.participants.find(p => p.userId === Number(session.user.id));
+          return acc + (part?.unreadCount || 0);
+        }, 0);
+        setUnreadMessages(totalUnread);
+      } catch (err) {
+        setUnreadMessages(0);
+      }
+    }
+    fetchConversations();
+    // opcional: interval para atualizar badge periodicamente
+    const t = setInterval(fetchConversations, 20_000);
+    return () => clearInterval(t);
+  }, [session]);
+
+  const handleReadAll = async () => {
+    await fetch("/api/notifications", { method: "PATCH" });
+    setNotifications(notifications.map(n => ({ ...n, read: true })));
+    setUnreadCount(0);
+  };
+
   const navItems = [
     {
       label: "Notificações",
       icon: <Bell size={20} />,
       onClick: () => setShowNotifications((prev) => !prev),
       custom: true,
+    },
+    {
+      label: "Mensagens",
+      icon: <MessageSquare size={20} />,
+      onClick: () => router.push("/messages"),
+      badge: unreadMessages,
     },
     {
       label: "Timeline",
@@ -225,31 +280,6 @@ export default function Header() {
       color: "text-red-400 hover:border-b-red-400",
     },
   ];
-
-  const [showNotifications, setShowNotifications] = useState(false);
-  const [notifications, setNotifications] = useState([]);
-  const [unreadCount, setUnreadCount] = useState(0);
-
-  useEffect(() => {
-    async function fetchNotifications() {
-      try {
-        const res = await fetch("/api/notifications");
-        const data = await res.json();
-        setNotifications(data);
-        setUnreadCount(data.filter(n => !n.read).length);
-      } catch (err) {
-        setNotifications([]);
-        setUnreadCount(0);
-      }
-    }
-    fetchNotifications();
-  }, [showNotifications]);
-
-  const handleReadAll = async () => {
-    await fetch("/api/notifications", { method: "PATCH" });
-    setNotifications(notifications.map(n => ({ ...n, read: true })));
-    setUnreadCount(0);
-  };
 
   return (
     <aside className="fixed left-0 top-0 h-screen w-56 bg-zinc-900 flex flex-col items-center py-8 shadow-lg z-50">
@@ -330,6 +360,11 @@ export default function Header() {
               }}>
               {item.icon}
               {item.label}
+              {item.badge > 0 && (
+                <span className="ml-1 bg-pink-500 text-white text-xs rounded-full px-2">
+                  {item.badge}
+                </span>
+              )}
             </button>
           )
         )}
