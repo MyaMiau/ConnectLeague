@@ -52,10 +52,8 @@ model users {
   bio                  String?
   elo                  String?
   status               String?
-  // CAMPOS OPCIONAIS PARA ORGANIZAÇÃO
+  // CAMPO PARA ORGANIZAÇÃO
   orgName              String?        @db.VarChar(100)
-  cnpj                 String?        @db.VarChar(30)
-  orgDesc              String?
   // RELACIONAMENTOS
   accounts             accounts[]
   sessions             sessions[]

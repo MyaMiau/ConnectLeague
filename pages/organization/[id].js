@@ -610,7 +610,7 @@ async function handleDeletarVagaConfirmed() {
     );
 
   const displayName = localOrg?.name || localOrg?.orgName;
-  const displayBio = localOrg?.orgDesc || localOrg?.bio || "Nenhuma descrição ainda.";
+  const displayBio = localOrg?.bio || "Nenhuma descrição ainda.";
   const displayImage = localOrg?.logo || localOrg?.image || "/default-avatar.png";
   const displayEmail = localOrg?.email || "";
 

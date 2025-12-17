@@ -20,8 +20,6 @@ export default async function handler(req, res) {
     status,
     elo,
     orgName,     // só organizações
-    cnpj,        // só organizações
-    orgDesc      // só organizações
   } = req.body;
 
   // Validação dos campos obrigatórios
@@ -60,8 +58,6 @@ export default async function handler(req, res) {
     // Só adiciona campos de organização se for organization
     if (type === "organization") {
       userData.orgName = orgName || null;
-      userData.cnpj = cnpj || null;
-      userData.orgDesc = orgDesc || null;
     }
 
     // Cria o novo usuário

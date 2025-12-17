@@ -80,7 +80,7 @@ export default function ProfileCardGeneric({ user, showEdit = false, onUserUpdat
   if (!user) return <div>Carregando perfil...</div>;
 
   const displayName = user.orgName || user.name;
-  const displayBio = user.orgDesc || user.bio || "Nenhuma descrição ainda.";
+  const displayBio = user.bio || "Nenhuma descrição ainda.";
   const displayImage = user.logo || user.image || "/default-avatar.png";
   const displayEmail = user.email || user.orgEmail || "";
   const typeMap = {
