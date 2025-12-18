@@ -133,10 +133,6 @@ export default function Register() {
                   <option value="" disabled hidden>Selecione sua função</option>
                   <option value="player" style={{ color: "#000" }}>Jogador</option>
                   <option value="organization" style={{ color: "#000" }}>Organização</option>
-                  <option value="coach" style={{ color: "#000" }}>Coach</option>
-                  <option value="analyst" style={{ color: "#000" }}>Analista</option>
-                  <option value="manager" style={{ color: "#000" }}>Manager</option>
-                  <option value="psychologist" style={{ color: "#000" }}>Psicologo</option>
                 </select>
               </div>
               

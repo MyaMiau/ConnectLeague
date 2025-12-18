@@ -6,13 +6,12 @@ import { Textarea } from "./ui/textarea";
 import { useRouter } from "next/router";
 import { useSession } from "next-auth/react";
 
-
 export default function ProfileCardGeneric({ user, showEdit = false, onUserUpdate }) {
   const [editMode, setEditMode] = useState(false);
   const [localUser, setLocalUser] = useState(() => ({
     ...(user || {}),
     orgName: user?.orgName || "",
-    orgDesc: user?.orgDesc || "",
+    bio: user?.bio || "",
     logo: user?.logo || user?.image || "/default-avatar.png",
     email: user?.email || "",
   }));
@@ -22,10 +21,10 @@ export default function ProfileCardGeneric({ user, showEdit = false, onUserUpdat
   const [startingChat, setStartingChat] = useState(false);
 
   useEffect(() => {
-    setLocalUser(prev => ({
+    setLocalUser(() => ({
       ...(user || {}),
       orgName: user?.orgName || "",
-      orgDesc: user?.orgDesc || "",
+      bio: user?.bio || "",
       logo: user?.logo || user?.image || "/default-avatar.png",
       email: user?.email || "",
     }));
@@ -61,7 +60,11 @@ export default function ProfileCardGeneric({ user, showEdit = false, onUserUpdat
 
   async function handleSave() {
     if (onUserUpdate) {
-      await onUserUpdate(localUser);
+      // remove undefined keys before sending to backend/prisma
+      const payload = Object.fromEntries(
+        Object.entries(localUser).filter(([_, v]) => v !== undefined)
+      );
+      await onUserUpdate(payload);
     }
     setEditMode(false);
   }
@@ -70,7 +73,7 @@ export default function ProfileCardGeneric({ user, showEdit = false, onUserUpdat
     setLocalUser({
       ...(user || {}),
       orgName: user?.orgName || "",
-      orgDesc: user?.orgDesc || "",
+      bio: user?.bio || "",
       logo: user?.logo || user?.image || "/default-avatar.png",
       email: user?.email || "",
     });
@@ -94,27 +97,27 @@ export default function ProfileCardGeneric({ user, showEdit = false, onUserUpdat
   const isOwnProfile = session?.user?.id && Number(session.user.id) === Number(user.id);
 
   async function startChat(otherUserId) {
-      if (isOwnProfile) return;
-      setStartingChat(true);
-      try {
-        const res = await fetch("/api/conversations", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ otherUserId }),
-        });
-        if (res.status === 401) {
-          router.push("/login");
-          return;
-        }
-        if (!res.ok) throw new Error("Erro ao iniciar conversa");
-        const conv = await res.json();
-        router.push(`/messages?conversationId=${conv.id}`);
-      } catch (err) {
-        alert(err.message || "Erro ao iniciar conversa");
-      } finally {
-        setStartingChat(false);
+    if (isOwnProfile) return;
+    setStartingChat(true);
+    try {
+      const res = await fetch("/api/conversations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ otherUserId }),
+      });
+      if (res.status === 401) {
+        router.push("/login");
+        return;
       }
+      if (!res.ok) throw new Error("Erro ao iniciar conversa");
+      const conv = await res.json();
+      router.push(`/messages?conversationId=${conv.id}`);
+    } catch (err) {
+      alert(err.message || "Erro ao iniciar conversa");
+    } finally {
+      setStartingChat(false);
     }
+  }
 
   if (!editMode) {
     return (
@@ -140,15 +143,15 @@ export default function ProfileCardGeneric({ user, showEdit = false, onUserUpdat
                 Editar Perfil
               </Button>
             )}
-             {!isOwnProfile && (
-                <Button
-                  onClick={() => startChat(user.id)}
-                  className="bg-purple-600 hover:bg-purple-700"
-                  disabled={startingChat}>
-                  {startingChat ? "Abrindo..." : "Mensagem"}
-                </Button>
-              )}
-            </div>
+            {!isOwnProfile && (
+              <Button
+                onClick={() => startChat(user.id)}
+                className="bg-purple-600 hover:bg-purple-700"
+                disabled={startingChat}>
+                {startingChat ? "Abrindo..." : "Mensagem"}
+              </Button>
+            )}
+          </div>
         </div>
       </div>
     );
@@ -192,10 +195,10 @@ export default function ProfileCardGeneric({ user, showEdit = false, onUserUpdat
             className="mb-2"
           />
           <Textarea
-            name="orgDesc"
-            value={localUser.orgDesc}
+            name="bio"
+            value={localUser.bio}
             onChange={handleChange}
-            placeholder="Descrição da organização"
+            placeholder="Descrição/Bio"
             className="mb-2"
           />
           <div className="flex gap-2 mt-4">

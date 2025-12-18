@@ -117,8 +117,13 @@ const canEditOrDeleteComment = (comment) =>
     });
     if (res.ok) {
       const updated = await res.json();
-      setOrg(updated.organization);
-      setLocalOrg(updated.organization);
+      // Preservar isCurrentUser que não vem da API PUT
+      const updatedOrgWithIsCurrentUser = {
+        ...updated.organization,
+        isCurrentUser: org?.isCurrentUser ?? (Number(loggedUser?.id) === Number(id))
+      };
+      setOrg(updatedOrgWithIsCurrentUser);
+      setLocalOrg(updatedOrgWithIsCurrentUser);
       setEditMode(false);
       setShowMenu(false);
       alert("Perfil salvo com sucesso!");
@@ -687,8 +692,8 @@ async function handleDeletarVagaConfirmed() {
                 placeholder="Email"
               />
               <Textarea
-                name="orgDesc"
-                value={localOrg.orgDesc || ""}
+                name="bio"
+                value={localOrg.bio || ""}
                 onChange={handleChange}
                 className="mb-2"
                 placeholder="Descrição/Bio"

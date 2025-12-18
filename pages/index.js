@@ -15,6 +15,7 @@ export default function HomePage() {
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
   const timeoutRef = useRef(null);
+  const [logoSrc, setLogoSrc] = useState("/connect-league-logo.png");
 
   useEffect(() => {
     if (paused) return;
@@ -69,12 +70,17 @@ export default function HomePage() {
           <div className="absolute top-6 left-6 z-30 flex items-center gap-3">
             <div className="relative w-20 h-20">
               <Image
-                src="/cl-logo-render.png"
+                src={logoSrc}
                 alt="Connect League"
                 fill
-                sizes="40px"
-                className="object-contain"
+                sizes="80px"
+                className="rounded-full object-cover"
                 priority
+                onError={() => {
+                  if (logoSrc === "/connect-league-logo.png") {
+                    setLogoSrc("/cl-logo-render.png");
+                  }
+                }}
               />
             </div>
             <span className="hidden sm:inline-block text-lg md:text-xl font-extrabold text-white/90">

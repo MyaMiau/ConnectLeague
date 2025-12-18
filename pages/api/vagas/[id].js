@@ -58,11 +58,11 @@ export default async function handler(req, res) {
     return res.status(204).end();
   }
 
-  // Candidatar-se (somente jogadores e afins)
+  // Candidatar-se (somente jogadores)
   if (req.method === "POST") {
     if (
       !session ||
-      !["player", "jogador", "coach", "manager", "psychologist", "psicologo", "designer"].includes(session.user.type)
+      !["player", "jogador"].includes(session.user.type)
     ) {
       return res.status(401).json({ error: "Somente jogadores podem se candidatar." });
     }
@@ -126,7 +126,7 @@ export default async function handler(req, res) {
 
     // Somente jogadores podem descandidatar
     if (action === "descandidatar") {
-      if (!["player", "jogador", "coach", "manager", "psychologist", "psicologo", "designer"].includes(session.user.type)) {
+      if (!["player", "jogador"].includes(session.user.type)) {
         return res.status(403).json({ error: "Somente jogadores podem cancelar candidatura!" });
       }
       await prisma.applications.deleteMany({

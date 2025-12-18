@@ -199,6 +199,7 @@ export default function Header() {
   const [unreadCount, setUnreadCount] = useState(0);
 
   const [unreadMessages, setUnreadMessages] = useState(0);
+  const [logoSrc, setLogoSrc] = useState("/connect-league-logo.png");
 
   useEffect(() => {
     async function fetchNotifications() {
@@ -285,13 +286,17 @@ export default function Header() {
     <aside className="fixed left-0 top-0 h-screen w-56 bg-zinc-900 flex flex-col items-center py-8 shadow-lg z-50">
       <Link href="/timeline" className="flex items-center mb-6">
         <Image
-          src="/cl-logo-render.png"
-          alt="Logo eSports Connect"
-          width={80}
-          height={80}
-          style={{ width: "100px", height: "auto" }}
-          className="rounded-md"
+          src={logoSrc}
+          alt="Logo Connect League"
+          width={100}
+          height={100}
+          className="rounded-full object-cover"
           priority
+          onError={() => {
+            if (logoSrc === "/connect-league-logo.png") {
+              setLogoSrc("/cl-logo-render.png");
+            }
+          }}
         />
       </Link>
 
