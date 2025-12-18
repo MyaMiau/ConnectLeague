@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useRouter } from "next/router";
+import { supabase } from "@/lib/supabaseClient";
 import { useSession } from "next-auth/react";
 
 const ROLES = [
@@ -57,29 +58,59 @@ export default function ProfileCard({ user, onUserUpdate, showEdit = true }) {
     setLocalUser((prev) => ({ ...prev, [name]: value }));
   }
 
-  // Novo handleImage para upload no servidor e salvar só a URL
+  // Novo handleImage usando Supabase Storage para salvar apenas a URL
   async function handleImage(e) {
     const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = async () => {
-        const base64 = reader.result;
-        const filename = `${Date.now()}-${file.name}`;
+    if (!file) return;
 
-        // Envia para API que salva a imagem em /public/uploads e retorna a URL
-        const res = await fetch("/api/upload-avatar", {
+    try {
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${Date.now()}.${fileExt}`;
+      const filePath = `avatars/${fileName}`;
+
+      const { data, error } = await supabase.storage
+        .from("cl-avatars")
+        .upload(filePath, file);
+
+      // #region agent log
+      fetch(
+        "http://127.0.0.1:7242/ingest/10fdd7ad-6471-44b1-8078-9719ef0a3d08",
+        {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ base64, filename }),
-        });
-        if (res.ok) {
-          const { url } = await res.json();
-          setLocalUser((prev) => ({ ...prev, image: url }));
-        } else {
-          alert("Erro ao fazer upload da imagem.");
+          body: JSON.stringify({
+            sessionId: "debug-session",
+            runId: "pre-fix",
+            hypothesisId: "H2",
+            location: "components/ProfileCard.jsx:handleImage",
+            message: "Resultado upload avatar Supabase",
+            data: { filePath, hasError: !!error },
+            timestamp: Date.now(),
+          }),
         }
-      };
-      reader.readAsDataURL(file);
+      ).catch(() => {});
+      // #endregion
+
+      if (error) {
+        console.error("Erro upload avatar Supabase:", error);
+        alert("Erro ao fazer upload da imagem.");
+        return;
+      }
+
+      const { data: publicUrlData } = supabase.storage
+        .from("cl-avatars")
+        .getPublicUrl(filePath);
+
+      const publicUrl = publicUrlData?.publicUrl;
+      if (!publicUrl) {
+        alert("Erro ao obter URL pública do avatar.");
+        return;
+      }
+
+      setLocalUser((prev) => ({ ...prev, image: publicUrl }));
+    } catch (err) {
+      console.error("Erro inesperado ao enviar avatar:", err);
+      alert("Erro ao fazer upload da imagem.");
     }
   }
 

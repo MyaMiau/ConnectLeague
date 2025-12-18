@@ -7,13 +7,14 @@ import { Button } from "@/components/ui/button";
 import { Upload } from "lucide-react";
 import { useState } from "react";
 import imageCompression from "browser-image-compression";
+import { supabase } from "@/lib/supabaseClient";
 
 export default function CreatePost({ onPost, user }) {
   const [text, setText] = useState("");
   const [imageFile, setImageFile] = useState(null);
-  const [imageUrl, setImageUrl] = useState(""); 
+  const [imageUrl, setImageUrl] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(""); 
+  const [error, setError] = useState("");
 
   function getAuthorId(user) {
     console.log("user recebido em CreatePost:", user);
@@ -27,8 +28,48 @@ export default function CreatePost({ onPost, user }) {
     );
   }
 
+  async function uploadPostImageToSupabase(file) {
+    const fileExt = file.name.split(".").pop();
+    const fileName = `${Date.now()}.${fileExt}`;
+    const filePath = `posts/${fileName}`;
+
+    const { data, error } = await supabase.storage
+      .from("cl-posts")
+      .upload(filePath, file);
+
+    // #region agent log
+    fetch(
+      "http://127.0.0.1:7242/ingest/10fdd7ad-6471-44b1-8078-9719ef0a3d08",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sessionId: "debug-session",
+          runId: "pre-fix",
+          hypothesisId: "H1",
+          location: "components/CreatePost.jsx:uploadPostImageToSupabase",
+          message: "Resultado upload imagem post Supabase",
+          data: { filePath, hasError: !!error },
+          timestamp: Date.now(),
+        }),
+      }
+    ).catch(() => {});
+    // #endregion
+
+    if (error) {
+      console.error("Erro upload Supabase:", error);
+      return "";
+    }
+
+    const { data: publicUrlData } = supabase.storage
+      .from("cl-posts")
+      .getPublicUrl(filePath);
+
+    return publicUrlData?.publicUrl || "";
+  }
+
   const handleImageUpload = async (e) => {
-    setError(""); 
+    setError("");
     const file = e.target.files[0];
     if (!file) return;
 
@@ -36,9 +77,9 @@ export default function CreatePost({ onPost, user }) {
     if (file.size > 2 * 1024 * 1024) {
       try {
         imageToUpload = await imageCompression(file, {
-          maxSizeMB: 2, 
+          maxSizeMB: 2,
           maxWidthOrHeight: 1920,
-          initialQuality: 0.8, 
+          initialQuality: 0.8,
           useWebWorker: true,
         });
       } catch (err) {
@@ -50,7 +91,9 @@ export default function CreatePost({ onPost, user }) {
     }
 
     if (imageToUpload.size > 10 * 1024 * 1024) {
-      setError("A imagem é muito grande, mesmo após compressão! O limite é 10MB.");
+      setError(
+        "A imagem é muito grande, mesmo após compressão! O limite é 10MB."
+      );
       setImageFile(null);
       setImageUrl("");
       return;
@@ -58,27 +101,16 @@ export default function CreatePost({ onPost, user }) {
 
     setImageFile(imageToUpload);
 
-    const formData = new FormData();
-    formData.append("image", imageToUpload);
-
     try {
-      const resp = await fetch("/api/posts/upload", {
-        method: "POST",
-        body: formData,
-      });
-      if (resp.ok) {
-        const data = await resp.json();
-        setImageUrl(data.imageUrl); 
-      } else {
-        if (resp.status === 413) {
-          const data = await resp.json();
-          setError(data.error || "A imagem é muito grande! O limite é 10MB.");
-        } else {
-          setError("Erro ao enviar imagem. Tente novamente.");
-        }
+      const supabaseUrl = await uploadPostImageToSupabase(imageToUpload);
+      if (!supabaseUrl) {
+        setError("Erro ao enviar imagem. Tente novamente.");
         setImageUrl("");
+        return;
       }
+      setImageUrl(supabaseUrl);
     } catch (err) {
+      console.error("Erro ao enviar imagem para Supabase:", err);
       setError("Erro ao enviar imagem. Tente novamente.");
       setImageUrl("");
     }

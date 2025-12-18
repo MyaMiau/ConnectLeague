@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/router";
+import { supabase } from "@/lib/supabaseClient";
 import Image from "next/image";
 import Link from "next/link";
 import Header from "../../components/Header";
@@ -114,28 +115,55 @@ export default function OrganizationProfile() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onloadend = async () => {
-      try {
-        const base64 = reader.result;
-        const filename = `${Date.now()}-${file.name}`;
-        const res = await fetch("/api/upload-avatar", {
+    try {
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${Date.now()}.${fileExt}`;
+      const filePath = `org-logos/${fileName}`;
+
+      const { data, error } = await supabase.storage
+        .from("cl-avatars")
+        .upload(filePath, file);
+
+      // #region agent log
+      fetch(
+        "http://127.0.0.1:7242/ingest/10fdd7ad-6471-44b1-8078-9719ef0a3d08",
+        {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ base64, filename }),
-        });
-        if (!res.ok) {
-          alert("Erro ao enviar imagem da organização.");
-          return;
+          body: JSON.stringify({
+            sessionId: "debug-session",
+            runId: "pre-fix",
+            hypothesisId: "H3",
+            location: "pages/organization/[id].js:handleLogoChange",
+            message: "Resultado upload logo organização Supabase",
+            data: { filePath, hasError: !!error },
+            timestamp: Date.now(),
+          }),
         }
-        const { url } = await res.json();
-        setLocalOrg((prev) => (prev ? { ...prev, logo: url } : prev));
-      } catch (err) {
-        alert("Erro ao enviar imagem da organização.");
-      }
-    };
+      ).catch(() => {});
+      // #endregion
 
-    reader.readAsDataURL(file);
+      if (error) {
+        console.error("Erro upload logo organização Supabase:", error);
+        alert("Erro ao enviar imagem da organização.");
+        return;
+      }
+
+      const { data: publicUrlData } = supabase.storage
+        .from("cl-avatars")
+        .getPublicUrl(filePath);
+
+      const publicUrl = publicUrlData?.publicUrl;
+      if (!publicUrl) {
+        alert("Erro ao obter URL pública da logo.");
+        return;
+      }
+
+      setLocalOrg((prev) => (prev ? { ...prev, logo: publicUrl } : prev));
+    } catch (err) {
+      console.error("Erro inesperado ao enviar logo:", err);
+      alert("Erro ao enviar imagem da organização.");
+    }
   }
 
   async function handleSave() {
