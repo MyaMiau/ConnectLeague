@@ -167,73 +167,86 @@ export default function VagasSalvasPage() {
 
   if (!session) {
     return (
-      <div className="min-h-screen bg-black text-white">
+      <>
         <Header />
-        <div className="max-w-4xl mx-auto py-8 px-4">
-          <p>Faça login para ver suas vagas salvas.</p>
+        <div className="min-h-screen bg-background text-foreground pl-64">
+          <div className="max-w-4xl mx-auto py-10 px-4">
+            <p className="text-muted-foreground">
+              Faça login para ver suas vagas salvas.
+            </p>
+          </div>
         </div>
-      </div>
+      </>
     );
   }
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <>
       <Header />
-      <div className="max-w-4xl mx-auto py-8 px-4">
-        <h1 className="text-3xl font-bold mb-6">Vagas salvas</h1>
-        <div className="space-y-6">
-          {vagas.length === 0 ? (
-            <p className="text-center text-zinc-400 mt-16">Nenhuma vaga salva.</p>
-          ) : (
-            vagas.map(vaga => (
-              <VagaCard
-                key={vaga.id}
-                vaga={vaga}
-                usuario={session?.user}
-                onRemoverSalvo={handleRemoverSalvo}
-                onSalvar={handleSalvarVaga}
-                onCandidatar={handleCandidatar}
-                onDescandidatar={handleDescandidatar}
-                onShowDetails={() => {
-                  const vagaAtual = vagas.find(v => v.id === vaga.id);
-                  setDetalheVaga(vagaAtual || vaga);
-                }}
-                onFechar={handleFechar}      
-                onDeletar={handleDeletar}    
-                onEditar={handleEditar}      
-              />
-            ))
-          )}
-        </div>
-      </div>
-      {/* Modal de confirmação */}
-      {confirmModal.open && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/60 z-50">
-          <div className="bg-zinc-900 p-8 rounded-xl shadow-xl text-center">
-            <p className="text-lg">{confirmModal.message}</p>
-            <button
-              className="mt-4 px-6 py-2 bg-purple-600 text-white rounded hover:bg-purple-800"
-              onClick={() => setConfirmModal({ open: false, message: "" })}
-            >
-              Ok
-            </button>
+      <div className="min-h-screen bg-background text-foreground pl-64">
+        <div className="max-w-4xl mx-auto py-10 px-4 space-y-6">
+          <h1 className="section-title mb-2">Vagas salvas</h1>
+          <p className="text-muted-foreground">
+            Revise e gerencie as vagas que você marcou para ver depois.
+          </p>
+          <div className="space-y-4 mt-4">
+            {vagas.length === 0 ? (
+              <p className="text-center text-muted-foreground mt-12">
+                Nenhuma vaga salva.
+              </p>
+            ) : (
+              vagas.map((vaga) => (
+                <VagaCard
+                  key={vaga.id}
+                  vaga={vaga}
+                  usuario={session?.user}
+                  onRemoverSalvo={handleRemoverSalvo}
+                  onSalvar={handleSalvarVaga}
+                  onCandidatar={handleCandidatar}
+                  onDescandidatar={handleDescandidatar}
+                  onShowDetails={() => {
+                    const vagaAtual = vagas.find((v) => v.id === vaga.id);
+                    setDetalheVaga(vagaAtual || vaga);
+                  }}
+                  onFechar={handleFechar}
+                  onDeletar={handleDeletar}
+                  onEditar={handleEditar}
+                />
+              ))
+            )}
           </div>
         </div>
-      )}
-      {detalheVaga && (
-        <VagaDetalhesModal
-          vaga={detalheVaga}
-          usuario={session?.user}
-          onClose={() => setDetalheVaga(null)}
-          onCandidatar={handleCandidatar}
-          onDescandidatar={handleDescandidatar}
-          onSalvar={handleSalvarVaga}
-          onRemoverSalvo={handleRemoverSalvo}
-          onFechar={handleFechar}      
-          onDeletar={handleDeletar}    
-          onEditar={handleEditar}      
-        />
-      )}
-    </div>
+
+        {/* Modal de confirmação */}
+        {confirmModal.open && (
+          <div className="fixed inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm z-50">
+            <div className="card-glow bg-card p-6 rounded-2xl max-w-sm w-full text-center space-y-4">
+              <p className="text-base text-foreground">{confirmModal.message}</p>
+              <button
+                className="btn-gradient px-6 py-2.5 rounded-lg text-sm font-semibold"
+                onClick={() => setConfirmModal({ open: false, message: "" })}
+              >
+                Ok
+              </button>
+            </div>
+          </div>
+        )}
+
+        {detalheVaga && (
+          <VagaDetalhesModal
+            vaga={detalheVaga}
+            usuario={session?.user}
+            onClose={() => setDetalheVaga(null)}
+            onCandidatar={handleCandidatar}
+            onDescandidatar={handleDescandidatar}
+            onSalvar={handleSalvarVaga}
+            onRemoverSalvo={handleRemoverSalvo}
+            onFechar={handleFechar}
+            onDeletar={handleDeletar}
+            onEditar={handleEditar}
+          />
+        )}
+      </div>
+    </>
   );
 }

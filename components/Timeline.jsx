@@ -12,6 +12,7 @@ import DeleteConfirmationModal from "@/components/DeleteConfirmationModal";
 import EditPostModal from "@/components/EditPostModal";
 import CreatePost from "@/components/CreatePost";
 import ReplyThread from "@/components/ReplyThread";
+import { cn } from "@/lib/utils";
 
 export default function Timeline() {
   const [user, setUser] = useState(null);
@@ -317,20 +318,24 @@ export default function Timeline() {
   return (
     <div className="w-full flex flex-col items-center">
       <CreatePost onPost={handleNewPost} user={user} />
-      <div className="w-full max-w-2xl space-y-6">
+      <div className="w-full max-w-4xl space-y-7">
         {loading ? (
           <p className="text-center text-zinc-400">Carregando posts...</p>
         ) : Array.isArray(posts) && posts.length > 0 ? (
           posts.map((post) => (
-            <Card key={post.id} className="bg-zinc-900 rounded-2xl">
-              <CardContent className="p-6 space-y-4 relative">
-                <div className="flex justify-between items-start">
-                  <div className="flex items-center gap-4">
+            <Card
+              key={post.id}
+              className="card-glow bg-card rounded-3xl overflow-hidden animate-fade-in"
+            >
+              <CardContent className="px-6 py-6 md:px-8 md:py-7 space-y-4 relative">
+                {/* Header */}
+                <div className="flex items-center justify-between pb-2">
+                  <div className="flex items-center gap-3">
                     <Link
                       href={`/profile/${post.author?.id || ""}`}
                       className="flex items-center gap-4 cursor-pointer group"
                     >
-                      <div className="relative w-[40px] h-[40px] rounded-full overflow-hidden border border-zinc-700 bg-zinc-800 shrink-0">
+                      <div className="relative w-10 h-10 rounded-full overflow-hidden bg-zinc-900 ring-2 ring-indigo-500/40 shrink-0">
                         <Image
                           src={post.author?.image || "/default-avatar.png"}
                           alt="Avatar"
@@ -340,8 +345,8 @@ export default function Timeline() {
                           priority
                         />
                       </div>
-                      <div>
-                        <p className="font-semibold group-hover:underline">
+                  <div>
+                    <p className="text-base md:text-lg font-semibold text-zinc-50 group-hover:text-zinc-100 group-hover:underline">
                           {post.author?.name || "Autor desconhecido"}
                         </p>
                         <p className="text-xs text-zinc-400">
@@ -358,7 +363,7 @@ export default function Timeline() {
                         type="button"
                         onClick={() => setActiveOptions(post.id === activeOptions ? null : post.id)}
                       >
-                        <MoreHorizontal className="text-zinc-400 hover:text-white cursor-pointer" />
+                        <MoreHorizontal className="text-zinc-500 hover:text-zinc-200 cursor-pointer" />
                       </button>
                       {activeOptions === post.id && (
                         <div className="absolute right-0 mt-2 w-32 bg-zinc-800 border border-zinc-700 rounded shadow-md z-10 cursor-pointer">
@@ -387,25 +392,45 @@ export default function Timeline() {
                   onSave={saveEditedPost}
                   post={editingPost}
                 />
-                {(!editingPost || editingPost.id !== post.id) && <p className="whitespace-pre-line">{post.content}</p>}
-                {post.image && (
-                  <Image src={post.image} alt="Imagem do post" width={800} height={400} className="rounded-xl object-cover" />
+                {/* Conteúdo do post */}
+                {(!editingPost || editingPost.id !== post.id) && (
+                  <p className="whitespace-pre-line text-zinc-50 leading-relaxed px-1 text-[0.98rem] md:text-base">
+                    {post.content}
+                  </p>
                 )}
-                <div className="flex gap-6 pt-2 border-t border-zinc-800 mt-2 text-sm text-zinc-400 ">
+                {post.image && (
+                  <div className="pt-1">
+                    <Image
+                      src={post.image}
+                      alt="Imagem do post"
+                      width={800}
+                      height={450}
+                      className="w-full max-h-96 rounded-xl object-cover"
+                    />
+                  </div>
+                )}
+
+                {/* Ações */}
+                <div className="flex gap-6 pt-3 border-t border-zinc-800 mt-2 text-sm text-zinc-400">
                   <button
                     type="button"
                     onClick={() => toggleLikePost(post.id)}
-                    className="flex items-center gap-1 text-sm hover:opacity-80 cursor-pointer"
+                    className="flex items-center gap-2 text-sm text-zinc-400 hover:text-pink-400 transition-colors group cursor-pointer"
                   >
-                    <Heart className={post.postLikes?.some((l) => l.userId === user?.id) ? "text-pink-500" : ""} size={18} />
+                    <Heart
+                      className={cn(
+                        "w-5 h-5 transition-transform group-hover:scale-110",
+                        post.postLikes?.some((l) => l.userId === user?.id) && "text-pink-500"
+                      )}
+                    />
                     <span>{post.postLikes?.length || 0}</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => setCommentInputs({ ...commentInputs, [post.id]: "" })}
-                    className="flex items-center gap-1 text-sm hover:opacity-80 cursor-pointer"
+                    className="flex items-center gap-2 text-sm text-zinc-400 hover:text-indigo-400 transition-colors group cursor-pointer"
                   >
-                    <MessageCircle size={18} />
+                    <MessageCircle className="w-5 h-5 transition-transform group-hover:scale-110" />
                   </button>
                   <button
                     type="button"
@@ -415,22 +440,25 @@ export default function Timeline() {
                         url: window.location.href,
                       })
                     }
-                    className="flex items-center gap-1 text-sm hover:opacity-80 cursor-pointer"
+                    className="flex items-center gap-2 text-sm text-zinc-400 hover:text-indigo-400 transition-colors group cursor-pointer"
                   >
-                    <Share2 size={18} />
+                    <Share2 className="w-5 h-5 transition-transform group-hover:scale-110" />
                   </button>
                 </div>
 
                 <div className="mt-4 space-y-4">
                   {(post.comments || []).map((comment) => (
-                    <div key={comment.id} className="bg-zinc-800 p-4 rounded-lg">
+                    <div
+                      key={comment.id}
+                      className="rounded-lg bg-muted/50 p-4 space-y-2"
+                    >
                       <div className="flex justify-between">
-                        <div className="flex gap-3 items-center">
+                        <div className="flex gap-3 items-start">
                           <Link
                             href={`/profile/${comment.author?.id || ""}`}
                             className="flex items-center gap-2 cursor-pointer group"
                           >
-                            <div className="relative w-[30px] h-[30px] rounded-full overflow-hidden border border-zinc-700 bg-zinc-800 shrink-0">
+                            <div className="relative w-8 h-8 rounded-full overflow-hidden bg-muted shrink-0 ring-2 ring-primary/20">
                               <Image
                                 src={comment.author?.image || "/default-avatar.png"}
                                 alt="Avatar"
@@ -440,12 +468,12 @@ export default function Timeline() {
                                 priority
                               />
                             </div>
-                            <div>
-                              <p className="text-sm font-semibold text-zinc-100 group-hover:underline">
+                            <div className="space-y-1">
+                              <p className="text-sm font-semibold text-foreground group-hover:underline">
                                 {comment.author?.name || comment.author}
                               </p>
                               {editingComment?.id === comment.id ? (
-                                <>
+                                <div className="space-y-2">
                                   <Textarea
                                     className="text-sm"
                                     value={editingComment.content}
@@ -464,9 +492,11 @@ export default function Timeline() {
                                   >
                                     Salvar
                                   </Button>
-                                </>
+                                </div>
                               ) : (
-                                <p className="text-sm text-zinc-300">{comment.content}</p>
+                                <p className="text-sm text-muted-foreground leading-relaxed">
+                                  {comment.content}
+                                </p>
                               )}
                             </div>
                           </Link>
@@ -510,14 +540,17 @@ export default function Timeline() {
                         )}
                       </div>
 
-                      <div className="flex gap-4 mt-2 text-xs text-zinc-400">
+                      <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
                         <button
                           type="button"
                           onClick={() => toggleLikeComment(comment.id, post.id)}
-                          className="flex items-center gap-1 text-sm hover:opacity-80 cursor-pointer"
+                          className="flex items-center gap-1 text-sm hover:text-foreground transition-colors cursor-pointer"
                         >
                           <Heart
-                            className={comment.commentLikes?.some((l) => l.userId === user?.id) ? "text-pink-500" : ""}
+                            className={cn(
+                              "w-3 h-3",
+                              comment.commentLikes?.some((l) => l.userId === user?.id) && "text-pink-500",
+                            )}
                             size={14}
                           />
                           <span>{comment.commentLikes?.length || 0}</span>
@@ -525,7 +558,7 @@ export default function Timeline() {
                         <button
                           type="button"
                           onClick={() => toggleReplyInput(comment.id)}
-                          className="flex items-center gap-1 text-sm hover:underline cursor-pointer"
+                          className="flex items-center gap-1 text-sm hover:text-foreground transition-colors cursor-pointer"
                         >
                           <MessageCircle size={14} />
                           <span>Responder</span>

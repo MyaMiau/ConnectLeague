@@ -92,7 +92,7 @@ export default async function handler(req, res) {
           data: { vacancy_id: vagaId, user_id: Number(session.user.id) },
         });
 
-        // cria notificação para a organização
+        // cria notificação básica para a organização (sem campos extras não definidos no schema)
         if (vagaAtual && vagaAtual.organization_id) {
           await tx.notification.create({
             data: {
@@ -103,8 +103,6 @@ export default async function handler(req, res) {
               commentId: null,
               read: false,
               createdAt: new Date(),
-              message: `${session.user.name} se candidatou à vaga ${vagaAtual.title}`,
-              link: `/vagas/${vagaId}`,
             },
           });
         }

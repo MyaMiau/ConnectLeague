@@ -1,9 +1,8 @@
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import Image from 'next/image';
-import Header from "@/components/Header"; 
-import ProfileCard from "@/components/ProfileCard"; 
+import Image from "next/image";
+import Header from "@/components/Header";
 
 export default function VagaCandidatos() {
   const router = useRouter();
@@ -24,92 +23,119 @@ export default function VagaCandidatos() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black text-white flex flex-col items-center">
+      <>
         <Header />
-        <div className="flex-1 flex items-center justify-center">Carregando...</div>
-      </div>
+        <div className="min-h-screen bg-background text-foreground pl-64 flex items-center justify-center">
+          <p className="text-muted-foreground">Carregando...</p>
+        </div>
+      </>
     );
   }
 
   if (!vaga) {
     return (
-      <div className="min-h-screen bg-black text-white flex flex-col items-center">
+      <>
         <Header />
-        <div className="flex-1 flex items-center justify-center">Vaga não encontrada.</div>
-      </div>
+        <div className="min-h-screen bg-background text-foreground pl-64 flex items-center justify-center">
+          <p className="text-muted-foreground">Vaga não encontrada.</p>
+        </div>
+      </>
     );
   }
 
   return (
-    <div className="min-h-screen bg-black text-white flex flex-col items-center px-4">
+    <>
       <Header />
-      <div className="w-full max-w-2xl mt-10">
-        <h1 className="text-3xl font-bold mb-2">Candidatos da vaga</h1>
-        <h2 className="text-xl font-semibold mb-4">
-          {vaga.titulo || vaga.title}
-        </h2>
-        <div className="mb-8 text-zinc-400">
-          <span>
-            Organização:{" "}
-            <Link href={`/profile/${vaga.organization?.id || ""}`} className="hover:underline font-bold">
-              {vaga.organization?.name || "Organização desconhecida"}
-            </Link>
-          </span>
-        </div>
-
-        {vaga.applications?.length === 0 && (
-          <p className="text-zinc-400 text-center">Nenhum candidato ainda.</p>
-        )}
-
-        <div className="space-y-6">
-          {vaga.applications?.map(app => {
-            const user = app.user;
-            if (!user) return null;
-            return (
-              <div
-                key={user.id}
-                className="bg-zinc-900 rounded-xl p-6 flex flex-col md:flex-row items-center gap-6 border border-zinc-800 shadow"
+      <div className="min-h-screen bg-background text-foreground pl-64">
+        <main className="max-w-3xl mx-auto pt-10 pb-12 px-4 space-y-8">
+          <header className="space-y-2">
+            <h1 className="section-title">Candidatos da vaga</h1>
+            <p className="text-muted-foreground">
+              {vaga.titulo || vaga.title}
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Organização:{" "}
+              <Link
+                href={`/profile/${vaga.organization?.id || ""}`}
+                className="text-primary font-medium hover:underline"
               >
-                <Link href={`/profile/${user.id}`} className="flex items-center gap-4 group">
-                  <div className="relative w-20 h-20 rounded-full overflow-hidden border border-zinc-700 bg-zinc-800 shrink-0">
-                    <Image
-                      src={user.image || "/default-avatar.png"}
-                      alt={user.name}
-                      fill
-                      sizes="80px"
-                      className="object-cover"
-                      priority
-                    />
+                {vaga.organization?.name || "Organização desconhecida"}
+              </Link>
+            </p>
+          </header>
+
+          {vaga.applications?.length === 0 ? (
+            <p className="text-center text-muted-foreground mt-6">
+              Nenhum candidato ainda.
+            </p>
+          ) : (
+            <div className="space-y-4">
+              {vaga.applications?.map((app) => {
+                const user = app.user;
+                if (!user) return null;
+                return (
+                  <div
+                    key={user.id}
+                    className="card-glow bg-card rounded-xl p-5 animate-fade-in hover-lift"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="relative w-16 h-16 rounded-full overflow-hidden ring-2 ring-primary/20 bg-muted shrink-0">
+                        <Image
+                          src={user.image || "/default-avatar.png"}
+                          alt={user.name}
+                          fill
+                          sizes="64px"
+                          className="object-cover"
+                          priority
+                        />
+                      </div>
+
+                      <div className="flex-1 min-w-0">
+                        <h2 className="font-semibold text-lg text-foreground truncate">
+                          {user.name}
+                        </h2>
+                        {user.elo && (
+                          <p className="text-sm text-muted-foreground">
+                            <span className="font-medium text-foreground">
+                              Elo:
+                            </span>{" "}
+                            {Array.isArray(user.elo)
+                              ? user.elo.join(", ")
+                              : user.elo}
+                          </p>
+                        )}
+                        {user.roles && (
+                          <p className="text-sm text-muted-foreground">
+                            <span className="font-medium text-foreground">
+                              Funções:
+                            </span>{" "}
+                            {Array.isArray(user.roles)
+                              ? user.roles.join(", ")
+                              : user.roles}
+                          </p>
+                        )}
+                        {user.bio && (
+                          <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                            {user.bio}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="shrink-0">
+                        <Link href={`/profile/${user.id}`}>
+                          <button className="btn-gradient px-5 py-2.5 rounded-lg text-sm font-semibold shadow-lg">
+                            Ver perfil
+                          </button>
+                        </Link>
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-bold text-lg group-hover:underline">{user.name}</p>
-                    {user.elo && (
-                      <p className="text-zinc-400 text-sm">
-                        <strong>Elo:</strong> {Array.isArray(user.elo) ? user.elo.join(", ") : user.elo}
-                      </p>
-                    )}
-                    {user.roles && (
-                      <p className="text-zinc-400 text-sm">
-                        <strong>Funções:</strong> {Array.isArray(user.roles) ? user.roles.join(", ") : user.roles}
-                      </p>
-                    )}
-                    {user.bio && (
-                      <p className="text-zinc-300 text-sm mt-2">{user.bio}</p>
-                    )}
-                  </div>
-                </Link>
-                <div className="mt-3 md:mt-0 md:ml-auto flex flex-col items-end">
-                  <Link href={`/profile/${user.id}`}>
-                    <button className="bg-purple-600 text-white py-2 px-4 rounded shadow hover:bg-purple-700 transition">
-                      Ver perfil
-                    </button>
-                  </Link>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+                );
+              })}
+            </div>
+          )}
+        </main>
       </div>
-    </div>
+    </>
   );
 }

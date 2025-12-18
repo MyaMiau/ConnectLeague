@@ -28,7 +28,7 @@ export default function VagasPage() {
     tags: []
   });
 
-  const fetchVagas = () => {
+  function fetchVagas() {
     const params = new URLSearchParams();
     params.append("pagina", filtros.pagina);
     params.append("ordenar", filtros.ordenar);
@@ -47,7 +47,12 @@ export default function VagasPage() {
       .then(({ vagas }) => {
         setVagas(vagas);
       });
-  };
+  }
+
+  // Carrega vagas ao montar a página e sempre que os filtros mudarem
+  useEffect(() => {
+    fetchVagas();
+  }, [filtros]);
 
 
   const handleInput = e => setFiltros(f => ({ ...f, [e.target.name]: e.target.value, pagina: 1 }));
@@ -275,66 +280,82 @@ export default function VagasPage() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <>
       <Header />
-      <div className="max-w-4xl mx-auto py-8 px-4">
-        <h1 className="text-3xl font-bold mb-6">Vagas disponíveis</h1>
-        {session?.user?.type === "organization" && (
-          <div className="mb-6">
-            <Button onClick={() => setShowVagaModal(true)}>
-              Abrir vaga
-            </Button>
-          </div>
-        )}
-        <div className="mb-6"></div>
-        {vagas.length === 0 ? (
-          <p className="text-center text-zinc-400 mt-16">Nenhuma vaga encontrada.</p>
-        ) : (
-          <div className="space-y-6">
-            {vagas.map(vaga => (
-              <VagaCard
-                key={vaga.id}
-                vaga={vaga}
-                usuario={session?.user}
-                onCandidatar={handleCandidatar}
-                onDescandidatar={handleDescandidatar} 
-                onSalvar={handleSalvar}
-                onRemoverSalvo={handleRemoverSalvo}
-                onFechar={handleFechar}
-                onDeletar={handleDeletar}
-                onShowDetails={() => {
-                  const vagaAtual = vagas.find(v => v.id === vaga.id);
-                  setVagaSelecionada(vagaAtual || vaga);
-                }}
-              />
-            ))}
-          </div>
-        )}
+      <div className="min-h-screen bg-background text-foreground pl-64">
+        <div className="max-w-4xl mx-auto py-10 px-4 space-y-8">
+          <header className="space-y-3">
+            <h1 className="section-title">Vagas disponíveis</h1>
+            <p className="text-muted-foreground">
+              Encontre oportunidades abertas por organizações da comunidade.
+            </p>
+            {session?.user?.type === "organization" && (
+              <div className="pt-2">
+                <Button
+                  onClick={() => setShowVagaModal(true)}
+                  className="btn-gradient px-6 py-2.5 rounded-lg text-sm font-semibold shadow-lg"
+                >
+                  Abrir vaga
+                </Button>
+              </div>
+            )}
+          </header>
 
-        <div className="flex items-center justify-center mt-8 gap-6">
-          <button
-            onClick={() => setFiltros(f => ({ ...f, pagina: Math.max(1, f.pagina - 1) }))}
-            disabled={filtros.pagina === 1}
-            className="px-4 py-2 bg-zinc-800 rounded hover:bg-zinc-700 disabled:bg-zinc-900"
-          >
-            Anterior
-          </button>
-          <span>Página {filtros.pagina}</span>
-          <button
-            onClick={() => setFiltros(f => ({ ...f, pagina: f.pagina + 1 }))}
-            disabled={vagas.length < 10}
-            className="px-4 py-2 bg-zinc-800 rounded hover:bg-zinc-700 disabled:bg-zinc-900"
-          >
-            Próxima
-          </button>
+          {vagas.length === 0 ? (
+            <p className="text-center text-muted-foreground mt-12">
+              Nenhuma vaga encontrada.
+            </p>
+          ) : (
+            <div className="space-y-4">
+              {vagas.map((vaga) => (
+                <VagaCard
+                  key={vaga.id}
+                  vaga={vaga}
+                  usuario={session?.user}
+                  onCandidatar={handleCandidatar}
+                  onDescandidatar={handleDescandidatar}
+                  onSalvar={handleSalvar}
+                  onRemoverSalvo={handleRemoverSalvo}
+                  onFechar={handleFechar}
+                  onDeletar={handleDeletar}
+                  onShowDetails={() => {
+                    const vagaAtual = vagas.find((v) => v.id === vaga.id);
+                    setVagaSelecionada(vagaAtual || vaga);
+                  }}
+                />
+              ))}
+            </div>
+          )}
+
+          <div className="flex items-center justify-center mt-4 gap-6 text-sm text-muted-foreground">
+            <button
+              onClick={() =>
+                setFiltros((f) => ({ ...f, pagina: Math.max(1, f.pagina - 1) }))
+              }
+              disabled={filtros.pagina === 1}
+              className="px-4 py-2 rounded-lg border border-border bg-background hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Anterior
+            </button>
+            <span>Página {filtros.pagina}</span>
+            <button
+              onClick={() =>
+                setFiltros((f) => ({ ...f, pagina: f.pagina + 1 }))
+              }
+              disabled={vagas.length < 10}
+              className="px-4 py-2 rounded-lg border border-border bg-background hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Próxima
+            </button>
+          </div>
         </div>
       </div>
       {confirmModal.open && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/60 z-50">
-          <div className="bg-zinc-900 p-8 rounded-xl shadow-xl text-center">
-            <p className="text-lg">{confirmModal.message}</p>
+        <div className="fixed inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm z-50">
+          <div className="card-glow bg-card rounded-2xl p-6 max-w-sm w-full text-center space-y-4">
+            <p className="text-base text-foreground">{confirmModal.message}</p>
             <button
-              className="mt-4 px-6 py-2 bg-purple-600 text-white rounded hover:bg-purple-800"
+              className="btn-gradient px-6 py-2.5 rounded-lg text-sm font-semibold"
               onClick={() => setConfirmModal({ open: false, message: "" })}
             >
               Ok
@@ -368,12 +389,13 @@ export default function VagasPage() {
         open={showEditModal}
         onClose={() => {
           setShowEditModal(false);
-          setEditVaga(null);}}
+          setEditVaga(null);
+        }}
         onSubmit={handleUpdateVaga}
         loading={loadingVagaModal}
         initialValues={editVaga}
         editing
       />
-    </div>
+    </>
   );
 }

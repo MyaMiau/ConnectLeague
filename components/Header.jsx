@@ -2,7 +2,14 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useEffect, useRef, useState } from "react";
-import { Home, Briefcase, LogOut, Bell, Bookmark, MessageSquare } from "lucide-react";
+import {
+  Home,
+  Briefcase,
+  LogOut,
+  Bell,
+  Bookmark,
+  MessageSquare,
+} from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
 
 function getNotificationLink(n) {
@@ -244,137 +251,220 @@ export default function Header() {
     setUnreadCount(0);
   };
 
+  // Navegação no estilo Sidebar moderno
   const navItems = [
     {
+      id: "notifications",
       label: "Notificações",
-      icon: <Bell size={20} />,
-      onClick: () => setShowNotifications((prev) => !prev),
+      icon: Bell,
+      hasCounter: true,
       custom: true,
     },
     {
-      label: "Mensagens",
-      icon: <MessageSquare size={20} />,
-      onClick: () => router.push("/messages"),
-      badge: unreadMessages,
-    },
-    {
+      id: "timeline",
       label: "Timeline",
-      icon: <Home size={20} />,
-      onClick: () => router.push("/timeline"),
+      icon: Home,
+      path: "/timeline",
     },
     {
+      id: "messages",
+      label: "Mensagens",
+      icon: MessageSquare,
+      path: "/messages",
+    },
+    {
+      id: "jobs",
       label: "Vagas",
-      icon: <Briefcase size={20} />,
-      onClick: () => router.push("/vagas"),
+      icon: Briefcase,
+      path: "/vagas",
     },
     {
+      id: "saved",
       label: "Salvos",
-      icon: <Bookmark size={20} />,
-      onClick: () => router.push("/vagas/salvos"),
+      icon: Bookmark,
+      path: "/vagas/salvos",
     },
     {
+      id: "logout",
       label: "Sair",
-      icon: <LogOut size={20} />,
-      onClick: () => {
-        signOut({ callbackUrl: "/login" });
-      },
-      color: "text-red-400 hover:border-b-red-400",
+      icon: LogOut,
+      path: "/login",
+      isDestructive: true,
     },
   ];
 
-  return (
-    <aside className="fixed left-0 top-0 h-screen w-56 bg-zinc-900 flex flex-col items-center py-8 shadow-lg z-50">
-      <Link href="/timeline" className="flex items-center mb-6">
-        <Image
-          src={logoSrc}
-          alt="Logo Connect League"
-          width={100}
-          height={100}
-          className="rounded-full object-cover"
-          priority
-          onError={() => {
-            if (logoSrc === "/connect-league-logo.png") {
-              setLogoSrc("/cl-logo-render.png");
-            }
-          }}
-        />
-      </Link>
+  const isOrgUser = session?.user?.type === "organization";
+  const filteredNavItems = isOrgUser
+    ? navItems.filter((item) => item.id !== "saved")
+    : navItems;
 
+  const getActiveItem = () => {
+    const path = router.pathname;
+    const asPath = router.asPath || "";
+
+    // Perfil próprio (player ou organização) -> não destacar nada no menu
+    const isOwnProfileRoute =
+      (path.startsWith("/profile/[id]") || path.startsWith("/organization/[id]")) &&
+      (() => {
+        const segments = asPath.split("/");
+        const idFromPath = segments[2];
+        if (!idFromPath || !session?.user?.id) return false;
+        return Number(idFromPath) === Number(session.user.id);
+      })();
+
+    if (isOwnProfileRoute) return null;
+
+    if (path.startsWith("/timeline")) return "timeline";
+    if (path.startsWith("/messages")) return "messages";
+    if (path.startsWith("/vagas/salvos")) return "saved";
+    if (path.startsWith("/vagas")) return "jobs";
+
+    return "timeline";
+  };
+
+  const activeItem = getActiveItem();
+
+  return (
+    <aside className="fixed left-0 top-0 h-screen w-64 bg-zinc-950 border-r border-zinc-800/60 flex flex-col z-50">
+      {/* Logo / topo */}
+      <div className="px-6 pt-6 pb-4 flex items-center gap-3">
+        <button
+          type="button"
+          onClick={() => router.push("/timeline")}
+          className="flex items-center gap-3 cursor-pointer"
+        >
+          <div className="relative w-14 h-14 rounded-full overflow-hidden bg-zinc-900 border border-zinc-700/80">
+            <Image
+              src={logoSrc}
+              alt="Connect League"
+              fill
+              sizes="56px"
+              className="object-cover"
+              priority
+              onError={() => {
+                if (logoSrc === "/connect-league-logo.png") {
+                  setLogoSrc("/cl-logo-render.png");
+                }
+              }}
+            />
+          </div>
+          <span className="text-2xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-sky-400 via-indigo-400 to-fuchsia-400">
+            CL
+          </span>
+        </button>
+      </div>
+
+      {/* Perfil usuário */}
+      <div className="px-4 mb-6">
       {profile && (
         <Link
           href={getProfileUrl(profile)}
-          className="flex items-center gap-2 mb-8 w-full px-4 group cursor-pointer">
-          <div className="relative w-[56px] h-[56px] shrink-0">
+          className="flex items-center gap-3 p-3 rounded-xl bg-zinc-900/80 border border-zinc-800/80 transition-all duration-150 hover:bg-zinc-900 cursor-pointer group"
+        >
+          <div className="relative w-11 h-11 shrink-0 rounded-full overflow-hidden ring-2 ring-purple-500/40 group-hover:ring-purple-400/70 transition-all">
             <Image
               src={profile.image || "/default-avatar.png"}
               fill
               sizes="56px"
-              className="rounded-full object-cover border-2 border-zinc-600 shadow-sm"
+              className="object-cover"
               alt={profile.name || "Avatar"}
               priority/>
           </div>
-          <span className="text-zinc-100 font-semibold group-hover:text-purple-400 transition-colors truncate">
+          <span className="text-sm font-semibold text-zinc-100 group-hover:text-purple-300 transition-colors truncate">
             {profile.name}
           </span>
         </Link>
       )}
+      </div>
 
-      <nav className="flex flex-col gap-4 w-full px-4">
-        {navItems.map((item, idx) =>
-          item.custom ? (
-            <div className="relative" key={item.label}>
-              <button
-                className={`
-                  flex items-center gap-2 font-medium text-zinc-100
-                  bg-transparent border-none outline-none px-0 py-0
-                  hover:underline hover:underline-offset-4 hover:decoration-2 hover:decoration-purple-500
-                  transition-all duration-150
-                  text-left cursor-pointer hover:text-purple-400`}
-                style={{ boxShadow: "none", borderRadius: 0 }}
-                onClick={item.onClick}>
-                {item.icon}
-                {item.label}
-                {unreadCount > 0 && (
-                  <span className="ml-1 bg-pink-500 text-white text-xs rounded-full px-2">
-                    {unreadCount}
-                  </span>
-                )}
-              </button>
-              <NotificationsPopover
-                open={showNotifications}
-                onClose={() => setShowNotifications(false)}
-                notifications={notifications}
-                unreadCount={unreadCount}
-                onRead={handleReadAll}
-              />
-            </div>
-          ) : (
-            <button
-              key={item.label}
-              onClick={item.onClick}
-              className={`
-                flex items-center gap-2 font-medium text-zinc-100
-                bg-transparent border-none outline-none px-0 py-0
-                hover:underline hover:underline-offset-4 hover:decoration-2 hover:decoration-purple-500
-                transition-all duration-150
-                text-left cursor-pointer
-                ${item.color || "hover:text-purple-400"}`}
-              style={{
-                boxShadow: "none",
-                borderRadius: 0,
-              }}>
-              {item.icon}
-              {item.label}
-              {item.badge > 0 && (
-                <span className="ml-1 bg-pink-500 text-white text-xs rounded-full px-2">
-                  {item.badge}
-                </span>
-              )}
-            </button>
-          )
-        )}
+      {/* Navegação */}
+      <nav className="flex-1 px-3 mt-2">
+        <ul className="space-y-1.5">
+          {filteredNavItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = activeItem === item.id;
+
+            if (item.custom) {
+              // Notificações com popover
+              return (
+                <li key={item.id} className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setShowNotifications((prev) => !prev)}
+                    className={`relative w-full flex items-center gap-4 px-4 py-3 rounded-2xl text-base font-medium transition-colors cursor-pointer
+                      ${
+                        isActive
+                          ? "bg-zinc-800/80 text-zinc-50 shadow-[0_0_0_1px_rgba(129,140,248,0.4)]"
+                          : "text-zinc-300 hover:bg-zinc-900/80"
+                      }`}
+                  >
+                    {isActive && (
+                      <span className="absolute left-0 top-1/2 -translate-y-1/2 h-9 w-1.5 rounded-full bg-gradient-to-b from-sky-400 via-indigo-400 to-fuchsia-400" />
+                    )}
+                    <Icon className="w-5 h-5 flex-shrink-0" />
+                    <span className="flex-1 text-left">{item.label}</span>
+                    {unreadCount > 0 && (
+                      <span className="flex items-center justify-center min-w-[20px] h-5 px-1.5 text-[11px] font-bold rounded-full bg-pink-500 text-white">
+                        {unreadCount}
+                      </span>
+                    )}
+                  </button>
+                  <NotificationsPopover
+                    open={showNotifications}
+                    onClose={() => setShowNotifications(false)}
+                    notifications={notifications}
+                    unreadCount={unreadCount}
+                    onRead={handleReadAll}
+                  />
+                </li>
+              );
+            }
+
+            if (item.id === "logout") {
+              return (
+                <li key={item.id} className="relative">
+                  <button
+                    type="button"
+                    onClick={() => signOut({ callbackUrl: "/login" })}
+                    className="relative w-full flex items-center gap-4 px-4 py-3 rounded-2xl text-base font-medium text-red-400 hover:bg-red-950/40 hover:text-red-300 transition-colors cursor-pointer"
+                  >
+                    <Icon className="w-5 h-5 flex-shrink-0" />
+                    <span className="flex-1 text-left">Sair</span>
+                  </button>
+                </li>
+              );
+            }
+
+            return (
+              <li key={item.id} className="relative">
+                <Link
+                  href={item.path}
+                  className={`relative w-full flex items-center gap-4 px-4 py-3 rounded-2xl text-base font-medium transition-colors cursor-pointer
+                    ${
+                      isActive
+                        ? "bg-zinc-800/80 text-zinc-50 shadow-[0_0_0_1px_rgba(129,140,248,0.4)]"
+                        : "text-zinc-300 hover:bg-zinc-900/80"
+                    }`}
+                >
+                  {isActive && (
+                    <span className="absolute left-0 top-1/2 -translate-y-1/2 h-9 w-1.5 rounded-full bg-gradient-to-b from-sky-400 via-indigo-400 to-fuchsia-400" />
+                  )}
+                  <Icon className="w-5 h-5 flex-shrink-0" />
+                  <span className="flex-1 text-left">{item.label}</span>
+                  {item.id === "messages" && unreadMessages > 0 && (
+                    <span className="flex items-center justify-center min-w-[20px] h-5 px-1.5 text-[11px] font-bold rounded-full bg-sky-500 text-white">
+                      {unreadMessages}
+                    </span>
+                  )}
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
       </nav>
-      <div className="mt-auto text-zinc-500 text-xs">
+
+      {/* Rodapé */}
+      <div className="p-4 border-t border-zinc-800 text-xs text-zinc-500">
         © 2025 Connect League
       </div>
     </aside>

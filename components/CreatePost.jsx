@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Upload } from "lucide-react";
 import { useState } from "react";
 import imageCompression from "browser-image-compression";
 
@@ -127,14 +128,37 @@ export default function CreatePost({ onPost, user }) {
   };
 
   return (
-    <Card className="w-full max-w-2xl bg-zinc-900 mb-8 rounded-2xl">
-      <CardContent className="p-6 space-y-4">
+    <Card className="w-full max-w-4xl card-glow bg-card rounded-3xl mb-8 animate-fade-in">
+      <CardContent className="px-6 py-6 md:px-8 md:py-7 space-y-4">
+        {/* Caixa de texto principal */}
         <Textarea
           placeholder="Compartilhe algo profissional..."
           value={text}
           onChange={(e) => setText(e.target.value)}
+          className="w-full bg-transparent border-none resize-none text-foreground text-base md:text-[1.05rem] placeholder:text-muted-foreground focus:outline-none focus-visible:ring-0 focus-visible:border-none min-h-[80px]"
         />
-        <Input type="file" accept="image/*" onChange={handleImageUpload} />
+
+        {/* Linha inferior: upload + publicar */}
+        <div className="flex items-center justify-between mt-4 pt-4 border-t border-border gap-3 flex-wrap">
+          <label className="flex items-center gap-2 px-4 py-2 rounded-lg border border-border text-muted-foreground hover:bg-muted transition-colors cursor-pointer text-sm">
+            <Upload className="w-4 h-4" />
+            <span>Escolher arquivo</span>
+            <Input
+              type="file"
+              accept="image/*"
+              onChange={handleImageUpload}
+              className="hidden"
+            />
+          </label>
+
+          <Button
+            onClick={handlePost}
+            disabled={loading || !text.trim()}
+            className="px-6 py-2.5 rounded-lg bg-gradient-to-r from-sky-500 via-indigo-500 to-fuchsia-500 hover:from-sky-400 hover:via-indigo-400 hover:to-fuchsia-400 text-sm font-semibold shadow-[0_12px_35px_rgba(79,70,229,0.6)] disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            {loading ? "Publicando..." : "Publicar"}
+          </Button>
+        </div>
         {error && (
           <div className="text-red-500 text-sm mt-2">{error}</div>
         )}
@@ -142,12 +166,9 @@ export default function CreatePost({ onPost, user }) {
           <img
             src={imageUrl}
             alt="Prévia da imagem"
-            className="max-w-xs max-h-48 rounded-lg mt-2"
+            className="max-w-xs max-h-48 rounded-xl mt-3 border border-border object-cover"
           />
         )}
-        <Button onClick={handlePost} disabled={loading || !text.trim()}>
-          {loading ? "Publicando..." : "Publicar"}
-        </Button>
       </CardContent>
     </Card>
   );

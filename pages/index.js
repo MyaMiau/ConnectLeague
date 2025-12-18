@@ -1,9 +1,10 @@
 import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 export default function HomePage() {
-  const carouselImages = [
+  const heroImages = [
     "/playerbonita.jpg",
     "/playerbonita2.jpg",
     "/playerbonita3.jpg",
@@ -13,122 +14,103 @@ export default function HomePage() {
   ];
 
   const [index, setIndex] = useState(0);
-  const [paused, setPaused] = useState(false);
   const timeoutRef = useRef(null);
   const [logoSrc, setLogoSrc] = useState("/connect-league-logo.png");
 
   useEffect(() => {
-    if (paused) return;
     timeoutRef.current = setTimeout(() => {
-      setIndex((prev) => (prev + 1) % carouselImages.length);
-    }, 4000);
+      setIndex((prev) => (prev + 1) % heroImages.length);
+    }, 5000);
     return () => clearTimeout(timeoutRef.current);
-  }, [index, paused, carouselImages.length]);
+  }, [index, heroImages.length]);
 
   const goPrev = () => {
     clearTimeout(timeoutRef.current);
-    setIndex((prev) => (prev - 1 + carouselImages.length) % carouselImages.length);
+    setIndex((prev) => (prev - 1 + heroImages.length) % heroImages.length);
   };
+
   const goNext = () => {
     clearTimeout(timeoutRef.current);
-    setIndex((prev) => (prev + 1) % carouselImages.length);
+    setIndex((prev) => (prev + 1) % heroImages.length);
   };
+
   const goTo = (i) => {
     clearTimeout(timeoutRef.current);
     setIndex(i);
   };
 
   return (
-    <div className="min-h-screen bg-[#000000] text-white">
-      <main className="relative overflow-hidden" style={{ minHeight: "100vh" }}>
-        <div className="absolute inset-0 z-0">
-          <div className="relative w-full h-full">
+    <div className="min-h-screen bg-[#020617] text-white relative overflow-hidden">
+      {/* Background image + overlay */}
+      <div className="absolute inset-0">
+        <Image
+          src="/bgindex.png"
+          alt="Background arena"
+          fill
+          className="object-cover object-center scale-x-[-1] opacity-60"
+          priority
+        />
+        <div className="absolute inset-0 bg-gradient-to-br from-black/90 via-black/85 to-black/70" />
+      </div>
+
+      {/* Content */}
+      <div className="relative z-10 min-h-screen flex flex-col">
+        {/* Header */}
+        <header className="px-8 pt-6 flex items-center gap-3">
+          <div className="relative w-16 h-16 rounded-full overflow-hidden bg-zinc-900/80 border border-zinc-700/80">
             <Image
-              src="/bgindex.png"
-              alt="Background arena"
+              src={logoSrc}
+              alt="Connect League"
               fill
-              style={{
-                objectFit: "cover",
-                objectPosition: "center",
-                transform: "scaleX(-1)",
-                opacity: 0.5,
-              }}
+              sizes="64px"
+              className="object-cover"
               priority
+              onError={() => {
+                if (logoSrc === "/connect-league-logo.png") {
+                  setLogoSrc("/cl-logo-render.png");
+                }
+              }}
             />
           </div>
-          <div
-            className="absolute inset-0 pointer-events-none"
-            style={{
-              background:
-                "radial-gradient(800px 420px at 36% 45%, rgba(10,20,35,0) 0%, rgba(8,12,20,0.55) 50%, rgba(8,12,20,0.85) 100%)",
-            }}
-          />
-        </div>
+          <span className="text-xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-sky-400 via-indigo-400 to-fuchsia-400">
+            Connect League
+          </span>
+        </header>
 
-        <div className="relative z-20 w-full max-w-7xl mx-auto px-8 py-20">
-          {/* logo */}
-          <div className="absolute top-6 left-6 z-30 flex items-center gap-3">
-            <div className="relative w-20 h-20">
-              <Image
-                src={logoSrc}
-                alt="Connect League"
-                fill
-                sizes="80px"
-                className="rounded-full object-cover"
-                priority
-                onError={() => {
-                  if (logoSrc === "/connect-league-logo.png") {
-                    setLogoSrc("/cl-logo-render.png");
-                  }
-                }}
-              />
-            </div>
-            <span className="hidden sm:inline-block text-lg md:text-xl font-extrabold text-white/90">
-              Connect League
-            </span>
-          </div>
-
-          <div className="flex flex-col lg:flex-row items-start lg:items-center gap-12">
-            <div className="flex-1 max-w-2xl" style={{ paddingTop: "4vh" }}>
-              <h1
-                className="font-extrabold text-white leading-tight"
-                style={{
-                  fontSize: "clamp(3.6rem, 3.5vw, 6.4rem)",
-                  lineHeight: 0.98,
-                  letterSpacing: "-0.02em",
-                  marginBottom: 12,
-                  maxWidth: "520px", 
-                }}
-              >
-                Vença como time
-                <br />
-                Cresça como
-                <br />
-                jogador.
+        {/* Hero */}
+        <main className="flex-1 flex items-center">
+          <div className="container mx-auto px-8 py-12 grid lg:grid-cols-2 gap-12 items-center">
+            {/* Left side */}
+            <div className="space-y-8 max-w-xl">
+              <h1 className="text-5xl lg:text-6xl font-extrabold leading-tight tracking-tight">
+                <span className="block text-white">Vença como time</span>
+                <span className="block bg-clip-text text-transparent bg-gradient-to-r from-sky-400 via-indigo-400 to-fuchsia-400">
+                  Cresça como jogador.
+                </span>
               </h1>
 
-              <p className="mt-6 text-zinc-300 max-w-xl text-sm md:text-base font-medium">
-                Conecte jogadores, equipes e oportunidades. Compartilhe partidas, encontre vagas e leve sua
-                carreira gamer para o próximo nível.
+              <p className="text-base md:text-lg text-zinc-200/90 leading-relaxed">
+                Conecte jogadores, equipes e oportunidades. Compartilhe partidas, encontre vagas e leve
+                sua carreira gamer para o próximo nível.
               </p>
 
-              <div className="mt-10 flex items-center gap-6">
-                <Link href="/login" className="inline-block">
+              <div className="flex items-center gap-4">
+                <Link href="/login">
                   <button
-                    className="px-6 py-3 rounded-full text-white font-medium transition-transform transform hover:-translate-y-0.5 cursor-pointer"
+                    className="px-8 py-3.5 rounded-full text-base font-semibold text-white shadow-[0_20px_60px_rgba(59,130,246,0.45)] transition-transform hover:-translate-y-0.5 cursor-pointer"
                     style={{
-                      background: "linear-gradient(90deg,#7c3aed,#5b21b6)",
-                      boxShadow: "0 10px 30px rgba(99,102,241,0.18)",
+                      background:
+                        "linear-gradient(90deg,#22d3ee 0%,#6366f1 40%,#a855f7 75%,#ec4899 100%)",
                     }}
                   >
                     Login
                   </button>
                 </Link>
 
-                <Link href="/register" className="inline-block">
+                <Link href="/register">
                   <button
-                    className="px-6 py-3 rounded-full text-white font-medium border border-white/20 bg-white/3 hover:bg-white/6 cursor-pointer"
-                    style={{ backdropFilter: "blur(6px)" }}
+                    className="px-8 py-3.5 rounded-full text-base font-semibold border border-white/25 bg-white/5 hover:bg-white/10 cursor-pointer transition-colors"
+                    style={{ backdropFilter: "blur(14px)" }}
                   >
                     Cadastre-se
                   </button>
@@ -136,96 +118,65 @@ export default function HomePage() {
               </div>
             </div>
 
-            <div
-              className="relative select-none"
-              style={{
-                width: 420,
-                marginLeft: 0,
-              }}
-              onMouseEnter={() => setPaused(true)}
-              onMouseLeave={() => setPaused(false)}
-            >
-              <div
-                aria-hidden
-                className="absolute -left-6 -top-6 w-[460px] h-[360px] rounded-3xl filter blur-3xl opacity-80"
-                style={{
-                  background:
-                    "radial-gradient(closest-side, rgba(99,102,241,0.45), rgba(59,130,246,0.09) 40%, transparent 60%)",
-                  zIndex: 0,
-                }}
-              />
-
-              <div
-                className="relative rounded-3xl overflow-hidden shadow-2xl"
-                style={{
-                  border: "1px solid rgba(255,255,255,0.06)",
-                  zIndex: 5,
-                  height: 420,
-                  width: "100%",
-                  background: "linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01))",
-                }}
-              >
-                {carouselImages.map((src, i) => (
-                  <div
-                    key={src}
-                    className="absolute inset-0 transition-opacity duration-700 ease-in-out"
-                    style={{
-                      opacity: i === index ? 1 : 0,
-                      zIndex: i === index ? 6 : 4,
-                    }}
-                  >
-                    <Image
-                      src={src}
-                      alt={`Player ${i + 1}`}
-                      fill
-                      sizes="(max-width: 1024px) 80vw, 420px"
-                      className="object-cover"
-                      priority={i === index}
-                    />
-                  </div>
-                ))}
-
-                <button
-                  aria-label="Previous"
-                  onClick={goPrev}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 z-40 bg-black/40 hover:bg-black/50 rounded-full w-10 h-10 flex items-center justify-center text-white cursor-pointer" 
-                  style={{ backdropFilter: "blur(6px)" }}
-                >
-                  ‹
-                </button>
-                <button
-                  aria-label="Next"
-                  onClick={goNext}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 z-40 bg-black/40 hover:bg-black/50 rounded-full w-10 h-10 flex items-center justify-center text-white cursor-pointer"
-                  style={{ backdropFilter: "blur(6px)" }}
-                >
-                  ›
-                </button>
-
-                <div className="absolute left-1/2 -translate-x-1/2 bottom-5 z-40 flex gap-3">
-                  {carouselImages.map((_, i) => (
-                    <button
-                      key={i}
-                      onClick={() => goTo(i)}
-                      aria-label={`Go to slide ${i + 1}`}
-                      className={`w-3 h-3 rounded-full ${i === index ? "bg-white" : "bg-white/30"} transition-all`}
-                      style={i === index ? { transform: "scale(1.15)" } : undefined}
-                    />
+            {/* Right side - carousel */}
+            <div className="relative hidden lg:block">
+              <div className="rounded-2xl p-2 bg-white/5 border border-white/10 backdrop-blur-md shadow-[0_30px_80px_rgba(15,23,42,0.9)]">
+                <div className="relative aspect-video rounded-xl overflow-hidden bg-black/40">
+                  {heroImages.map((src, i) => (
+                    <div
+                      key={src}
+                      className="absolute inset-0 transition-opacity duration-700 ease-in-out"
+                      style={{
+                        opacity: i === index ? 1 : 0,
+                        zIndex: i === index ? 2 : 0,
+                      }}
+                    >
+                      <Image
+                        src={src}
+                        alt={`Highlight ${i + 1}`}
+                        fill
+                        sizes="(max-width: 1024px) 80vw, 640px"
+                        className="object-cover"
+                        priority={i === index}
+                      />
+                    </div>
                   ))}
+
+                  {/* Carousel controls */}
+                  <button
+                    aria-label="Imagem anterior"
+                    onClick={goPrev}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/45 backdrop-blur-md flex items-center justify-center hover:bg-black/65 transition-colors cursor-pointer"
+                  >
+                    <ChevronLeft className="w-5 h-5 text-white" />
+                  </button>
+                  <button
+                    aria-label="Próxima imagem"
+                    onClick={goNext}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/45 backdrop-blur-md flex items-center justify-center hover:bg-black/65 transition-colors cursor-pointer"
+                  >
+                    <ChevronRight className="w-5 h-5 text-white" />
+                  </button>
+
+                  {/* Dots */}
+                  <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2">
+                    {heroImages.map((_, i) => (
+                      <button
+                        key={i}
+                        aria-label={`Ir para imagem ${i + 1}`}
+                        onClick={() => goTo(i)}
+                        className={`w-2.5 h-2.5 rounded-full transition-all ${
+                          i === index ? "bg-white scale-110" : "bg-white/40"
+                        }`}
+                      />
+                    ))}
+                  </div>
                 </div>
               </div>
-              <div
-                aria-hidden
-                className="absolute left-6 -bottom-10 w-[360px] h-8 rounded-full filter blur-2xl opacity-70"
-                style={{
-                  background:
-                    "radial-gradient(closest-side, rgba(99,102,241,0.35), rgba(59,130,246,0.06) 40%, transparent 60%)",
-                }}
-              />
             </div>
           </div>
-        </div>
-      </main>
+        </main>
+      </div>
     </div>
   );
 }

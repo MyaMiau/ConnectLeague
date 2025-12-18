@@ -35,7 +35,8 @@ export default function ReplyThread({
   depth = 0,
 }) {
   const [showReplyInput, setShowReplyInput] = useState(false);
-  const canEditOrDeleteReply = !!loggedUser?.id && loggedUser.id === getAuthorId(reply);
+  const canEditOrDeleteReply =
+    !!loggedUser?.id && String(loggedUser.id) === String(getAuthorId(reply));
 
   if (!reply) return null;
   const indentStyle = depth > 0 ? { marginLeft: depth * 12 } : {};
@@ -43,7 +44,7 @@ export default function ReplyThread({
   return (
     <div style={{ marginTop: 10, ...indentStyle }}>
       <div
-        className="bg-zinc-900 rounded-xl shadow-lg"
+        className="relative bg-zinc-900 rounded-xl shadow-lg"
         style={{
           border: "1.5px solid #232326",
           padding: "12px 14px",
@@ -102,7 +103,7 @@ export default function ReplyThread({
                       if (e.key === "Enter" && !e.shiftKey) {
                         e.preventDefault();
                         e.stopPropagation();
-                        saveEditedReply(commentId, reply.id, editingReply.content);
+                        saveEditedReply(postId, commentId, reply.id, editingReply.content);
                       } else {
                         e.stopPropagation();
                       }
@@ -117,7 +118,7 @@ export default function ReplyThread({
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        saveEditedReply(commentId, reply.id, editingReply.content);
+                        saveEditedReply(postId, commentId, reply.id, editingReply.content);
                       }}
                     >
                       Salvar

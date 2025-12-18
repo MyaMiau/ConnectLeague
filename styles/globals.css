@@ -1,26 +1,163 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  /* Core background / text */
+  --color-background: hsl(220 20% 8%);
+  --color-foreground: hsl(210 40% 98%);
+
+  /* Surfaces */
+  --color-card: hsl(220 18% 12%);
+  --color-card-foreground: hsl(210 40% 98%);
+  --color-popover: hsl(220 18% 12%);
+  --color-popover-foreground: hsl(210 40% 98%);
+
+  /* Brand & accents */
+  --color-primary: hsl(186 100% 50%);
+  --color-primary-foreground: hsl(220 20% 8%);
+  --color-secondary: hsl(280 80% 60%);
+  --color-secondary-foreground: hsl(210 40% 98%);
+  --color-muted: hsl(220 15% 18%);
+  --color-muted-foreground: hsl(215 20% 65%);
+  --color-accent: hsl(280 80% 60%);
+  --color-accent-foreground: hsl(210 40% 98%);
+  --color-destructive: hsl(0 72% 51%);
+  --color-destructive-foreground: hsl(210 40% 98%);
+  --color-success: hsl(142 76% 36%);
+  --color-success-foreground: hsl(210 40% 98%);
+
+  /* Borders / inputs / focus */
+  --color-border: hsl(220 15% 20%);
+  --color-input: hsl(220 15% 18%);
+  --color-ring: hsl(186 100% 50%);
+
+  /* Radius */
+  --radius-lg: 0.75rem;
+
+  /* Sidebar palette (para .nav-item e cia) */
+  --color-sidebar-background: hsl(220 20% 6%);
+  --color-sidebar-foreground: hsl(210 40% 98%);
+  --color-sidebar-primary: hsl(186 100% 50%);
+  --color-sidebar-primary-foreground: hsl(220 20% 8%);
+  --color-sidebar-accent: hsl(220 15% 15%);
+  --color-sidebar-accent-foreground: hsl(210 40% 98%);
+  --color-sidebar-border: hsl(220 15% 15%);
+  --color-sidebar-ring: hsl(186 100% 50%);
+
+  /* Tipografia */
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+
+  /* Todos os botões com cursor-pointer por padrão */
+  button,
+  [role="button"] {
+    cursor: pointer;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer components {
+  .card-glow {
+    @apply relative overflow-hidden rounded-2xl bg-card text-card-foreground;
+    box-shadow: 0 0 0 1px hsl(var(--color-border)), 0 8px 32px -8px hsl(220 20% 0% / 0.6);
+  }
+
+  .card-glow::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(135deg, hsl(186 100% 50% / 0.15), hsl(280 80% 60% / 0.15));
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+
+  .btn-gradient {
+    background: linear-gradient(135deg, hsl(186 100% 50%), hsl(280 80% 60%));
+    @apply text-primary-foreground font-semibold transition-all duration-300;
+  }
+
+  .btn-gradient:hover {
+    box-shadow: 0 0 20px hsl(186 100% 50 / 0.3);
+    transform: translateY(-2px);
+    filter: brightness(1.08);
+  }
+
+  .btn-secondary-custom {
+    @apply bg-secondary/80 text-secondary-foreground font-semibold transition-all duration-300 backdrop-blur-sm;
+  }
+
+  .btn-secondary-custom:hover {
+    @apply bg-secondary;
+    box-shadow: 0 0 20px hsl(280 80% 60 / 0.3);
+    transform: translateY(-2px);
+  }
+
+  .nav-item {
+    @apply flex items-center gap-3 px-4 py-3 rounded-lg text-muted-foreground transition-all duration-200;
+  }
+
+  .nav-item:hover {
+    @apply bg-sidebar-accent text-foreground;
+  }
+
+  .nav-item.active {
+    @apply bg-sidebar-accent text-primary;
+    box-shadow: inset 3px 0 0 hsl(186 100% 50%);
+  }
+
+  .badge-status {
+    @apply px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider;
+  }
+
+  .badge-open {
+    @apply bg-[hsl(142_76%_36%/0.15)] text-[hsl(142_76%_60%)] border border-[hsl(142_76%_36%/0.5)];
+  }
+
+  .badge-closed {
+    @apply bg-[hsl(0_72%_51%/0.15)] text-[hsl(0_72%_70%)] border border-[hsl(0_72%_51%/0.5)];
+  }
+
+  .badge-role {
+    @apply px-3 py-1.5 rounded-md text-sm font-medium bg-muted/80 text-foreground border border-border;
+  }
+
+  .badge-free-agent {
+    @apply px-3 py-1.5 rounded-md text-sm font-semibold bg-[hsl(142_76%_36%/0.12)] text-[hsl(142_76%_60%)] border border-[hsl(142_76%_36%/0.5)];
+  }
+
+  .section-title {
+    @apply text-xl font-semibold text-foreground relative inline-block;
+  }
+
+  .section-title::after {
+    content: "";
+    @apply absolute -bottom-2 left-0 w-12 h-0.5 rounded-full;
+    background: linear-gradient(135deg, hsl(186 100% 50%), hsl(280 80% 60%));
+  }
+}
+
+@layer utilities {
+  .text-gradient {
+    background: linear-gradient(135deg, hsl(186 100% 50%), hsl(280 80% 60%));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .hover-lift {
+    @apply transition-transform duration-200;
+  }
+
+  .hover-lift:hover {
+    transform: translateY(-2px);
+  }
 }

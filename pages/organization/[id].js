@@ -10,10 +10,12 @@ import { Textarea } from "../../components/ui/textarea";
 import { MoreHorizontal, Heart, MessageCircle, Share2 } from "lucide-react";
 import { format } from "date-fns";
 import ptBR from "date-fns/locale/pt-BR";
+import { cn } from "@/lib/utils";
 import DeleteConfirmationModal from "@/components/DeleteConfirmationModal";
 import ReplyThread from "@/components/ReplyThread";
 import VagaModalForm from "../../components/VagaModalForm";
 import VagaDetalhesModal from "../../components/VagaDetalhesModal";
+import VagaCard from "../../components/VagaCard";
 
 export default function OrganizationProfile() {
   const router = useRouter();
@@ -94,12 +96,12 @@ export default function OrganizationProfile() {
   }, []);
 
   const canEditOrDeletePost = (post) =>
-  String(loggedUser?.id) === String(post.authorId) ||
-  String(loggedUser?.id) === String(post.author?.id);
+    String(loggedUser?.id) === String(post.authorId) ||
+    String(loggedUser?.id) === String(post.author?.id);
 
-const canEditOrDeleteComment = (comment) =>
-  String(loggedUser?.id) === String(comment.authorId) ||
-  String(loggedUser?.id) === String(comment.author?.id);
+  const canEditOrDeleteComment = (comment) =>
+    String(loggedUser?.id) === String(comment.authorId) ||
+    String(loggedUser?.id) === String(comment.author?.id);
 
 
 
@@ -108,8 +110,45 @@ const canEditOrDeleteComment = (comment) =>
     setLocalOrg(prev => ({ ...prev, [name]: value }));
   }
 
+  async function handleLogoChange(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      try {
+        const base64 = reader.result;
+        const filename = `${Date.now()}-${file.name}`;
+        const res = await fetch("/api/upload-avatar", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ base64, filename }),
+        });
+        if (!res.ok) {
+          alert("Erro ao enviar imagem da organização.");
+          return;
+        }
+        const { url } = await res.json();
+        setLocalOrg((prev) => (prev ? { ...prev, logo: url } : prev));
+      } catch (err) {
+        alert("Erro ao enviar imagem da organização.");
+      }
+    };
+
+    reader.readAsDataURL(file);
+  }
+
   async function handleSave() {
-    const payload = { ...localOrg, name: localOrg.orgName || localOrg.name };
+    if (!localOrg) return;
+
+    // Converte o campo "logo" (usado no front) para "image", que é o campo existente no modelo `users`
+    const { logo, orgName, ...rest } = localOrg;
+    const payload = {
+      ...rest,
+      name: orgName || rest.name,
+      image: logo || rest.image || null,
+    };
+
     const res = await fetch(`/api/organization/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
@@ -582,11 +621,14 @@ async function handleDeletarVagaConfirmed() {
   };
 
   const handleConfirmDelete = async () => {
-    if (deleteTarget.type === "comment") {
+    if (deleteTarget.type === "post") {
+      await handleDeletePostOrg(deleteTarget.postId);
+    } else if (deleteTarget.type === "comment") {
       await handleDeleteComment(deleteTarget.postId, deleteTarget.commentId);
     } else if (deleteTarget.type === "reply") {
       await handleDeleteReply(deleteTarget.postId, deleteTarget.commentId, deleteTarget.replyId);
     }
+
     setIsDeleteModalOpen(false);
   };
 
@@ -601,17 +643,38 @@ async function handleDeletarVagaConfirmed() {
     }
   };
 
+  // Excluir post (perfil da organização)
+  const handleDeletePostOrg = async (postId) => {
+    try {
+      const res = await fetch(`/api/posts/${postId}`, { method: "DELETE" });
+      if (!res.ok && res.status !== 204) {
+        throw new Error(`Falha ao deletar post, status ${res.status}`);
+      }
+
+      // Atualiza lista de posts local
+      setPosts((prev) => (Array.isArray(prev) ? prev.filter((p) => p.id !== postId) : prev));
+    } catch (error) {
+      console.error("Erro ao deletar post da organização:", error);
+    }
+  };
+
   if (loading)
     return (
-      <div className="min-h-screen bg-black text-white flex items-center justify-center">
-        Carregando...
-      </div>
+      <>
+        <Header />
+        <div className="min-h-screen bg-background text-foreground pl-64 flex items-center justify-center">
+          <p className="text-muted-foreground">Carregando...</p>
+        </div>
+      </>
     );
   if (!org)
     return (
-      <div className="min-h-screen bg-black text-white flex items-center justify-center">
-        Organização não encontrada.
-      </div>
+      <>
+        <Header />
+        <div className="min-h-screen bg-background text-foreground pl-64 flex items-center justify-center">
+          <p className="text-muted-foreground">Organização não encontrada.</p>
+        </div>
+      </>
     );
 
   const displayName = localOrg?.name || localOrg?.orgName;
@@ -619,97 +682,166 @@ async function handleDeletarVagaConfirmed() {
   const displayImage = localOrg?.logo || localOrg?.image || "/default-avatar.png";
   const displayEmail = localOrg?.email || "";
 
-  console.log("loggedUser", loggedUser);
-
   return (
-    <div className="min-h-screen bg-black text-white flex">
+    <div className="min-h-screen bg-background text-foreground flex">
       <Header user={org} />
-      <main className="flex-1 flex flex-col items-center py-10 px-4">
-        {/* Card de perfil da organização */}
-        <div className="w-full max-w-2xl bg-zinc-900 rounded-2xl shadow-xl mb-8 border border-zinc-800 relative">
-          <div className="flex gap-6 items-center px-8 py-8">
-            <div className="shrink-0">
-              <Image
-                src={displayImage}
-                width={120}
-                height={120}
-                className="rounded-full border-4 border-purple-500 object-cover bg-zinc-800"
-                alt={`Logo da organização ${displayName}`}
-              />
-            </div>
-            <div className="flex-1 flex flex-col items-start">
-              <h2 className="text-2xl font-semibold mb-2">{displayName}</h2>
-              {displayEmail && <p className="text-zinc-400 mb-2">{displayEmail}</p>}
-              <p className="text-zinc-300 mb-2">{displayBio}</p>
-            </div>
-            {org.isCurrentUser && !editMode && (
-              <div className="absolute top-6 right-6 z-10">
+      <main className="flex-1 flex flex-col items-center py-10 px-4 pl-64">
+        {/* Card de perfil da organização com o mesmo front do card de jogador */}
+        <Card className="w-full max-w-4xl bg-gradient-to-b from-zinc-900/95 via-zinc-900/90 to-zinc-950 shadow-[0_32px_96px_rgba(15,23,42,0.95)] border border-zinc-800/80 rounded-3xl mb-10 relative overflow-hidden">
+          {/* Menu de opções */}
+          {org.isCurrentUser && (
+            <div className="absolute top-4 right-4 z-20">
+              {!editMode && (
                 <button
-                  className="p-2 rounded-full bg-zinc-800 hover:bg-zinc-700 transition"
+                  type="button"
+                  aria-label="Mais opções"
                   onClick={handleMenuClick}
-                  aria-label="Opções"
+                  className="text-zinc-400 hover:text-white focus:outline-none text-2xl leading-none cursor-pointer"
                 >
-                  <MoreHorizontal size={28} color="#A78BFA" />
+                  &#x22EE;
                 </button>
-                {showMenu && (
-                  <div className="absolute right-0 mt-2 bg-zinc-900 shadow rounded py-1 px-2">
-                    <button
-                      className="text-zinc-200 hover:text-purple-400 px-3 py-1 w-full text-left"
-                      onClick={() => {
-                        setEditMode(true);
-                        setShowMenu(false);
-                      }}
-                    >
-                      Editar Perfil
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
-            {org.isCurrentUser && editMode && (
-              <div className="absolute top-6 right-6 z-10 flex gap-2">
-                <Button size="sm" onClick={handleSave}>Salvar</Button>
-                <Button size="sm" variant="outline" onClick={() => { setEditMode(false); setShowMenu(false); }}>
-                  Cancelar
-                </Button>
-              </div>
-            )}
-          </div>
-          {org.isCurrentUser && editMode && (
-            <div className="px-8 pb-8">
-              <Input
-                name="orgName"
-                value={localOrg.orgName || localOrg.name || ""}
-                onChange={handleChange}
-                className="text-lg font-bold mt-2 mb-2"
-                placeholder="Nome da Organização"
-              />
-              <Input
-                name="email"
-                value={localOrg.email || ""}
-                onChange={handleChange}
-                className="mb-2"
-                placeholder="Email"
-              />
-              <Textarea
-                name="bio"
-                value={localOrg.bio || ""}
-                onChange={handleChange}
-                className="mb-2"
-                placeholder="Descrição/Bio"
-              />
+              )}
+              {showMenu && !editMode && (
+                <div className="absolute right-0 mt-2 bg-zinc-800 border border-zinc-700 rounded shadow-md z-30">
+                  <button
+                    type="button"
+                    className="block w-full text-left px-4 py-2 hover:bg-zinc-700 cursor-pointer text-sm text-zinc-200"
+                    onClick={() => {
+                      setEditMode(true);
+                      setShowMenu(false);
+                    }}
+                  >
+                    Editar Perfil
+                  </button>
+                </div>
+              )}
+              {editMode && (
+                <div className="flex gap-2">
+                  <Button size="sm" onClick={handleSave}>
+                    Salvar
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      setEditMode(false);
+                      setShowMenu(false);
+                    }}
+                  >
+                    Cancelar
+                  </Button>
+                </div>
+              )}
             </div>
           )}
-        </div>
+
+          <CardContent className="flex flex-col md:flex-row gap-10 px-10 pt-14 pb-10 items-start">
+            {/* Logo / avatar */}
+            <div className="relative w-[168px] h-[168px] shrink-0">
+              <div
+                className="absolute -inset-[3px] rounded-full bg-gradient-to-br from-sky-400 via-indigo-400 to-fuchsia-500 opacity-80 blur-md"
+                aria-hidden
+              />
+              <Image
+                src={displayImage}
+                fill
+                sizes="168px"
+                className="relative rounded-full border-4 border-zinc-900 object-cover bg-zinc-900"
+                alt={`Logo da organização ${displayName}`}
+                priority
+              />
+              {editMode && (
+                <label className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-zinc-800 px-2 py-1 rounded text-xs cursor-pointer border border-zinc-600">
+                  Trocar
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleLogoChange}
+                  />
+                </label>
+              )}
+            </div>
+
+            {/* Informações da organização */}
+            <div className="flex-1 space-y-5">
+              {/* Nome */}
+              {editMode ? (
+                <Input
+                  name="orgName"
+                  value={localOrg.orgName || localOrg.name || ""}
+                  onChange={handleChange}
+                  className="text-3xl font-semibold mb-2"
+                  maxLength={40}
+                  placeholder="Nome da organização"
+                />
+              ) : (
+                <p className="text-4xl md:text-[2.6rem] font-extrabold tracking-tight leading-tight">
+                  {displayName}
+                </p>
+              )}
+
+              {/* Email */}
+              <div className="flex flex-wrap items-center gap-2 text-base">
+                <span className="font-medium text-zinc-300">Email:</span>
+                {editMode ? (
+                  <Input
+                    name="email"
+                    value={localOrg.email || ""}
+                    onChange={handleChange}
+                    className="max-w-md bg-zinc-800 border border-zinc-700 rounded px-3 py-1.5"
+                    placeholder="email@organizacao.com"
+                  />
+                ) : (
+                  <span className="text-sm text-muted-foreground">
+                    {displayEmail || "Não informado"}
+                  </span>
+                )}
+              </div>
+
+              {/* Bio / descrição */}
+              <div>
+                <span className="font-medium block text-zinc-300">Descrição:</span>
+                {editMode ? (
+                  <Textarea
+                    name="bio"
+                    value={localOrg.bio || ""}
+                    onChange={handleChange}
+                    className="bg-zinc-800 border border-zinc-700 rounded mt-1"
+                    maxLength={200}
+                    rows={3}
+                    placeholder="Fale um pouco sobre a organização..."
+                  />
+                ) : (
+                  <p className="text-zinc-200">
+                    {displayBio || (
+                      <span className="italic text-zinc-500">
+                        Nenhuma descrição ainda.
+                      </span>
+                    )}
+                  </p>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {org.isCurrentUser && (
-          <div className="w-full max-w-2xl flex gap-4 mb-8">
-            <Button className="flex-1" onClick={handleOpenVagaModal}>
+          <div className="w-full max-w-4xl flex gap-4 mb-8">
+            <button
+              type="button"
+              className="flex-1 btn-gradient py-3.5 rounded-full text-base font-semibold shadow-lg"
+              onClick={handleOpenVagaModal}
+            >
               Abrir uma vaga
-            </Button>
-            <Button className="flex-1" variant="outline" onClick={handleOpenPostModal}>
+            </button>
+            <button
+              type="button"
+              className="flex-1 btn-secondary-custom py-3.5 rounded-full text-base font-semibold"
+              onClick={handleOpenPostModal}
+            >
               Fazer um post
-            </Button>
+            </button>
           </div>
         )}
 
@@ -779,34 +911,111 @@ async function handleDeletarVagaConfirmed() {
         )}
 
         {/* Vagas abertas */}
-        <div className="w-full max-w-2xl">
-          <h2 className="text-xl font-bold mb-4">Vagas</h2>
+        <div className="w-full max-w-4xl mt-4">
+          <h2 className="section-title mb-6">Vagas</h2>
           {vagas.length === 0 ? (
-            <p className="text-zinc-500 text-center">Nenhuma vaga cadastrada.</p>
+            <p className="text-center text-muted-foreground">
+              Nenhuma vaga cadastrada.
+            </p>
           ) : (
             <div className="space-y-4">
-              {vagas.map(vaga => (
-                <div key={vaga.id} className="bg-zinc-900 rounded-xl p-5 shadow">
-                  <h3 className="text-lg font-bold">{vaga.titulo || vaga.title}</h3>
-                  <span
-                    className={`inline-block px-3 py-1 rounded-full font-semibold mb-2 ${
-                      vaga.status === "Aberta"
-                        ? "bg-green-600 text-white"
-                        : "bg-red-600 text-white"
-                    }`}>
-                    {vaga.status === "Aberta" ? "Aberta" : "Fechada"}
-                  </span>
-                  <p className="text-zinc-300 mb-2">{vaga.descricao || vaga.description}</p>
-                  <span className="text-xs text-zinc-400">
-                    Publicada em {vaga.created_at ? new Date(vaga.created_at).toLocaleDateString() : "?"}
-                  </span>
-                  <div className="mt-2">
-                    <Button size="sm" onClick={() => setVagaSelecionada(vaga)}>
-                      Ver vaga
-                    </Button>
-                  </div>
-                </div>
-              ))}
+              {vagas.map((vaga) => {
+                const titulo = vaga.titulo || vaga.title || "Vaga sem título";
+                const descricaoCurta = vaga.descricao || vaga.description || "";
+                const orgName = vaga.organization?.name || displayName || "Organização desconhecida";
+
+                return (
+                  <Card key={vaga.id} className="card-glow bg-card rounded-xl p-6 animate-fade-in hover-lift">
+                    <CardContent className="space-y-4 p-0">
+                      {/* Cabeçalho */}
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex items-start gap-4">
+                          <div className="relative w-16 h-16 rounded-full overflow-hidden bg-muted border border-border shrink-0">
+                            <Image
+                              src={
+                                vaga.organization?.logo ||
+                                vaga.organization?.image ||
+                                displayImage ||
+                                "/default-avatar.png"
+                              }
+                              alt={orgName}
+                              fill
+                              sizes="64px"
+                              className="object-cover"
+                              priority
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <h3 className="font-semibold text-lg text-foreground">{titulo}</h3>
+                            <p className="text-sm text-muted-foreground font-medium">{orgName}</p>
+                          </div>
+                        </div>
+                        <span
+                          className={cn(
+                            "badge-status shrink-0",
+                            vaga.status === "Aberta" ? "badge-open" : "badge-closed",
+                          )}
+                        >
+                          {vaga.status === "Aberta" ? "Aberta" : "Fechada"}
+                        </span>
+                      </div>
+
+                      {/* Infos rápidas */}
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-sm text-muted-foreground">
+                        <p>
+                          <span className="font-semibold text-foreground">Posições:</span>{" "}
+                          {vaga.posicoes?.join(", ") ||
+                            vaga.positions?.join(", ") ||
+                            "Não informado"}
+                        </p>
+                        <p>
+                          <span className="font-semibold text-foreground">Elo:</span>{" "}
+                          {vaga.elos?.join(", ") || "Não informado"}
+                        </p>
+                        <p>
+                          <span className="font-semibold text-foreground">Tipos:</span>{" "}
+                          {vaga.tiposUsuario?.join(", ") ||
+                            vaga.userTypes?.join(", ") ||
+                            "Não informado"}
+                        </p>
+                      </div>
+
+                      {/* Descrição curta */}
+                      {!!descricaoCurta && (
+                        <p className="text-sm text-muted-foreground leading-relaxed">
+                          {descricaoCurta}
+                        </p>
+                      )}
+
+                      {/* Rodapé: apenas Ver detalhes + info */}
+                      <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-border">
+                        <div className="flex items-center gap-3 flex-wrap">
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => setVagaSelecionada(vaga)}
+                            className="px-4 py-2 rounded-lg"
+                          >
+                            Ver detalhes
+                          </Button>
+                        </div>
+
+                        <div className="flex flex-col items-end text-xs text-muted-foreground">
+                          <span>
+                            Publicada em{" "}
+                            {vaga.dataPublicacao
+                              ? new Date(vaga.dataPublicacao).toLocaleDateString()
+                              : vaga.created_at
+                              ? new Date(vaga.created_at).toLocaleDateString()
+                              : "?"}
+                          </span>
+                          <span>Candidatos: {vaga.applications?.length || 0}</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
           )}
         </div>
@@ -823,27 +1032,21 @@ async function handleDeletarVagaConfirmed() {
           />
         )}
 
-        <div className="w-full max-w-2xl space-y-6 mt-8">
-          <h2 className="text-xl font-bold mb-4">Posts</h2>
+        <div className="w-full max-w-4xl space-y-6 mt-10">
+          <h2 className="section-title mb-4">Posts</h2>
           {posts.length === 0 && (
-            <p className="text-center text-zinc-400">Nenhum post encontrado para esta organização.</p>
+            <p className="text-center text-muted-foreground">
+              Nenhum post encontrado para esta organização.
+            </p>
           )}
             {posts.map((post) => {
-              console.log(
-                "POST DEBUG",
-                {
-                  loggedUserId: loggedUser?.id,
-                  postAuthorId: post.authorId,
-                  postAuthorObjId: post.author?.id
-                }
-              );
               return (
-                <Card key={post.id} className="bg-zinc-900 rounded-2xl">
-              <CardContent className="p-6 space-y-4 relative">
+                <Card key={post.id} className="card-glow bg-card rounded-3xl overflow-hidden animate-fade-in">
+                  <CardContent className="px-6 py-6 md:px-8 md:py-7 space-y-4 relative">
                 <div className="flex justify-between items-start">
                   <div className="flex items-center gap-4">
                     <Link href={`/profile/${post.author?.id || ""}`} className="flex items-center gap-4 cursor-pointer group">
-                      <div className="relative w-[40px] h-[40px] rounded-full overflow-hidden border border-zinc-700 bg-zinc-800 shrink-0">
+                      <div className="relative w-10 h-10 rounded-full overflow-hidden bg-muted shrink-0 ring-2 ring-primary/20">
                         <Image
                           src={post.author?.image || "/default-avatar.png"}
                           alt="Avatar"
@@ -854,13 +1057,15 @@ async function handleDeletarVagaConfirmed() {
                         />
                       </div>
                       <div>
-                        <p className="font-semibold group-hover:underline">
+                        <p className="font-semibold text-foreground group-hover:underline">
                           {post.author?.name || "Autor desconhecido"}
                         </p>
-                        <p className="text-xs text-zinc-400">
-                          {post.createdAt ?
-                            format(new Date(post.createdAt), "d 'de' MMMM 'às' HH:mm", { locale: ptBR }) :
-                            ""}
+                        <p className="text-xs text-muted-foreground">
+                          {post.createdAt
+                            ? format(new Date(post.createdAt), "d 'de' MMMM 'às' HH:mm", {
+                                locale: ptBR,
+                              })
+                            : ""}
                         </p>
                       </div>
                     </Link>
@@ -929,7 +1134,9 @@ async function handleDeletarVagaConfirmed() {
                     </div>
                   </>
                 ) : (
-                  <p className="whitespace-pre-line">{post.content}</p>
+                  <p className="whitespace-pre-line text-zinc-50 leading-relaxed px-1 text-[0.98rem] md:text-base">
+                    {post.content}
+                  </p>
                 )}
 
                 {post.image && (
@@ -941,33 +1148,36 @@ async function handleDeletarVagaConfirmed() {
                     className="rounded-xl object-cover"
                   />
                 )}
-                <div className="flex gap-6 pt-2 border-t border-zinc-800 mt-2 text-sm text-zinc-400 ">
+                <div className="flex gap-6 pt-2 border-t border-border mt-2 text-sm text-muted-foreground">
                   <button
                     type="button"
                     onClick={() => toggleLikePost(post.id)}
-                    className="flex items-center gap-1 text-sm hover:opacity-80 cursor-pointer">
-                    <Heart className={post.postLikes?.some(l => l.userId === loggedUser?.id) ? "text-pink-500" : ""} size={18} />
+                    className="flex items-center gap-1 text-sm hover:text-foreground cursor-pointer">
+                    <Heart
+                      className={post.postLikes?.some(l => l.userId === loggedUser?.id) ? "text-pink-500" : ""}
+                      size={18}
+                    />
                     <span>{post.postLikes?.length || 0}</span>
                   </button>
                   <button
                     type="button"
-                    className="flex items-center gap-1 text-sm hover:opacity-80 cursor-pointer">
+                    className="flex items-center gap-1 text-sm hover:text-foreground cursor-pointer">
                     <MessageCircle size={18} />
                   </button>
                   <button
                     type="button"
                     onClick={() => handleShare(post.id)}
-                    className="flex items-center gap-1 text-sm hover:opacity-80 cursor-pointer">
+                    className="flex items-center gap-1 text-sm hover:text-foreground cursor-pointer">
                     <Share2 size={18} />
                   </button>
                 </div>
                 <div className="mt-4 space-y-4">
                   {post.comments?.map((comment) => (
-                    <div key={comment.id} className="bg-zinc-800 p-4 rounded-lg">
+                    <div key={comment.id} className="bg-muted/50 p-4 rounded-lg">
                       <div className="flex justify-between">
-                        <div className="flex gap-3 items-center">
+                        <div className="flex gap-3 items-start">
                           <Link href={`/profile/${comment.author?.id || ""}`} className="flex items-center gap-2 cursor-pointer group">
-                            <div className="relative w-[30px] h-[30px] rounded-full overflow-hidden border border-zinc-700 bg-zinc-800 shrink-0">
+                            <div className="relative w-[30px] h-[30px] rounded-full overflow-hidden bg-muted shrink-0 ring-2 ring-primary/20">
                               <Image
                                 src={comment.author?.image || "/default-avatar.png"}
                                 alt="Avatar"
@@ -978,7 +1188,9 @@ async function handleDeletarVagaConfirmed() {
                               />
                             </div>
                             <div>
-                              <p className="text-sm font-semibold text-zinc-100 group-hover:underline">{comment.author?.name || "Desconhecido"}</p>
+                              <p className="text-sm font-semibold text-foreground group-hover:underline">
+                                {comment.author?.name || "Desconhecido"}
+                              </p>
                               {editingComment?.id === comment.id ? (
                                 <>
                                   <Textarea
@@ -995,7 +1207,7 @@ async function handleDeletarVagaConfirmed() {
                                   </Button>
                                 </>
                               ) : (
-                                <p className="text-sm text-zinc-300">{comment.content}</p>
+                                <p className="text-sm text-muted-foreground">{comment.content}</p>
                               )}
                             </div>
                           </Link>
@@ -1044,18 +1256,21 @@ async function handleDeletarVagaConfirmed() {
                           </div>
                         )}
                       </div>
-                      <div className="flex gap-4 mt-2 text-xs text-zinc-400">
+                      <div className="flex gap-4 mt-2 text-xs text-muted-foreground">
                         <button
                           type="button"
                           onClick={() => toggleLikeComment(comment.id, post.id)}
-                          className="flex items-center gap-1 text-sm hover:opacity-80 cursor-pointer">
-                          <Heart className={comment.commentLikes?.some(l => l.userId === loggedUser?.id) ? "text-pink-500" : ""} size={14} />
+                          className="flex items-center gap-1 text-sm hover:text-foreground cursor-pointer">
+                          <Heart
+                            className={comment.commentLikes?.some(l => l.userId === loggedUser?.id) ? "text-pink-500" : ""}
+                            size={14}
+                          />
                           <span>{comment.commentLikes?.length || 0}</span>
                         </button>
                         <button
                           type="button"
                           onClick={() => toggleReplyInput(comment.id)}
-                          className="flex items-center gap-1 text-sm hover:underline cursor-pointer">
+                          className="flex items-center gap-1 text-sm hover:text-foreground cursor-pointer">
                           <MessageCircle size={14} />
                           <span>Responder</span>
                         </button>

@@ -350,19 +350,36 @@ export default function PostPage() {
     }
   }, [loading, post]);
 
-  if (loading) return <p className="text-center text-zinc-400 mt-16">Carregando post...</p>;
-  if (!post) return <p className="text-center text-zinc-400 mt-16">Post não encontrado.</p>;
+  if (loading)
+    return (
+      <>
+        <Header />
+        <div className="min-h-screen bg-background text-foreground pl-64 flex items-center justify-center">
+          <p className="text-muted-foreground">Carregando post...</p>
+        </div>
+      </>
+    );
+  if (!post)
+    return (
+      <>
+        <Header />
+        <div className="min-h-screen bg-background text-foreground pl-64 flex items-center justify-center">
+          <p className="text-muted-foreground">Post não encontrado.</p>
+        </div>
+      </>
+    );
 
   return (
-    <div className="min-h-screen bg-black text-white pt-24 flex flex-col items-center px-4">
+    <>
       <Header />
-      <div className="w-full max-w-2xl mt-8">
-        <Card className="bg-zinc-900 rounded-2xl">
-          <CardContent className="p-6 space-y-4 relative">
+      <div className="min-h-screen bg-background text-foreground pt-24 flex flex-col items-center px-4 pl-64">
+        <div className="w-full max-w-4xl mt-8">
+          <Card className="card-glow bg-card rounded-3xl overflow-hidden animate-fade-in">
+            <CardContent className="px-6 py-6 md:px-8 md:py-7 space-y-4 relative">
             <div className="flex justify-between items-start">
               <div className="flex items-center gap-4">
                 <Link href={`/profile/${post.author?.id || ""}`} className="flex items-center gap-4 cursor-pointer group">
-                  <div className="relative w-[40px] h-[40px] rounded-full overflow-hidden border border-zinc-700 bg-zinc-800 shrink-0">
+                  <div className="relative w-10 h-10 rounded-full overflow-hidden bg-muted shrink-0 ring-2 ring-primary/20">
                     <Image
                       src={post.author?.image || "/default-avatar.png"}
                       alt="Avatar"
@@ -372,11 +389,11 @@ export default function PostPage() {
                       priority
                     />
                   </div>
-                  <div>
-                    <p className="font-semibold group-hover:underline">
+                    <div>
+                      <p className="text-base md:text-lg font-semibold text-foreground group-hover:underline">
                       {post.author?.name || "Autor desconhecido"}
                     </p>
-                    <p className="text-xs text-zinc-400">
+                    <p className="text-xs text-muted-foreground">
                       {post.createdAt && !isNaN(new Date(post.createdAt)) ?
                         format(new Date(post.createdAt), "d 'de' MMMM 'às' HH:mm", { locale: ptBR }) :
                         ""}
@@ -423,7 +440,9 @@ export default function PostPage() {
                 </div>
               )}
             </div>
-            <p className="whitespace-pre-line">{post.content}</p>
+            <p className="whitespace-pre-line text-foreground text-[0.98rem] md:text-base">
+              {post.content}
+            </p>
             {post.image && (
               <Image
                 src={post.image}
@@ -433,23 +452,26 @@ export default function PostPage() {
                 className="rounded-xl object-cover"
               />
             )}
-            <div className="flex gap-6 pt-2 border-t border-zinc-800 mt-2 text-sm text-zinc-400 ">
+            <div className="flex gap-6 pt-2 border-t border-border mt-2 text-sm text-muted-foreground">
               <button
                 type="button"
                 onClick={() => toggleLikePost(post.id)}
-                className="flex items-center gap-1 text-sm hover:opacity-80 cursor-pointer">
-                <Heart className={post.postLikes?.some(l => l.userId === loggedUser?.id) ? "text-pink-500" : ""} size={18} />
+                className="flex items-center gap-1 text-sm hover:text-foreground cursor-pointer">
+                <Heart
+                  className={post.postLikes?.some(l => l.userId === loggedUser?.id) ? "text-pink-500" : ""}
+                  size={18}
+                />
                 <span>{post.postLikes?.length || 0}</span>
               </button>
               <button
                 type="button"
-                className="flex items-center gap-1 text-sm hover:opacity-80 cursor-pointer">
+                className="flex items-center gap-1 text-sm hover:text-foreground cursor-pointer">
                 <MessageCircle size={18} />
               </button>
               <button
                 type="button"
                 onClick={handleShare}
-                className="flex items-center gap-1 text-sm hover:opacity-80 cursor-pointer">
+                className="flex items-center gap-1 text-sm hover:text-foreground cursor-pointer">
                 <Share2 size={18} />
               </button>
             </div>
@@ -458,12 +480,12 @@ export default function PostPage() {
                 <div
                   key={comment.id}
                   id={`comment-${comment.id}`}
-                  className="bg-zinc-800 p-4 rounded-lg"
+                  className="bg-muted/50 p-4 rounded-lg"
                 >
                   <div className="flex justify-between">
-                    <div className="flex gap-3 items-start">
+                        <div className="flex gap-3 items-start">
                       <Link href={`/profile/${comment.author?.id || ""}`} className="flex items-center gap-2 cursor-pointer group">
-                        <div className="relative w-[30px] h-[30px] rounded-full overflow-hidden border border-zinc-700 bg-zinc-800 shrink-0">
+                            <div className="relative w-[30px] h-[30px] rounded-full overflow-hidden bg-muted shrink-0 ring-2 ring-primary/20">
                           <Image
                             src={comment.author?.image || "/default-avatar.png"}
                             alt="Avatar"
@@ -474,7 +496,9 @@ export default function PostPage() {
                           />
                         </div>
                         <div>
-                          <p className="text-sm font-semibold text-zinc-100 group-hover:underline">{comment.author?.name || "Desconhecido"}</p>
+                          <p className="text-sm font-semibold text-foreground group-hover:underline">
+                            {comment.author?.name || "Desconhecido"}
+                          </p>
                         </div>
                       </Link>
 
@@ -484,18 +508,21 @@ export default function PostPage() {
                             <Textarea
                               className="text-sm"
                               value={editingComment.content}
-                              onChange={(e) => setEditingComment({ ...editingComment, content: e.target.value })}
+                              onChange={(e) =>
+                                setEditingComment({ ...editingComment, content: e.target.value })
+                              }
                             />
                             <Button
                               type="button"
                               size="sm"
                               className="mt-1"
-                              onClick={() => saveEditedComment(comment.id, editingComment.content)}>
+                              onClick={() => saveEditedComment(comment.id, editingComment.content)}
+                            >
                               Salvar
                             </Button>
                           </>
                         ) : (
-                          <p className="text-sm text-zinc-300">{comment.content}</p>
+                          <p className="text-sm text-muted-foreground">{comment.content}</p>
                         )}
                       </div>
                     </div>
@@ -543,18 +570,21 @@ export default function PostPage() {
                       </div>
                     )}
                   </div>
-                  <div className="flex gap-4 mt-2 text-xs text-zinc-400">
+                  <div className="flex gap-4 mt-2 text-xs text-muted-foreground">
                     <button
                       type="button"
                       onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleLikeComment(comment.id); }}
-                      className="flex items-center gap-1 text-sm hover:opacity-80 cursor-pointer">
-                      <Heart className={comment.commentLikes?.some(l => l.userId === loggedUser?.id) ? "text-pink-500" : ""} size={14} />
+                      className="flex items-center gap-1 text-sm hover:text-foreground cursor-pointer">
+                      <Heart
+                        className={comment.commentLikes?.some(l => l.userId === loggedUser?.id) ? "text-pink-500" : ""}
+                        size={14}
+                      />
                       <span>{comment.commentLikes?.length || 0}</span>
                     </button>
                     <button
                       type="button"
                       onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleReplyInput(comment.id); }}
-                      className="flex items-center gap-1 text-sm hover:underline cursor-pointer">
+                      className="flex items-center gap-1 text-sm hover:text-foreground cursor-pointer">
                       <MessageCircle size={14} />
                       <span>Responder</span>
                     </button>
@@ -632,15 +662,16 @@ export default function PostPage() {
                 </Button>
               </div>
             </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </div>
+        <DeleteConfirmationModal
+          isOpen={isDeleteModalOpen}
+          onClose={() => setIsDeleteModalOpen(false)}
+          onConfirm={handleConfirmDelete}
+          itemType={deleteTarget.type}
+        />
       </div>
-      <DeleteConfirmationModal
-        isOpen={isDeleteModalOpen}
-        onClose={() => setIsDeleteModalOpen(false)}
-        onConfirm={handleConfirmDelete}
-        itemType={deleteTarget.type}
-      />
-    </div>
+    </>
   );
 }

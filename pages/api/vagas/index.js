@@ -43,7 +43,7 @@ export default async function handler(req, res) {
         organization: true,
         applications: true,
         favorites: true,
-      }
+      },
     });
 
     res.status(200).json({ vagas });
@@ -56,6 +56,7 @@ export default async function handler(req, res) {
       return res.status(401).json({ error: "Não autenticado como organização." });
 
     const { title, description, requirements, benefits, userTypes, positions, elos, city, state, tags } = req.body;
+
     const vaga = await prisma.vacancies.create({
       data: {
         title,
@@ -69,9 +70,10 @@ export default async function handler(req, res) {
         state,
         tags,
         status: "Aberta",
-        organization_id: Number(session.user.id), 
-      }
+        organization_id: Number(session.user.id),
+      },
     });
+
     res.status(201).json({ vaga });
   }
 }

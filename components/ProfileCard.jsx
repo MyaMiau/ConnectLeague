@@ -136,7 +136,7 @@ export default function ProfileCard({ user, onUserUpdate, showEdit = true }) {
   }
 
   return (
-    <Card className="w-full max-w-2xl bg-zinc-900 shadow-xl rounded-2xl mb-6 relative">
+    <Card className="w-full max-w-4xl bg-gradient-to-b from-zinc-900/95 via-zinc-900/90 to-zinc-950 shadow-[0_32px_96px_rgba(15,23,42,0.95)] border border-zinc-800/80 rounded-3xl mb-10 relative overflow-hidden">
       {/* Menu de 3 pontinhos */}
       {showEdit && (
         <div className="absolute top-4 right-4 z-20">
@@ -159,14 +159,16 @@ export default function ProfileCard({ user, onUserUpdate, showEdit = true }) {
           )}
         </div>
       )}
-      <CardContent className="flex flex-col md:flex-row gap-6 p-6 items-center md:items-start">
+      <CardContent className="flex flex-col md:flex-row gap-10 px-10 pt-14 pb-10 items-center md:items-start">
         {/* Avatar */}
-        <div className="relative w-[120px] h-[120px] shrink-0">
+        <div className="relative w-[168px] h-[168px] shrink-0">
+          <div className="absolute -inset-[3px] rounded-full bg-gradient-to-br from-sky-400 via-indigo-400 to-fuchsia-500 opacity-80 blur-md" aria-hidden />
           <Image
             src={localUser.image || "/default-avatar.png"}
             fill
-            sizes="120px"
-            className="rounded-full border-4 border-zinc-700 object-cover"
+            sizes="168px"
+            quality={100}
+            className="relative rounded-full border-4 border-zinc-900 object-cover"
             alt="Avatar do Jogador"
             priority
           />
@@ -181,29 +183,31 @@ export default function ProfileCard({ user, onUserUpdate, showEdit = true }) {
         </div>
 
         {/* User info */}
-        <div className="flex-1 space-y-3 mt-4 md:mt-0">
+        <div className="flex-1 space-y-5 mt-4 md:mt-0">
           {/* Nome */}
           {editMode ? (
             <Input
               name="name"
               value={localUser.name}
               onChange={handleChange}
-              className="text-xl font-semibold mb-2"
+              className="text-3xl font-semibold mb-2"
               maxLength={20}
             />
           ) : (
-            <p className="text-2xl font-bold">{localUser.name}</p>
+            <p className="text-4xl md:text-[2.6rem] font-extrabold tracking-tight leading-tight">
+              {localUser.name}
+            </p>
           )}
 
           {/* Função (Role) */}
-          <div className="flex gap-2 items-center">
-            <span className="font-medium">Função:</span>
+          <div className="flex gap-2 items-center text-base">
+            <span className="font-medium text-zinc-300">Função:</span>
             {editMode ? (
               <select
                 name="role"
                 value={localUser.role || ""}
                 onChange={handleChange}
-                className="bg-zinc-800 border border-zinc-700 rounded px-2 py-1"
+                className="bg-zinc-800 border border-zinc-700 rounded px-3 py-1.5"
               >
                 <option value="">Selecione...</option>
                 {ROLES.map((r) => (
@@ -211,7 +215,7 @@ export default function ProfileCard({ user, onUserUpdate, showEdit = true }) {
                 ))}
               </select>
             ) : (
-              <span className="flex items-center gap-2 px-2 py-1 rounded bg-purple-800/40 text-purple-300 font-semibold">
+              <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-purple-900/70 text-purple-100 font-semibold text-sm shadow-[0_0_22px_rgba(147,51,234,0.55)]">
                 {selectedRole && (
                   <Image
                     src={selectedRole.icon}
@@ -227,24 +231,27 @@ export default function ProfileCard({ user, onUserUpdate, showEdit = true }) {
           </div>
 
           {/* Status */}
-          <div className="flex gap-2 items-center">
-            <span className="font-medium">Status:</span>
+          <div className="flex gap-2 items-center text-base">
+            <span className="font-medium text-zinc-300">Status:</span>
             {editMode ? (
               <select
                 name="status"
                 value={localUser.status || ""}
                 onChange={handleChange}
-                className="bg-zinc-800 border border-zinc-700 rounded px-2 py-1"
+                className="bg-zinc-800 border border-zinc-700 rounded px-3 py-1.5"
               >
                 <option value="Free Agent">Free Agent</option>
                 <option value="Em time">Em time</option>
               </select>
             ) : (
-              <span className={`px-2 py-1 rounded font-semibold
-                ${localUser.status === "Free Agent"
-                  ? "bg-green-700/30 text-green-300"
-                  : "bg-zinc-700/50 text-zinc-300"
-                }`}>
+              <span
+                className={`px-3 py-1.5 rounded-full font-semibold text-sm
+                ${
+                  localUser.status === "Free Agent"
+                    ? "bg-emerald-500/15 text-emerald-300 border border-emerald-400/40"
+                    : "bg-zinc-700/60 text-zinc-200 border border-zinc-500/50"
+                }`}
+              >
                 {localUser.status}
               </span>
             )}
@@ -266,7 +273,7 @@ export default function ProfileCard({ user, onUserUpdate, showEdit = true }) {
             )}
             {editMode && (
               <div className="flex flex-col gap-1">
-                <label className="font-medium">Elo:</label>
+                <label className="font-medium text-zinc-300">Elo:</label>
                 <select
                   name="elo"
                   value={localUser.elo || ""}
@@ -294,7 +301,7 @@ export default function ProfileCard({ user, onUserUpdate, showEdit = true }) {
 
           {/* Bio */}
           <div>
-            <span className="font-medium block">Bio:</span>
+            <span className="font-medium block text-zinc-300">Bio:</span>
             {editMode ? (
               <Textarea
                 name="bio"
@@ -305,14 +312,22 @@ export default function ProfileCard({ user, onUserUpdate, showEdit = true }) {
                 rows={2}
               />
             ) : (
-              <p className="text-zinc-300">{localUser.bio || <span className="italic text-zinc-500">Nenhuma descrição ainda.</span>}</p>
+              <p className="text-zinc-200">
+                {localUser.bio || (
+                  <span className="italic text-zinc-500">Nenhuma descrição ainda.</span>
+                )}
+              </p>
             )}
           </div>
 
           {/* Botão de Mensagem (apenas quando não for o próprio perfil) */}
           {!isOwnProfile && (
-            <div className="mt-3">
-              <Button onClick={() => startChat(user.id)} className="bg-purple-600 hover:bg-purple-700" disabled={startingChat}>
+            <div className="mt-4">
+              <Button
+                onClick={() => startChat(user.id)}
+                className="bg-gradient-to-r from-sky-500 via-indigo-500 to-fuchsia-500 hover:from-sky-400 hover:via-indigo-400 hover:to-fuchsia-400 text-white font-semibold shadow-[0_12px_35px_rgba(79,70,229,0.6)]"
+                disabled={startingChat}
+              >
                 {startingChat ? "Abrindo..." : "Mensagem"}
               </Button>
             </div>
@@ -320,8 +335,13 @@ export default function ProfileCard({ user, onUserUpdate, showEdit = true }) {
 
           {/* Botão salvar apenas no modo edição */}
           {editMode && (
-            <div className="mt-3">
-              <Button onClick={handleSave} className="bg-purple-600 hover:bg-purple-700">Salvar</Button>
+            <div className="mt-4 flex gap-3">
+              <Button
+                onClick={handleSave}
+                className="bg-gradient-to-r from-sky-500 via-indigo-500 to-fuchsia-500 hover:from-sky-400 hover:via-indigo-400 hover:to-fuchsia-400 text-white font-semibold"
+              >
+                Salvar
+              </Button>
             </div>
           )}
         </div>

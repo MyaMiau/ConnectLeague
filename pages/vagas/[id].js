@@ -108,81 +108,181 @@ export default function VagaDetalhes() {
     }
   };
 
-  if (loading) return <div className="min-h-screen bg-black text-white"><Header /><p className="text-center mt-24">Carregando vaga...</p></div>;
-  if (!vaga) return <div className="min-h-screen bg-black text-white"><Header /><p className="text-center mt-24">Vaga não encontrada.</p></div>;
+  if (loading)
+    return (
+      <>
+        <Header />
+        <div className="min-h-screen bg-background text-foreground pl-64 flex items-center justify-center">
+          <p className="text-muted-foreground">Carregando vaga...</p>
+        </div>
+      </>
+    );
+  if (!vaga)
+    return (
+      <>
+        <Header />
+        <div className="min-h-screen bg-background text-foreground pl-64 flex items-center justify-center">
+          <p className="text-muted-foreground">Vaga não encontrada.</p>
+        </div>
+      </>
+    );
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <>
       <Header />
-      <div className="max-w-3xl mx-auto py-8 px-4">
-        <h1 className="text-3xl font-bold mb-4">{vaga.titulo || vaga.title}</h1>
-        <div className="flex gap-6 items-center mb-6">
-            <img
-              src={
-                vaga.organization?.logo ||
-                vaga.organization?.image ||
-                "/default-avatar.png"}
-              alt="Logo Organização"
-              className="w-16 h-16 rounded-full bg-zinc-800 border"
-            />
+      <div className="min-h-screen bg-background text-foreground pl-64">
+        <main className="max-w-3xl mx-auto py-10 px-4 space-y-6">
+          <header className="space-y-3">
+            <h1 className="section-title">{vaga.titulo || vaga.title}</h1>
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-16 rounded-full overflow-hidden bg-muted ring-2 ring-primary/20 shrink-0">
+                <img
+                  src={
+                    vaga.organization?.logo ||
+                    vaga.organization?.image ||
+                    "/default-avatar.png"
+                  }
+                  alt="Logo Organização"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div>
+                <p className="font-semibold text-foreground">
+                  {vaga.organization?.name}
+                </p>
+                <Button variant="outline" asChild size="sm" className="mt-1">
+                  <a href={`/profile/${vaga.organization?.id}`}>
+                    Ver perfil da organização
+                  </a>
+                </Button>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="badge-status badge-open">
+                {vaga.status}
+              </span>
+              <span className="text-sm text-muted-foreground">
+                Publicada em{" "}
+                {vaga.dataPublicacao
+                  ? new Date(vaga.dataPublicacao).toLocaleDateString()
+                  : vaga.created_at
+                  ? new Date(vaga.created_at).toLocaleDateString()
+                  : "?"}
+              </span>
+            </div>
+          </header>
+
+          <section className="space-y-4 text-sm text-muted-foreground">
+            <div>
+              <h2 className="font-semibold text-foreground mb-1">
+                Descrição completa
+              </h2>
+              <p>{vaga.descricaoCompleta || vaga.descricao || vaga.description}</p>
+            </div>
+
+            {vaga.requisitos?.length > 0 && (
+              <div>
+                <h2 className="font-semibold text-foreground mb-1">
+                  Requisitos
+                </h2>
+                <ul className="list-disc pl-6 space-y-1">
+                  {vaga.requisitos.map((r, i) => (
+                    <li key={i}>{r}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {vaga.beneficios?.length > 0 && (
+              <div>
+                <h2 className="font-semibold text-foreground mb-1">
+                  Benefícios
+                </h2>
+                <ul className="list-disc pl-6 space-y-1">
+                  {vaga.beneficios.map((b, i) => (
+                    <li key={i}>{b}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            <div className="space-y-1">
+              <p>
+                <span className="font-semibold text-foreground">
+                  Posições:
+                </span>{" "}
+                {vaga.posicoes?.join(", ") ||
+                  vaga.positions?.join(", ") ||
+                  "—"}
+              </p>
+              <p>
+                <span className="font-semibold text-foreground">
+                  Elo mínimo:
+                </span>{" "}
+                {vaga.elos?.join(", ") || "—"}
+              </p>
+              <p>
+                <span className="font-semibold text-foreground">
+                  Localização:
+                </span>{" "}
+                {vaga.cidade || vaga.city || ""}
+                {(vaga.cidade || vaga.city) && (vaga.estado || vaga.state)
+                  ? "/"
+                  : ""}
+                {vaga.estado || vaga.state || ""}
+              </p>
+              {vaga.tags?.length > 0 && (
+                <p>
+                  <span className="font-semibold text-foreground">
+                    Tags:
+                  </span>{" "}
+                  {vaga.tags.join(", ")}
+                </p>
+              )}
+              <p>
+                <span className="font-semibold text-foreground">
+                  Candidatos:
+                </span>{" "}
+                {vaga.applications?.length || 0}
+              </p>
+            </div>
+          </section>
+
           <div>
-            <p className="font-semibold text-lg">{vaga.organization?.name}</p>
-            <Button variant="outline" asChild>
-              <a href={`/profile/${vaga.organization?.id}`}>Ver perfil da organização</a>
+            <Button
+              disabled={vaga.status !== "Aberta" || applying}
+              onClick={jaCandidatado ? handleDescandidatar : handleCandidatar}
+              aria-label={
+                jaCandidatado ? "Cancelar candidatura" : "Candidatar-se"
+              }
+              className="btn-gradient px-6 py-2.5 rounded-lg text-sm font-semibold"
+            >
+              {jaCandidatado
+                ? "Cancelar candidatura"
+                : vaga.status !== "Aberta"
+                ? "Vaga fechada"
+                : applying
+                ? "Enviando..."
+                : "Candidatar-se"}
             </Button>
           </div>
-        </div>
-        <div className="mb-4">
-          <span className="inline-block px-3 py-1 rounded-full bg-purple-700 text-white font-semibold">{vaga.status}</span>
-          <span className="ml-3 text-zinc-400">Publicada em {vaga.dataPublicacao ? new Date(vaga.dataPublicacao).toLocaleDateString() : vaga.created_at ? new Date(vaga.created_at).toLocaleDateString() : "?"}</span>
-        </div>
-        <div className="mb-6">
-          <h2 className="text-lg font-bold mb-2">Descrição completa</h2>
-          <p className="text-zinc-200">{vaga.descricaoCompleta || vaga.descricao || vaga.description}</p>
-        </div>
-        <div className="mb-6">
-          <h2 className="text-lg font-bold mb-2">Requisitos</h2>
-          <ul className="list-disc pl-6 text-zinc-200">
-            {vaga.requisitos?.map((r, i) => <li key={i}>{r}</li>)}
-          </ul>
-        </div>
-        <div className="mb-6">
-          <h2 className="text-lg font-bold mb-2">Benefícios</h2>
-          <ul className="list-disc pl-6 text-zinc-200">
-            {vaga.beneficios?.map((b, i) => <li key={i}>{b}</li>)}
-          </ul>
-        </div>
-        <div className="mb-6">
-          <span className="text-zinc-400"><strong>Posições:</strong> {vaga.posicoes?.join(", ") || vaga.positions?.join(", ") || "—"}</span> <br />
-          <span className="text-zinc-400"><strong>Elo mínimo:</strong> {vaga.elos?.join(", ") || "—"}</span> <br />
-          <span className="text-zinc-400"><strong>Localização:</strong> {vaga.cidade || vaga.city || ""}{(vaga.cidade || vaga.city) && (vaga.estado || vaga.state) ? "/" : ""}{vaga.estado || vaga.state || ""}</span>
-          {vaga.tags?.length > 0 && <div className="text-zinc-400"><strong>Tags:</strong> {vaga.tags.join(", ")}</div>}
-        </div>
-        <div className="mb-6">
-          <span className="text-zinc-400"><strong>Candidatos:</strong> {vaga.applications?.length || 0}</span>
-        </div>
-        <Button
-          color={jaCandidatado ? "red" : "green"}
-          disabled={jaCandidatado || vaga.status !== "Aberta" || applying}
-          onClick={jaCandidatado ? handleDescandidatar : handleCandidatar}
-          aria-label={jaCandidatado ? "Cancelar candidatura" : "Candidatar-se"}>
-          {jaCandidatado ? "Cancelar candidatura" : vaga.status !== "Aberta" ? "Vaga Fechada" : (applying ? "Enviando..." : "Candidatar-se")}
-        </Button>
-      </div>
-      {/* Modal de confirmação */}
-      {confirmModal.open && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/60 z-50">
-          <div className="bg-zinc-900 p-8 rounded-xl shadow-xl text-center">
-            <p className="text-lg">{confirmModal.message}</p>
-            <button
-              className="mt-4 px-6 py-2 bg-purple-600 text-white rounded hover:bg-purple-800"
-              onClick={() => setConfirmModal({ open: false, message: "" })}
-            >
-              Ok
-            </button>
+        </main>
+
+        {/* Modal de confirmação */}
+        {confirmModal.open && (
+          <div className="fixed inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm z-50">
+            <div className="card-glow bg-card p-6 rounded-2xl max-w-sm w-full text-center space-y-4">
+              <p className="text-base text-foreground">{confirmModal.message}</p>
+              <button
+                className="btn-gradient px-6 py-2.5 rounded-lg text-sm font-semibold"
+                onClick={() => setConfirmModal({ open: false, message: "" })}
+              >
+                Ok
+              </button>
+            </div>
           </div>
-        </div>
-      )}
-    </div>
+        )}
+      </div>
+    </>
   );
 }

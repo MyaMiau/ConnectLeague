@@ -36,8 +36,21 @@ export default async function handler(req, res) {
 
   if (req.method === "DELETE") {
     try {
+      // Apaga likes do post
+      await prisma.PostLike.deleteMany({ where: { postId } });
+
+      // Apaga notificações ligadas ao post
+      await prisma.Notification.deleteMany({ where: { postId } });
+
+      // Apaga replies diretamente ligados ao post (por segurança, apesar do onDelete cascade)
+      await prisma.Reply.deleteMany({ where: { postId } });
+
+      // Apaga comentários (e, por cascade, CommentLikes e Replies ligados ao comentário)
       await prisma.Comment.deleteMany({ where: { postId } });
+
+      // Finalmente apaga o post
       await prisma.Post.delete({ where: { id: postId } });
+
       return res.status(204).end();
     } catch (err) {
       console.error("Erro ao deletar post:", err);
